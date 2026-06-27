@@ -10,18 +10,19 @@ interface BookViewerProps {
 }
 
 export function BookViewer({ book }: BookViewerProps) {
+  // 页面索引: 0=封面, 1~N=场景, N+1=含义页
   const [currentPage, setCurrentPage] = useState(0)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [showVideoGenerator, setShowVideoGenerator] = useState(false)
-  const totalScenes = book.scenes.length
+  const totalPages = book.scenes.length + 2 // 封面 + 场景 + 含义页
 
   const goToNext = useCallback(() => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalScenes - 1))
-  }, [totalScenes])
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
+  }, [totalPages])
 
   const goToPrev = useCallback(() => {
     setCurrentPage((prev) => Math.max(prev - 1, 0))
-  }, [])
+  }, [totalPages])
 
   // 键盘事件
   useEffect(() => {
@@ -32,20 +33,18 @@ export function BookViewer({ book }: BookViewerProps) {
         goToPrev()
       }
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [goToNext, goToPrev])
 
-  const scene = book.scenes[currentPage]
-  const imageSrc = scene.imageUrl
-    ? scene.imageUrl
-    : scene.imageBlob
-    ? URL.createObjectURL(scene.imageBlob)
-    : null
+  // 判断当前页类型
+  const isCover = currentPage === 0
+  const isMeaningPage = currentPage === totalPages - 1
+  const sceneIndex = currentPage - 1 // 场景索引从0开始
+  const scene = !isCover && !isMeaningPage ? book.scenes[sceneIndex] : null
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* 工具栏 */}
       <div className="flex justify-between items-center">
         <button
@@ -84,62 +83,130 @@ export function BookViewer({ book }: BookViewerProps) {
           ◀
         </button>
 
-        <div className="flex-1 flex" style={{ perspective: '800px' }}>
-          {/* 左页 - 插图 */}
-          <div
-            className="w-1/2 bg-gradient-to-r from-secondary to-primary/20 rounded-l-card p-6 shadow-lg"
-            style={{ transform: 'rotateY(2deg)' }}
-          >
-            <div className="text-center mb-4">
-              <span className="text-sm text-gray-500">
-                第 {currentPage + 1} 幕
-              </span>
-              <h3 className="text-xl font-bold text-gray-800">
-                {scene.title}
-              </h3>
-            </div>
-            {imageSrc && (
-              <img
-                src={imageSrc}
-                alt={scene.title}
-                className="w-full h-auto rounded-lg shadow-md"
-              />
-            )}
-          </div>
+        <div className="flex-1" style={{ perspective: '800px' }}>
+          {/* 封面页 - 展示所有插图 */}
+          {isCover && (
+            <div className="bg-gradient-to-br from-secondary to-primary/20 rounded-card p-8 shadow-lg">
+              <div className="text-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                  📚 {book.title}
+                </h1>
+                <p className="text-gray-600">{book.meaning}</p>
+              </div>
 
-          {/* 右页 - 文本 */}
-          <div
-            className="w-1/2 bg-gradient-to-l from-secondary to-primary/20 rounded-r-card p-6 shadow-lg"
-            style={{ transform: 'rotateY(-2deg)' }}
-          >
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-700 mb-2">
-                  📖 场景描述
-                </h4>
-                <p className="text-gray-600">{scene.description}</p>
+              {/* 所有插图网格 */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {book.scenes.map((s, i) => {
+                  const imgSrc = s.imageUrl || (s.imageBlob ? URL.createObjectURL(s.imageBlob) : null)
+                  return (
+                    <div
+                      key={i}
+                      className="bg-white rounded-lg overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-all hover:scale-105"
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {imgSrc && (
+                        <img
+                          src={imgSrc}
+                          alt={s.title}
+                          className="w-full h-32 object-cover"
+                        />
+                      )}
+                      <div className="p-2 text-center">
+                        <span className="text-xs text-gray-500">第 {i + 1} 幕</span>
+                        <p className="text-sm font-medium text-gray-700 truncate">{s.title}</p>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-              <div className="bg-white/60 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-700 mb-2">💬 旁白</h4>
-                <p className="text-gray-800 italic text-lg">
-                  &ldquo;{scene.narration}&rdquo;
-                </p>
+
+              <div className="text-center text-sm text-gray-500">
+                点击任意场景开始阅读 →
               </div>
-              {currentPage === 0 && (
-                <div className="bg-white/60 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-700 mb-2">
-                    💡 成语含义
-                  </h4>
-                  <p className="text-gray-600">{book.meaning}</p>
-                </div>
-              )}
             </div>
-          </div>
+          )}
+
+          {/* 场景页 */}
+          {scene && (
+            <div className="flex">
+              {/* 左页 - 插图 */}
+              <div
+                className="w-1/2 bg-gradient-to-r from-secondary to-primary/20 rounded-l-card p-6 shadow-lg"
+                style={{ transform: 'rotateY(2deg)' }}
+              >
+                <div className="text-center mb-4">
+                  <span className="text-sm text-gray-500">
+                    第 {sceneIndex + 1} 幕
+                  </span>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    {scene.title}
+                  </h3>
+                </div>
+                {(scene.imageUrl || scene.imageBlob) && (
+                  <img
+                    src={scene.imageUrl || URL.createObjectURL(scene.imageBlob!)}
+                    alt={scene.title}
+                    className="w-full h-auto rounded-lg shadow-md"
+                  />
+                )}
+              </div>
+
+              {/* 右页 - 文本 */}
+              <div
+                className="w-1/2 bg-gradient-to-l from-secondary to-primary/20 rounded-r-card p-6 shadow-lg"
+                style={{ transform: 'rotateY(-2deg)' }}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">
+                      📖 场景描述
+                    </h4>
+                    <p className="text-gray-600">{scene.description}</p>
+                  </div>
+                  <div className="bg-white/60 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">💬 旁白</h4>
+                    <p className="text-gray-800 italic text-lg">
+                      &ldquo;{scene.narration}&rdquo;
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 含义页 */}
+          {isMeaningPage && (
+            <div className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-card p-8 shadow-lg text-center">
+              <div className="text-6xl mb-6">💡</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                成语含义
+              </h2>
+              <p className="text-xl text-gray-700 mb-8 leading-relaxed">
+                {book.meaning}
+              </p>
+
+              <div className="bg-white/60 rounded-lg p-6 max-w-lg mx-auto">
+                <h3 className="font-semibold text-gray-700 mb-3">📖 故事回顾</h3>
+                <div className="space-y-2 text-left">
+                  {book.scenes.map((s, i) => (
+                    <p key={i} className="text-gray-600 text-sm">
+                      <span className="font-medium">第 {i + 1} 幕 {s.title}：</span>
+                      {s.narration}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 text-sm text-gray-500">
+                🎉 故事讲完啦！
+              </div>
+            </div>
+          )}
         </div>
 
         <button
           onClick={goToNext}
-          disabled={currentPage === totalScenes - 1}
+          disabled={currentPage === totalPages - 1}
           className="text-3xl text-primary hover:text-accent disabled:opacity-30"
         >
           ▶
@@ -149,7 +216,7 @@ export function BookViewer({ book }: BookViewerProps) {
       {/* 页码指示器 */}
       <div className="flex justify-center items-center gap-4">
         <div className="flex gap-2">
-          {book.scenes.map((_, i) => (
+          {Array.from({ length: totalPages }).map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentPage(i)}
@@ -160,7 +227,7 @@ export function BookViewer({ book }: BookViewerProps) {
           ))}
         </div>
         <span className="text-sm text-gray-500">
-          {currentPage + 1} / {totalScenes}
+          {currentPage + 1} / {totalPages}
         </span>
       </div>
 
