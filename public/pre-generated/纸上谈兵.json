@@ -1,0 +1,33 @@
+{
+  "id": "book-1782550588646-15",
+  "title": "纸上谈兵",
+  "idiom": "纸上谈兵",
+  "meaning": "比喻空谈理论，不能解决实际问题",
+  "createdAt": "2026-06-27T08:56:28.646Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "熟读兵书",
+      "description": "熟读兵书",
+      "prompt": "A young general reading military books, cartoon style, study scene",
+      "narration": "赵括熟读兵书，谈论军事头头是道。",
+      "imageUrl": "/pre-generated/images/纸上谈兵_1.png"
+    },
+    {
+      "id": 2,
+      "title": "上战场",
+      "description": "上战场",
+      "prompt": "An inexperienced general leading army to battle, cartoon style, war scene",
+      "narration": "他当上将军后，却只会纸上谈兵。",
+      "imageUrl": "/pre-generated/images/纸上谈兵_2.png"
+    },
+    {
+      "id": 3,
+      "title": "惨遭失败",
+      "description": "惨遭失败",
+      "prompt": "An army defeated in battle, cartoon style, lesson learned",
+      "narration": "结果在实战中惨败，只会理论是不够的。",
+      "imageUrl": "/pre-generated/images/纸上谈兵_3.png"
+    }
+  ]
+}

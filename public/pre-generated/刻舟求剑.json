@@ -1,0 +1,33 @@
+{
+  "id": "book-1782549699692-6",
+  "title": "刻舟求剑",
+  "idiom": "刻舟求剑",
+  "meaning": "比喻拘泥于成法，不知变通",
+  "createdAt": "2026-06-27T08:41:39.692Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "剑掉入水中",
+      "description": "剑掉入水中",
+      "prompt": "A sword falling from a boat into a river, cartoon style, splash scene",
+      "narration": "有个人坐船时，剑掉进了水里。",
+      "imageUrl": "/pre-generated/images/刻舟求剑_1.png"
+    },
+    {
+      "id": 2,
+      "title": "在船上刻记号",
+      "description": "船上刻记号",
+      "prompt": "A person carving a mark on the boat, cartoon style, river journey",
+      "narration": "他在船上刻了个记号，想等船停了再找。",
+      "imageUrl": "/pre-generated/images/刻舟求剑_2.png"
+    },
+    {
+      "id": 3,
+      "title": "找不到剑",
+      "description": "找不到剑",
+      "prompt": "A confused person searching in water at a dock, cartoon style, realization",
+      "narration": "船已经走了，剑却还在原来的地方，他当然找不到了。",
+      "imageUrl": "/pre-generated/images/刻舟求剑_3.png"
+    }
+  ]
+}

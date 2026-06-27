@@ -1,0 +1,33 @@
+{
+  "id": "book-1782550910787-18",
+  "title": "负荆请罪",
+  "idiom": "负荆请罪",
+  "meaning": "表示向人认错赔罪",
+  "createdAt": "2026-06-27T09:01:50.787Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "廉颇不服",
+      "description": "廉颇不服",
+      "prompt": "A general angry at being outranked, cartoon style, pride scene",
+      "narration": "廉颇觉得自己功劳大，不服蔺相如。",
+      "imageUrl": "/pre-generated/images/负荆请罪_1.png"
+    },
+    {
+      "id": 2,
+      "title": "蔺相如避让",
+      "description": "蔺相如避让",
+      "prompt": "A wise minister avoiding conflict, cartoon style, humble scene",
+      "narration": "蔺相如为了国家大局，处处避让廉颇。",
+      "imageUrl": "/pre-generated/images/负荆请罪_2.png"
+    },
+    {
+      "id": 3,
+      "title": "负荆请罪",
+      "description": "负荆请罪",
+      "prompt": "A general carrying thorns to apologize, cartoon style, reconciliation scene",
+      "narration": "廉颇深受感动，背着荆条去请罪，两人成为好友。",
+      "imageUrl": "/pre-generated/images/负荆请罪_3.png"
+    }
+  ]
+}

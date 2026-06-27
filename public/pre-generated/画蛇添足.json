@@ -1,0 +1,33 @@
+{
+  "id": "book-1782548892130-0",
+  "title": "画蛇添足",
+  "idiom": "画蛇添足",
+  "meaning": "比喻做多余的事，反而不恰当",
+  "createdAt": "2026-06-27T08:28:12.130Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "画蛇比赛",
+      "description": "众人比赛画蛇",
+      "prompt": "A group of people drawing snakes on paper, cartoon style, competition scene",
+      "narration": "从前有几个人比赛画蛇，看谁画得快。",
+      "imageUrl": "/pre-generated/images/画蛇添足_1.png"
+    },
+    {
+      "id": 2,
+      "title": "添足之人",
+      "description": "有人给蛇添脚",
+      "prompt": "A person proudly adding feet to a snake drawing, cartoon style, funny scene",
+      "narration": "有个人画完了蛇，还给蛇添上了脚。",
+      "imageUrl": ""
+    },
+    {
+      "id": 3,
+      "title": "比赛失败",
+      "description": "反而输掉比赛",
+      "prompt": "A person looking sad while others celebrate, cartoon style, lesson learned",
+      "narration": "结果他反而输了比赛，多此一举反而不好。",
+      "imageUrl": "/pre-generated/images/画蛇添足_3.png"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "book-1782549969788-9",
+  "title": "叶公好龙",
+  "idiom": "叶公好龙",
+  "meaning": "比喻自称爱好某事物，其实并不是真爱好",
+  "createdAt": "2026-06-27T08:46:09.788Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "叶公爱龙",
+      "description": "到处是龙装饰",
+      "prompt": "A nobleman surrounded by dragon decorations, cartoon style, fancy room",
+      "narration": "叶公非常喜欢龙，家里到处都是龙的装饰。",
+      "imageUrl": "/pre-generated/images/叶公好龙_1.png"
+    },
+    {
+      "id": 2,
+      "title": "真龙降临",
+      "description": "真龙来访",
+      "prompt": "A real dragon appearing at the window, cartoon style, magical scene",
+      "narration": "有一天，一条真龙听说了，就来拜访他。",
+      "imageUrl": "/pre-generated/images/叶公好龙_2.png"
+    },
+    {
+      "id": 3,
+      "title": "叶公惊恐",
+      "description": "吓得躲起来",
+      "prompt": "A scared nobleman hiding under a table from a dragon, cartoon style, funny scene",
+      "narration": "叶公吓得躲到桌子底下，原来他并不是真的喜欢龙。",
+      "imageUrl": "/pre-generated/images/叶公好龙_3.png"
+    }
+  ]
+}

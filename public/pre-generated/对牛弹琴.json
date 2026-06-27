@@ -1,0 +1,33 @@
+{
+  "id": "book-1782550052536-10",
+  "title": "对牛弹琴",
+  "idiom": "对牛弹琴",
+  "meaning": "比喻对不懂道理的人讲道理",
+  "createdAt": "2026-06-27T08:47:32.536Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "音乐家弹琴",
+      "description": "对牛弹琴",
+      "prompt": "A musician playing music to a cow, cartoon style, farm background",
+      "narration": "有个音乐家对着牛弹奏美妙的音乐。",
+      "imageUrl": "/pre-generated/images/对牛弹琴_1.png"
+    },
+    {
+      "id": 2,
+      "title": "牛不理会",
+      "description": "牛不理会",
+      "prompt": "A cow eating grass ignoring the musician, cartoon style, funny scene",
+      "narration": "可是牛只顾着吃草，根本不听。",
+      "imageUrl": "/pre-generated/images/对牛弹琴_2.png"
+    },
+    {
+      "id": 3,
+      "title": "恍然大悟",
+      "description": "恍然大悟",
+      "prompt": "A musician realizing the cow cannot appreciate music, cartoon style, lesson learned",
+      "narration": "他这才明白，对不懂的人讲道理是没有用的。",
+      "imageUrl": "/pre-generated/images/对牛弹琴_3.png"
+    }
+  ]
+}

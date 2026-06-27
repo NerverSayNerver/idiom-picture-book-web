@@ -1,0 +1,33 @@
+{
+  "id": "book-1782550780785-17",
+  "title": "完璧归赵",
+  "idiom": "完璧归赵",
+  "meaning": "比喻把原物完好地归还本人",
+  "createdAt": "2026-06-27T08:59:40.785Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "蔺相如出使",
+      "description": "出使秦国",
+      "prompt": "An envoy traveling with a precious jade, cartoon style, diplomatic mission",
+      "narration": "蔺相如带着和氏璧出使秦国。",
+      "imageUrl": "/pre-generated/images/完璧归赵_1.png"
+    },
+    {
+      "id": 2,
+      "title": "秦王耍赖",
+      "description": "秦王耍赖",
+      "prompt": "A king trying to keep the jade without giving cities, cartoon style, tense scene",
+      "narration": "秦王想白白得到宝玉，不肯给城池。",
+      "imageUrl": "/pre-generated/images/完璧归赵_2.png"
+    },
+    {
+      "id": 3,
+      "title": "完璧归赵",
+      "description": "完璧归赵",
+      "prompt": "An envoy safely returning with the jade, cartoon style, triumphant return",
+      "narration": "蔺相如机智勇敢，终于把宝玉完好带回赵国。",
+      "imageUrl": "/pre-generated/images/完璧归赵_3.png"
+    }
+  ]
+}

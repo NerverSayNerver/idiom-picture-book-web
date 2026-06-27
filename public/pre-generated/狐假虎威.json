@@ -1,0 +1,33 @@
+{
+  "id": "book-1782549268430-4",
+  "title": "狐假虎威",
+  "idiom": "狐假虎威",
+  "meaning": "比喻仰仗别人的权势来欺压人",
+  "createdAt": "2026-06-27T08:34:28.430Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "狐狸骑虎",
+      "description": "狐狸骑老虎",
+      "prompt": "A fox riding on the back of a tiger, cartoon style, forest scene",
+      "narration": "狐狸骑在老虎背上，在森林里走。",
+      "imageUrl": "/pre-generated/images/狐假虎威_1.png"
+    },
+    {
+      "id": 2,
+      "title": "动物害怕",
+      "description": "动物都害怕",
+      "prompt": "Forest animals running away in fear, cartoon style, dramatic scene",
+      "narration": "其他动物看到都吓得逃跑。",
+      "imageUrl": "/pre-generated/images/狐假虎威_2.png"
+    },
+    {
+      "id": 3,
+      "title": "真相大白",
+      "description": "老虎发现真相",
+      "prompt": "A tiger looking angry at a scared fox, cartoon style, reveal moment",
+      "narration": "老虎发现真相后，狐狸再也不敢骗人了。",
+      "imageUrl": "/pre-generated/images/狐假虎威_3.png"
+    }
+  ]
+}

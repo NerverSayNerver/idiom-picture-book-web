@@ -1,0 +1,33 @@
+{
+  "id": "book-1782550295021-12",
+  "title": "破釜沉舟",
+  "idiom": "破釜沉舟",
+  "meaning": "比喻下定决心，不留退路",
+  "createdAt": "2026-06-27T08:51:35.021Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "砸破锅碗",
+      "description": "砸破锅碗",
+      "prompt": "An army breaking their cooking pots, cartoon style, war preparation",
+      "narration": "将军命令砸破锅碗，表示决一死战。",
+      "imageUrl": "/pre-generated/images/破釜沉舟_1.png"
+    },
+    {
+      "id": 2,
+      "title": "沉没船只",
+      "description": "沉没船只",
+      "prompt": "An army sinking their boats at the river, cartoon style, determined soldiers",
+      "narration": "又把船只沉入河中，断绝退路。",
+      "imageUrl": "/pre-generated/images/破釜沉舟_2.png"
+    },
+    {
+      "id": 3,
+      "title": "英勇胜利",
+      "description": "英勇胜利",
+      "prompt": "An army winning a great battle, cartoon style, victory celebration",
+      "narration": "士兵们奋勇作战，最终取得了胜利。",
+      "imageUrl": "/pre-generated/images/破釜沉舟_3.png"
+    }
+  ]
+}

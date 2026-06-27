@@ -1,0 +1,33 @@
+{
+  "id": "book-1782549083301-2",
+  "title": "亡羊补牢",
+  "idiom": "亡羊补牢",
+  "meaning": "比喻出了问题以后想办法补救",
+  "createdAt": "2026-06-27T08:31:23.301Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "羊圈破洞",
+      "description": "羊圈破洞丢羊",
+      "prompt": "A sheep pen with a hole, a wolf watching nearby, cartoon style, night scene",
+      "narration": "羊圈破了个洞，狼趁机偷走了几只羊。",
+      "imageUrl": "/pre-generated/images/亡羊补牢_1.png"
+    },
+    {
+      "id": 2,
+      "title": "修补羊圈",
+      "description": "修补羊圈",
+      "prompt": "A shepherd fixing the fence of sheep pen, cartoon style, determined expression",
+      "narration": "邻居劝他赶快修补羊圈。",
+      "imageUrl": "/pre-generated/images/亡羊补牢_2.png"
+    },
+    {
+      "id": 3,
+      "title": "羊群安全",
+      "description": "不再丢羊",
+      "prompt": "A happy shepherd with safe sheep in a repaired pen, cartoon style, happy ending",
+      "narration": "他修好羊圈后，再也没有丢过羊。",
+      "imageUrl": "/pre-generated/images/亡羊补牢_3.png"
+    }
+  ]
+}

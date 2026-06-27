@@ -1,0 +1,33 @@
+{
+  "id": "book-1782548983367-1",
+  "title": "守株待兔",
+  "idiom": "守株待兔",
+  "meaning": "比喻不主动努力，希望得到意外收获",
+  "createdAt": "2026-06-27T08:29:43.367Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "兔子撞树",
+      "description": "兔子撞树而死",
+      "prompt": "A rabbit running into a tree stump, cartoon style, farm background",
+      "narration": "有一天，一只兔子撞到树桩上死了。",
+      "imageUrl": "/pre-generated/images/守株待兔_1.png"
+    },
+    {
+      "id": 2,
+      "title": "农夫等待",
+      "description": "农夫天天等待",
+      "prompt": "A lazy farmer sitting by a tree stump waiting, cartoon style, sunny day",
+      "narration": "农夫从此每天坐在树桩旁等兔子。",
+      "imageUrl": "/pre-generated/images/守株待兔_2.png"
+    },
+    {
+      "id": 3,
+      "title": "田地荒芜",
+      "description": "田地荒芜",
+      "prompt": "An overgrown field with a sad farmer, cartoon style, lesson scene",
+      "narration": "结果田地都荒芜了，再也没有兔子来。",
+      "imageUrl": "/pre-generated/images/守株待兔_3.png"
+    }
+  ]
+}
