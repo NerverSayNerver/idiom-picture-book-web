@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { IDIOM_LIST } from '@/lib/idioms'
+import { useState, useEffect, useRef } from 'react'
+import { IDIOM_LIST, type IdiomInfo } from '@/lib/idioms'
 import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import { getAllPictureBooks } from '@/lib/db'
+import { fetchRecommendedIdioms } from '@/app/actions/recommend'
 
 interface IdiomSelectorProps {
   onBatchGenerate?: (idioms: string[]) => void
@@ -15,6 +16,9 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
   const [selectedIdiom, setSelectedIdiom] = useState<string | null>(null)
   const [selectedIdioms, setSelectedIdioms] = useState<Set<string>>(new Set())
   const [existingIdioms, setExistingIdioms] = useState<Set<string>>(new Set())
+  const [displayIdioms, setDisplayIdioms] = useState<IdiomInfo[]>(IDIOM_LIST)
+  const [refreshing, setRefreshing] = useState(false)
+  const shownIdiomsRef = useRef<Set<string>>(new Set(IDIOM_LIST.map(i => i.idiom)))
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
   const router = useRouter()
 
@@ -52,6 +56,22 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
       })
     } catch (error) {
       console.error('加载绘本列表失败:', error)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      const newIdioms = await fetchRecommendedIdioms(Array.from(shownIdiomsRef.current))
+      // 记录已展示的成语
+      newIdioms.forEach(i => shownIdiomsRef.current.add(i.idiom))
+      setDisplayIdioms(newIdioms)
+      setSelectedIdiom(null)
+      setSelectedIdioms(new Set())
+    } catch (error) {
+      console.error('获取推荐成语失败:', error)
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -97,9 +117,19 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
 
       {/* 成语网格 */}
       <div className="bg-white rounded-card p-6 shadow-md">
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">🎭 选择成语</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">🎭 选择成语</h2>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
+            {refreshing ? '获取中...' : '换一批'}
+          </button>
+        </div>
         <div className="grid grid-cols-5 gap-3">
-          {IDIOM_LIST.map((item) => {
+          {displayIdioms.map((item) => {
             const isMultiSelected = selectedIdioms.has(item.idiom)
             const isSingleSelected = selectedIdiom === item.idiom
             return (
