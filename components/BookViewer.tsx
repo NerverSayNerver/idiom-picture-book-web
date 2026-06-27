@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { PictureBook } from '@/lib/types'
 import { VideoGenerator } from './VideoGenerator'
 import { generatePDF } from '@/lib/pdf'
+import { useTTS } from '@/hooks/useTTS'
 
 interface BookViewerProps {
   book: PictureBook
 }
+
+const RATES = [0.5, 0.75, 1.0, 1.25, 1.5]
 
 export function BookViewer({ book }: BookViewerProps) {
   // 页面索引: 0=封面, 1~N=场景, N+1=含义页
@@ -16,6 +19,23 @@ export function BookViewer({ book }: BookViewerProps) {
   const [showVideoGenerator, setShowVideoGenerator] = useState(false)
   const totalPages = book.scenes.length + 2 // 封面 + 场景 + 含义页
 
+  const {
+    isPlaying,
+    isPaused,
+    rate,
+    currentCharIndex,
+    speak,
+    stop,
+    togglePause,
+    setRate: setTTSRate,
+    isSupported,
+  } = useTTS()
+
+  // 连续朗读模式标记
+  const isReadingModeRef = useRef(false)
+  // 防止 effect 递归触发
+  const isSpeakingRef = useRef(false)
+
   const goToNext = useCallback(() => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
   }, [totalPages])
@@ -23,6 +43,73 @@ export function BookViewer({ book }: BookViewerProps) {
   const goToPrev = useCallback(() => {
     setCurrentPage((prev) => Math.max(prev - 1, 0))
   }, [totalPages])
+
+  // 循环切换语速
+  const cycleRate = useCallback(() => {
+    const currentIndex = RATES.indexOf(rate)
+    const nextIndex = (currentIndex + 1) % RATES.length
+    setTTSRate(RATES[nextIndex])
+  }, [rate, setTTSRate])
+
+  // 判断当前页类型
+  const isCover = currentPage === 0
+  const isMeaningPage = currentPage === totalPages - 1
+  const sceneIndex = currentPage - 1 // 场景索引从0开始
+  const scene = !isCover && !isMeaningPage ? book.scenes[sceneIndex] : null
+
+  // 开始/停止朗读
+  const handleSpeak = useCallback(() => {
+    if (isPlaying) {
+      stop()
+      isReadingModeRef.current = false
+      return
+    }
+
+    isReadingModeRef.current = true
+    const startIndex = isCover ? 0 : isMeaningPage ? book.scenes.length : sceneIndex
+    if (startIndex >= book.scenes.length) return
+    setCurrentPage(startIndex + 1)
+  }, [isPlaying, stop, isCover, isMeaningPage, sceneIndex, book.scenes])
+
+  // 停止朗读并退出朗读模式
+  const handleStop = useCallback(() => {
+    stop()
+    isReadingModeRef.current = false
+  }, [stop])
+
+  // 页面变化时，在朗读模式下自动开始新页朗读
+  useEffect(() => {
+    if (!isReadingModeRef.current) return
+    if (isSpeakingRef.current) return
+    if (isCover) return
+
+    if (isMeaningPage) {
+      // 含义页朗读含义文本
+      isSpeakingRef.current = true
+      speak(book.meaning)
+      return
+    }
+
+    if (!scene) return
+
+    // 停止之前的朗读，开始新页
+    isSpeakingRef.current = true
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(scene.narration)
+    utterance.lang = 'zh-CN'
+    utterance.rate = rate
+    utterance.onend = () => {
+      isSpeakingRef.current = false
+      const nextPage = currentPage + 1
+      if (nextPage < totalPages) {
+        setCurrentPage(nextPage)
+      } else {
+        isReadingModeRef.current = false
+      }
+    }
+    window.speechSynthesis.speak(utterance)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage])
 
   // 键盘事件
   useEffect(() => {
@@ -37,12 +124,6 @@ export function BookViewer({ book }: BookViewerProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [goToNext, goToPrev])
 
-  // 判断当前页类型
-  const isCover = currentPage === 0
-  const isMeaningPage = currentPage === totalPages - 1
-  const sceneIndex = currentPage - 1 // 场景索引从0开始
-  const scene = !isCover && !isMeaningPage ? book.scenes[sceneIndex] : null
-
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* 工具栏 */}
@@ -55,9 +136,36 @@ export function BookViewer({ book }: BookViewerProps) {
         </button>
         <h2 className="text-xl font-bold text-gray-800">{book.title}</h2>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-button text-sm hover:bg-blue-200">
-            🔊 朗读
-          </button>
+          {isSupported && (
+            <>
+              <button
+                onClick={handleSpeak}
+                className={`px-4 py-2 rounded-button text-sm ${
+                  isPlaying
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
+              >
+                {isPlaying ? '⏹ 停止' : '🔊 朗读'}
+              </button>
+              {isPlaying && (
+                <>
+                  <button
+                    onClick={togglePause}
+                    className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-button text-sm hover:bg-yellow-200"
+                  >
+                    {isPaused ? '▶ 继续' : '⏸ 暂停'}
+                  </button>
+                  <button
+                    onClick={cycleRate}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-button text-sm hover:bg-gray-200"
+                  >
+                    🐢 {rate}x
+                  </button>
+                </>
+              )}
+            </>
+          )}
           <button
             onClick={() => setShowVideoGenerator(!showVideoGenerator)}
             className="px-4 py-2 bg-purple-100 text-purple-700 rounded-button text-sm hover:bg-purple-200"
@@ -166,7 +274,20 @@ export function BookViewer({ book }: BookViewerProps) {
                   <div className="bg-white/60 rounded-lg p-4">
                     <h4 className="font-semibold text-gray-700 mb-2">💬 旁白</h4>
                     <p className="text-gray-800 italic text-lg">
-                      &ldquo;{scene.narration}&rdquo;
+                      &ldquo;
+                      {scene.narration.split('').map((char, i) => (
+                        <span
+                          key={i}
+                          className={
+                            isPlaying && i === currentCharIndex
+                              ? 'bg-yellow-200 rounded px-0.5'
+                              : ''
+                          }
+                        >
+                          {char}
+                        </span>
+                      ))}
+                      &rdquo;
                     </p>
                   </div>
                 </div>
