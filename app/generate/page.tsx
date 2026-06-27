@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
+import { useTaskStore } from '@/lib/task-store'
 import { decomposeIdiom } from '@/app/actions/decompose'
 import { generateSceneImage, downloadImageAsBase64 } from '@/app/actions/generate'
 import { savePictureBook, saveSceneImage } from '@/lib/db'
-import { ProgressBar } from '@/components/ProgressBar'
+import { TaskQueue } from '@/components/TaskQueue'
 import { SceneCard } from '@/components/SceneCard'
 
 // 将 base64 转换为 Blob
@@ -40,7 +41,8 @@ export default function GeneratePage() {
     saveCurrentBook,
   } = useAppStore()
 
-  const [completedCount, setCompletedCount] = useState(0)
+  const { addTask, updateTask, getTaskById } = useTaskStore()
+  const [taskId, setTaskId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!currentIdiom) {
@@ -55,23 +57,64 @@ export default function GeneratePage() {
     try {
       // 阶段 1: LLM 场景拆分
       setDecomposing(true)
+      
+      // 创建拆分任务
+      const decomposeTaskId = addTask({
+        type: 'decompose',
+        total: 1,
+      })
+      setTaskId(decomposeTaskId)
+      updateTask(decomposeTaskId, { status: 'running' })
+      
       const decomposition = await decomposeIdiom(currentIdiom!)
       setDecomposition(decomposition.meaning, decomposition.scenes)
       setDecomposing(false)
+      
+      // 完成拆分任务
+      updateTask(decomposeTaskId, { 
+        status: 'completed', 
+        progress: 1,
+        sceneTitle: currentIdiom || '场景拆分'
+      })
 
       // 阶段 2: 逐个生成图像
       setGenerating(true)
       let successCount = 0
 
+      // 为每个场景创建生成任务
+      const sceneTaskIds: string[] = []
       for (let i = 0; i < decomposition.scenes.length; i++) {
         const scene = decomposition.scenes[i]
+        const sceneTaskId = addTask({
+          type: 'generate',
+          sceneId: i + 1,
+          sceneTitle: scene.title,
+          total: 2, // 生成 + 下载
+        })
+        sceneTaskIds.push(sceneTaskId)
+      }
+
+      // 逐个处理场景
+      for (let i = 0; i < decomposition.scenes.length; i++) {
+        const scene = decomposition.scenes[i]
+        const sceneTaskId = sceneTaskIds[i]
+        
+        // 检查任务是否被取消
+        const currentTask = getTaskById(sceneTaskId)
+        if (currentTask?.status === 'cancelled') {
+          continue
+        }
+        
         setGeneratingScene(i + 1)
+        updateTask(sceneTaskId, { status: 'running' })
 
         try {
           // 生成图像
+          updateTask(sceneTaskId, { progress: 1, total: 2 })
           const imageUrl = await generateSceneImage(scene.prompt)
 
           // 在服务器端下载图像并转换为 base64
+          updateTask(sceneTaskId, { progress: 2, total: 2 })
           const base64 = await downloadImageAsBase64(imageUrl)
 
           // 转换为 Blob
@@ -79,10 +122,24 @@ export default function GeneratePage() {
 
           // 保存到 store
           setSceneImage(i + 1, imageUrl, imageBlob)
-          setCompletedCount(i + 1)
+          
+          // 完成任务
+          updateTask(sceneTaskId, { 
+            status: 'completed', 
+            progress: 2,
+            total: 2 
+          })
+          
           successCount++
         } catch (err) {
           console.error(`场景 ${i + 1} 生成失败:`, err)
+          
+          // 标记任务失败
+          updateTask(sceneTaskId, { 
+            status: 'failed', 
+            error: err instanceof Error ? err.message : '生成失败'
+          })
+          
           // 继续生成下一个场景
         }
       }
@@ -92,6 +149,13 @@ export default function GeneratePage() {
 
       // 如果至少有一个场景成功，保存绘本
       if (successCount > 0) {
+        // 创建保存任务
+        const saveTaskId = addTask({
+          type: 'save',
+          total: 1,
+        })
+        updateTask(saveTaskId, { status: 'running' })
+        
         const book = saveCurrentBook()
         await savePictureBook(book)
 
@@ -101,6 +165,12 @@ export default function GeneratePage() {
             await saveSceneImage(book.id, scene.id, scene.imageBlob)
           }
         }
+        
+        updateTask(saveTaskId, { 
+          status: 'completed', 
+          progress: 1,
+          sceneTitle: '绘本保存完成'
+        })
 
         // 跳转到阅读页
         router.push(`/read/${book.id}`)
@@ -121,7 +191,7 @@ export default function GeneratePage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="w-full max-w-2xl space-y-8">
+      <div className="w-full max-w-4xl space-y-8">
         {/* 标题 */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-primary">⏳ 正在生成绘本</h1>
@@ -135,28 +205,13 @@ export default function GeneratePage() {
           </div>
         )}
 
-        {/* 阶段 1: LLM 场景拆分 */}
-        {isDecomposing && (
-          <div className="bg-white rounded-card p-6 shadow-md text-center">
-            <div className="text-4xl mb-4">🤖</div>
-            <h2 className="text-xl font-semibold mb-2">AI 正在构思故事...</h2>
-            <p className="text-gray-600">
-              正在将「{currentIdiom}」拆分为精彩场景
-            </p>
-          </div>
-        )}
+        {/* 任务队列 */}
+        <TaskQueue />
 
-        {/* 阶段 2: 图像生成 */}
+        {/* 场景预览 */}
         {currentScenes.length > 0 && (
-          <>
-            <div className="bg-white rounded-card p-6 shadow-md">
-              <ProgressBar
-                current={completedCount}
-                total={currentScenes.length}
-                label="图像生成进度"
-              />
-            </div>
-
+          <div className="bg-white rounded-card p-6 shadow-md">
+            <h2 className="text-lg font-semibold mb-4">🎬 场景预览</h2>
             <div className="grid grid-cols-2 gap-4">
               {currentScenes.map((scene) => (
                 <SceneCard
@@ -172,7 +227,7 @@ export default function GeneratePage() {
                 />
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {/* 趣味知识 */}
