@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useTaskStore } from '@/lib/task-store'
+import { useTaskStore, type TaskStatus } from '@/lib/task-store'
 import type { Task } from '@/lib/task-store'
 import { TaskCard } from './TaskCard'
 
@@ -9,9 +9,12 @@ interface TaskQueueProps {
   compact?: boolean
 }
 
+type FilterStatus = TaskStatus | 'all'
+
 export function TaskQueue({ compact = false }: TaskQueueProps) {
   const { getJobQueue, pauseAll, resumeAll, cancelAll, clearCompleted } = useTaskStore()
   const jobs = getJobQueue()
+  const [filter, setFilter] = useState<FilterStatus>('all')
 
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
 
@@ -23,11 +26,18 @@ export function TaskQueue({ compact = false }: TaskQueueProps) {
     })
   }, [])
 
-  const runningJobs = jobs.filter(j => j.status === 'running')
-  const pausedJobs = jobs.filter(j => j.status === 'paused')
-  const pendingJobs = jobs.filter(j => j.status === 'pending')
-  const failedJobs = jobs.filter(j => j.status === 'failed')
-  const completedJobs = jobs.filter(j => j.status === 'completed' || j.status === 'cancelled')
+  const filtered = filter === 'all' ? jobs : jobs.filter(j => j.status === filter)
+
+  const runningJobs = filtered.filter(j => j.status === 'running')
+  const pausedJobs = filtered.filter(j => j.status === 'paused')
+  const pendingJobs = filtered.filter(j => j.status === 'pending')
+  const failedJobs = filtered.filter(j => j.status === 'failed')
+  const completedJobs = filtered.filter(j => j.status === 'completed' || j.status === 'cancelled')
+
+  const statusLabels: Record<FilterStatus, string> = {
+    all: '全部', pending: '等待中', running: '执行中', paused: '已暂停',
+    completed: '已完成', failed: '失败', cancelled: '已取消',
+  }
 
   const orderedGroups: { label: string; color: string; jobs: Task[] }[] = [
     { label: '执行中', color: 'bg-blue-500 animate-pulse', jobs: runningJobs },
@@ -74,6 +84,18 @@ export function TaskQueue({ compact = false }: TaskQueueProps) {
         </div>
       )}
 
+      {/* Filter */}
+      {jobs.length > 0 && (
+        <div className="px-3 pt-3">
+          <select value={filter} onChange={e => setFilter(e.target.value as FilterStatus)}
+            className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200">
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Job list */}
       <div className="p-3 space-y-3 max-h-[400px] overflow-y-auto">
         {jobs.length === 0 ? (
@@ -98,9 +120,9 @@ export function TaskQueue({ compact = false }: TaskQueueProps) {
       </div>
 
       {/* Footer */}
-      {completedJobs.length > 0 && (
+      {(completedJobs.length > 0 || failedJobs.length > 0) && (
         <div className="px-3 py-2 bg-gray-50 border-t border-gray-100">
-          <button onClick={clearCompleted} className="text-xs text-gray-500 hover:text-gray-700">🧹 清除已完成</button>
+          <button onClick={clearCompleted} className="text-xs text-gray-500 hover:text-gray-700">🧹 清除已完成和失败</button>
         </div>
       )}
     </div>

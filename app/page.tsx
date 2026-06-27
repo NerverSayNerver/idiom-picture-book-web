@@ -12,7 +12,7 @@ export default function Home() {
 
   useEffect(() => {
     loadPersistedTasks()
-  }, [])
+  }, [loadPersistedTasks])
 
   const handleBatchGenerate = (idioms: string[]) => {
     createJobs(idioms)

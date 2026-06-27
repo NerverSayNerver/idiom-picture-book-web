@@ -459,7 +459,7 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
   // ── clearCompleted ────────────────────────────────────
   clearCompleted: () => {
     set((state) => ({
-      tasks: state.tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled'),
+      tasks: state.tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled' && t.status !== 'failed'),
     }))
   },
 
