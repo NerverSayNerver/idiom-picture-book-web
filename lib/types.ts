@@ -75,3 +75,27 @@ export interface AgnesVideoResultResponse {
   remixed_from_video_id?: string
   error?: string
 }
+
+export interface PreGeneratedIndexItem {
+  id: string
+  title: string
+  idiom: string
+  meaning: string
+  createdAt: string
+  sceneCount: number
+}
+
+export interface SceneTemplateRaw {
+  title?: string
+  description?: string
+  prompt?: string
+  narration?: string
+  compositionHint?: string
+}
+
+export interface DecompositionRaw {
+  meaning: string
+  characterDescription?: string
+  styleDescription?: string
+  scenes: SceneTemplateRaw[]
+}

@@ -1,7 +1,7 @@
 'use server'
 
 import { chatCompletion } from '@/lib/agnes-api'
-import type { IdiomDecomposition } from '@/lib/types'
+import type { IdiomDecomposition, DecompositionRaw } from '@/lib/types'
 
 const SYSTEM_PROMPT =
   '你是一位专业的儿童绘本故事策划，擅长将成语故事拆分为适合儿童阅读的场景。请始终以 JSON 格式返回结果。'
@@ -46,60 +46,52 @@ export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition>
     throw new Error('LLM 返回内容为空')
   }
 
-  // 尝试解析 JSON（可能包含 markdown 代码块）
   let jsonStr = content
   const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/)
   if (jsonMatch) {
     jsonStr = jsonMatch[1].trim()
   }
 
-  // 如果没有代码块，尝试直接解析
-  // 有时 LLM 会在 JSON 前后添加说明文字
   const jsonStart = jsonStr.indexOf('{')
   const jsonEnd = jsonStr.lastIndexOf('}')
   if (jsonStart !== -1 && jsonEnd !== -1) {
     jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1)
   }
 
-  const data = JSON.parse(jsonStr)
+  const data: DecompositionRaw = JSON.parse(jsonStr)
 
-  // 验证返回格式
   if (!data.meaning || !Array.isArray(data.scenes) || data.scenes.length === 0) {
     throw new Error('LLM 返回格式不正确')
   }
 
-  // 获取角色描述和风格描述
   const characterDescription = data.characterDescription || ''
   const styleDescription = data.styleDescription || ''
 
   return {
     idiom,
     meaning: data.meaning,
-    scenes: data.scenes.map((s: any, i: number) => {
-      // 构建统一的prompt，包含角色描述和风格描述
+    characterDescription,
+    styleDescription,
+    scenes: data.scenes.map((s, i) => {
       let prompt = s.prompt || `A cartoon scene for ${idiom} story`
-      
-      // 如果有角色描述，添加到prompt开头
+
       if (characterDescription) {
         prompt = `${characterDescription}, ${prompt}`
       }
-      
-      // 插入构图指令
+
       const compositionHint = s.compositionHint || ''
       if (compositionHint) {
         prompt = `${prompt}, ${compositionHint}`
       }
-      
-      // 如果有风格描述，添加到prompt末尾
+
       if (styleDescription) {
         prompt = `${prompt}, ${styleDescription}`
       }
 
       return {
-        id: i + 1,
         title: s.title || `场景 ${i + 1}`,
         description: s.description || '',
-        prompt: prompt,
+        prompt,
         narration: s.narration || '',
         compositionHint,
       }

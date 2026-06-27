@@ -142,6 +142,29 @@ interface TaskQueueState {
   loadPersistedTasks: () => Promise<void>
 }
 
+// ── 持久化防抖函数 ────────────────────────────────────────
+
+function debounce<T extends (...args: never[]) => void>(
+  fn: T,
+  delay: number
+): T & { cancel: () => void } {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  const debounced = (...args: Parameters<T>) => {
+    if (timeoutId) clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => {
+      fn(...args)
+      timeoutId = null
+    }, delay)
+  }
+  debounced.cancel = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+  }
+  return debounced as T & { cancel: () => void }
+}
+
 // ── Store 实现 ───────────────────────────────────────────
 
 export const useTaskStore = create<TaskQueueState>((set, get) => ({
@@ -524,10 +547,10 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
   },
 
   // ── 持久化 ─────────────────────────────────────────────
-  persistTasks: () => {
+  persistTasks: debounce(() => {
     const { tasks } = get()
     saveTasks(tasks).catch(console.error)
-  },
+  }, 300),
 
   loadPersistedTasks: async () => {
     const tasks = await loadTasks()

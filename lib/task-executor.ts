@@ -5,11 +5,6 @@ import { decomposeIdiom } from '@/app/actions/decompose'
 import { generateSceneImage, downloadImageAsBase64 } from '@/app/actions/generate'
 import { savePictureBook, saveSceneImage } from '@/lib/db'
 
-// ── 辅助函数 ─────────────────────────────────────────────
-
-/**
- * 将 base64 数据 URL 转换为 Blob
- */
 function base64ToBlob(base64: string): Blob {
   const [header, data] = base64.split(',')
   const mimeMatch = header.match(/:(.*?);/)
@@ -24,73 +19,96 @@ function base64ToBlob(base64: string): Blob {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// ── TaskExecutor ─────────────────────────────────────────
-
 export class TaskExecutor {
-  // ── 启动执行循环 ──────────────────────────────────────
+  private isRunning = false
+  private abortController: AbortController | null = null
+
   async start(): Promise<void> {
-    useTaskStore.setState({ isRunning: true })
-
-    while (useTaskStore.getState().isRunning) {
-      const { isPaused } = useTaskStore.getState()
-
-      // 暂停时等待恢复
-      if (isPaused) {
-        await sleep(200)
-        continue
-      }
-
-      // 取出下一个 pending job（dequeueNextJob 会将其标记为 running）
-      const job = useTaskStore.getState().dequeueNextJob()
-      if (!job) break // 没有更多 job，退出循环
-
-      useTaskStore.setState({ currentTaskId: job.id })
-
-      try {
-        await this.executeJob(job.id)
-      } catch (error) {
-        useTaskStore.getState().updateTask(job.id, {
-          status: 'failed',
-          error: error instanceof Error ? error.message : String(error),
-        })
-      }
+    if (this.isRunning) {
+      return
     }
 
-    useTaskStore.setState({ isRunning: false, currentTaskId: null })
+    this.isRunning = true
+    this.abortController = new AbortController()
+    useTaskStore.setState({ isRunning: true })
+
+    try {
+      while (this.isRunning && !this.abortController.signal.aborted) {
+        const state = useTaskStore.getState()
+        if (!state.isRunning) break
+
+        if (state.isPaused) {
+          await sleep(200)
+          continue
+        }
+
+        const job = state.dequeueNextJob()
+        if (!job) break
+
+        useTaskStore.setState({ currentTaskId: job.id })
+
+        try {
+          await this.executeJob(job.id)
+        } catch (error) {
+          useTaskStore.getState().updateTask(job.id, {
+            status: 'failed',
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+      }
+    } finally {
+      this.isRunning = false
+      this.abortController = null
+      useTaskStore.setState({ isRunning: false, currentTaskId: null })
+    }
   }
 
-  // ── 停止执行 ──────────────────────────────────────────
   stop(): void {
+    this.isRunning = false
+    if (this.abortController) {
+      this.abortController.abort()
+    }
     useTaskStore.setState({ isRunning: false })
   }
 
-  // ── 执行单个 Job ──────────────────────────────────────
+  isExecutorRunning(): boolean {
+    return this.isRunning
+  }
+
   private async executeJob(jobId: string): Promise<void> {
     const store = useTaskStore.getState()
     const job = store.getTaskById(jobId)
     if (!job || !job.idiom) return
 
-    // Step 1: 创建 decompose 子任务
     const [decomposeId] = store.addChildTasks(jobId, [{ type: 'decompose' }])
-
-    // Step 2: 执行 decompose（会动态创建 generate + save 子任务）
     await this.executeDecompose(decomposeId, jobId, job.idiom)
 
-    // Step 3: 顺序执行 generate + save 子任务
-    const childTasks = useTaskStore.getState().getChildTasks(jobId)
-    for (const child of childTasks) {
-      if (!useTaskStore.getState().isRunning) break
-      if (child.status === 'completed') continue
+    const maxIterations = 100
+    let iterations = 0
 
-      if (child.type === 'generate') {
-        await this.executeGenerate(child.id)
-      } else if (child.type === 'save') {
-        await this.executeSave(child.id)
+    while (iterations < maxIterations) {
+      iterations++
+      if (!this.isRunning || this.abortController?.signal.aborted) break
+      if (useTaskStore.getState().isPaused) {
+        await sleep(200)
+        continue
+      }
+
+      const childTasks = useTaskStore.getState().getChildTasks(jobId)
+      const nextTask = childTasks.find(
+        (t) => t.status === 'pending' && t.type !== 'decompose',
+      )
+
+      if (!nextTask) break
+
+      if (nextTask.type === 'generate') {
+        await this.executeGenerate(nextTask.id)
+      } else if (nextTask.type === 'save') {
+        await this.executeSave(nextTask.id)
       }
     }
   }
 
-  // ── 执行 Decompose 任务 ───────────────────────────────
   private async executeDecompose(
     taskId: string,
     jobId: string,
@@ -102,11 +120,8 @@ export class TaskExecutor {
 
     try {
       const result = await decomposeIdiom(idiom)
-
-      // 设置 appStore 中的分解结果
       useAppStore.getState().setDecomposition(result.meaning, result.scenes)
 
-      // 为每个场景创建 generate 子任务 + 末尾一个 save 子任务
       const childDefs: ChildTaskDef[] = result.scenes.map((scene, i) => ({
         type: 'generate' as const,
         sceneId: i + 1,
@@ -128,13 +143,12 @@ export class TaskExecutor {
         status: 'failed',
         error: error instanceof Error ? error.message : String(error),
       })
-      throw error // 传播错误，让 executeJob 知道 decompose 失败了
+      throw error
     } finally {
       useAppStore.getState().setDecomposing(false)
     }
   }
 
-  // ── 执行 Generate 任务 ────────────────────────────────
   private async executeGenerate(taskId: string): Promise<void> {
     const task = useTaskStore.getState().getTaskById(taskId)
     if (!task || task.sceneId === undefined) return
@@ -153,57 +167,62 @@ export class TaskExecutor {
     useAppStore.getState().setGeneratingScene(task.sceneId)
     useAppStore.getState().setGenerating(true)
 
-    try {
-      // 生成图像 URL
-      const imageUrl = await generateSceneImage(scene.prompt)
-      // 下载为 base64
-      const base64 = await downloadImageAsBase64(imageUrl)
-      // 转换为 Blob
-      const blob = base64ToBlob(base64)
-      // 保存到 appStore
-      useAppStore.getState().setSceneImage(task.sceneId, imageUrl, blob)
+    let attempt = 0
+    const maxAttempts = task.maxRetries + 1
+    let lastError: unknown = null
 
-      useTaskStore.getState().updateTask(taskId, {
-        status: 'completed',
-        progress: 1,
-        total: 1,
-      })
-    } catch (error) {
-      const currentTask = useTaskStore.getState().getTaskById(taskId)
-      if (currentTask && currentTask.retryCount < currentTask.maxRetries) {
-        // 自动重试：重置为 pending，增加重试计数
-        useTaskStore.getState().updateTask(taskId, {
-          status: 'pending',
-          retryCount: currentTask.retryCount + 1,
-          error: undefined,
-          progress: 0,
-        })
-        await sleep(1000)
-        await this.executeGenerate(taskId)
-      } else {
-        useTaskStore.getState().updateTask(taskId, {
-          status: 'failed',
-          error: error instanceof Error ? error.message : String(error),
-        })
+    while (attempt < maxAttempts) {
+      if (!this.isRunning || this.abortController?.signal.aborted) {
+        useAppStore.getState().setGeneratingScene(null)
+        useAppStore.getState().setGenerating(false)
+        return
       }
-    } finally {
-      useAppStore.getState().setGeneratingScene(null)
-      useAppStore.getState().setGenerating(false)
+
+      try {
+        const imageUrl = await generateSceneImage(scene.prompt)
+        const base64 = await downloadImageAsBase64(imageUrl)
+        const blob = base64ToBlob(base64)
+        useAppStore.getState().setSceneImage(task.sceneId, imageUrl, blob)
+
+        useTaskStore.getState().updateTask(taskId, {
+          status: 'completed',
+          progress: 1,
+          total: 1,
+          error: undefined,
+        })
+
+        useAppStore.getState().setGeneratingScene(null)
+        useAppStore.getState().setGenerating(false)
+        return
+      } catch (error) {
+        lastError = error
+        attempt++
+
+        if (attempt < maxAttempts) {
+          useTaskStore.getState().updateTask(taskId, {
+            retryCount: attempt,
+            error: `重试 ${attempt}/${maxAttempts - 1}: ${error instanceof Error ? error.message : String(error)}`,
+          })
+          await sleep(1000 * attempt)
+        }
+      }
     }
+
+    useTaskStore.getState().updateTask(taskId, {
+      status: 'failed',
+      error: lastError instanceof Error ? lastError.message : String(lastError),
+    })
+    useAppStore.getState().setGeneratingScene(null)
+    useAppStore.getState().setGenerating(false)
   }
 
-  // ── 执行 Save 任务 ────────────────────────────────────
   private async executeSave(taskId: string): Promise<void> {
     useTaskStore.getState().updateTask(taskId, { status: 'running' })
 
     try {
-      // 保存当前绘本到 appStore（内存）
       const book = useAppStore.getState().saveCurrentBook()
-
-      // 持久化到 IndexedDB
       await savePictureBook(book)
 
-      // 保存每个场景的图像到 IndexedDB
       for (const scene of book.scenes) {
         if (scene.imageBlob) {
           await saveSceneImage(book.id, scene.id, scene.imageBlob)

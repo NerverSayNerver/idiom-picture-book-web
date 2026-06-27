@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { IDIOM_LIST } from '@/lib/idioms'
 import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import { getAllPictureBooks } from '@/lib/db'
+import type { PreGeneratedIndexItem } from '@/lib/types'
 import { DuplicateCheckDialog } from './DuplicateCheckDialog'
 
 interface IdiomSelectorProps {
@@ -21,7 +22,7 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
   const router = useRouter()
 
-  const toggleIdiom = (idiom: string) => {
+  const toggleIdiom = useCallback((idiom: string) => {
     setSelectedIdioms(prev => {
       const next = new Set(prev)
       next.has(idiom) ? next.delete(idiom) : next.add(idiom)
@@ -29,24 +30,17 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
     })
     setSelectedIdiom(null)
     setCustomIdiom('')
-  }
-
-  // 加载已有的绘本列表
-  useEffect(() => {
-    loadExistingIdioms()
   }, [])
 
-  const loadExistingIdioms = async () => {
+  const loadExistingIdioms = useCallback(async () => {
     try {
-      // 加载预生成的绘本
       const preGeneratedResponse = await fetch('/pre-generated/index.json')
       if (preGeneratedResponse.ok) {
-        const index = await preGeneratedResponse.json()
-        const idioms = new Set<string>(index.map((item: any) => item.idiom))
+        const index: PreGeneratedIndexItem[] = await preGeneratedResponse.json()
+        const idioms = new Set<string>(index.map((item) => item.idiom))
         setExistingIdioms(idioms)
       }
 
-      // 加载用户生成的绘本
       const userBooks = await getAllPictureBooks()
       setExistingIdioms(prev => {
         const newSet = new Set<string>(prev)
@@ -56,67 +50,65 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
     } catch (error) {
       console.error('加载绘本列表失败:', error)
     }
-  }
+  }, [])
 
-  const handleSelect = (idiom: string) => {
+  useEffect(() => {
+    loadExistingIdioms()
+  }, [loadExistingIdioms])
+
+  const handleSelect = useCallback((idiom: string) => {
     setSelectedIdiom(idiom)
     setCustomIdiom('')
-  }
+  }, [])
 
-  const handleCustomInput = (value: string) => {
+  const handleCustomInput = useCallback((value: string) => {
     setCustomIdiom(value)
     setSelectedIdiom(null)
-  }
+  }, [])
 
-  const handleStart = () => {
+  const handleStart = useCallback(() => {
     const idiom = selectedIdiom || customIdiom.trim()
     if (!idiom) return
 
-    // 检查是否已存在
     if (existingIdioms.has(idiom)) {
       setDuplicateIdiom(idiom)
       setShowDuplicateDialog(true)
       return
     }
 
-    // 不存在，直接生成
     setCurrentIdiom(idiom)
     router.push('/generate')
-  }
+  }, [selectedIdiom, customIdiom, existingIdioms, setCurrentIdiom, router])
 
-  const handleViewExisting = () => {
+  const handleViewExisting = useCallback(() => {
     if (duplicateIdiom) {
-      // 跳转到阅读页（需要找到对应的绘本ID）
-      // 这里简化处理，直接跳转到绘本库
       router.push('/library')
     }
     setShowDuplicateDialog(false)
-  }
+  }, [duplicateIdiom, router])
 
-  const handleRegenerate = () => {
+  const handleRegenerate = useCallback(() => {
     if (duplicateIdiom) {
       setCurrentIdiom(duplicateIdiom)
       router.push('/generate')
     }
     setShowDuplicateDialog(false)
-  }
+  }, [duplicateIdiom, setCurrentIdiom, router])
 
-  const handleCloseDialog = () => {
+  const handleCloseDialog = useCallback(() => {
     setShowDuplicateDialog(false)
     setDuplicateIdiom(null)
-  }
+  }, [])
 
   const activeIdiom = selectedIdiom || customIdiom.trim()
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
-      {/* 标题 */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-primary">🎨 成语绘本工坊</h1>
         <p className="mt-2 text-lg text-gray-600">和宝贝一起创造成语故事</p>
       </div>
 
-      {/* 成语网格 */}
       <div className="bg-white rounded-card p-6 shadow-md">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">🎭 选择成语</h2>
         <div className="grid grid-cols-5 gap-3">
@@ -146,7 +138,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
         </div>
       </div>
 
-      {/* 自定义输入 */}
       <div className="bg-white rounded-card p-6 shadow-md">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">✏️ 或输入自定义成语</h2>
         <input
@@ -156,7 +147,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
           placeholder="输入一个成语..."
           className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
         />
-        {/* 自定义输入的已有提示 */}
         {customIdiom.trim() && existingIdioms.has(customIdiom.trim()) && (
           <p className="text-sm text-green-600 mt-2">
             ✓ 该成语已有绘本
@@ -164,7 +154,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
         )}
       </div>
 
-      {/* 开始按钮 */}
       <div className="flex justify-center gap-4">
         {onBatchGenerate && selectedIdioms.size > 0 ? (
           <button
@@ -184,7 +173,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
         )}
       </div>
 
-      {/* 重复检查对话框 */}
       {showDuplicateDialog && duplicateIdiom && (
         <DuplicateCheckDialog
           idiom={duplicateIdiom}
