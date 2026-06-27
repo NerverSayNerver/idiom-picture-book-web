@@ -2,6 +2,8 @@
 export interface IdiomDecomposition {
   idiom: string
   meaning: string
+  characterDescription?: string
+  styleDescription?: string
   scenes: SceneTemplate[]
 }
 
@@ -11,6 +13,7 @@ export interface SceneTemplate {
   description: string
   prompt: string
   narration: string
+  compositionHint?: string  // 新增：构图提示
 }
 
 // 场景（包含图像）
