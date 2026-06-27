@@ -8,17 +8,32 @@ import {
 } from '@/lib/agnes-api'
 
 export async function generateSceneImage(prompt: string): Promise<string> {
-  const result = await generateImage(prompt)
-  const imageUrl = result.data[0]?.url
-  if (!imageUrl) {
-    throw new Error('图像生成失败')
+  // 重试逻辑，最多5次
+  for (let i = 0; i < 5; i++) {
+    try {
+      const result = await generateImage(prompt)
+      const imageUrl = result.data[0]?.url
+      if (!imageUrl) {
+        throw new Error('图像生成失败')
+      }
+      return imageUrl
+    } catch (error) {
+      console.log(`图像生成重试 ${i + 1}/5...`)
+      if (i === 4) throw error
+      // 等待更长时间再重试
+      await new Promise((resolve) => setTimeout(resolve, 3000 * (i + 1)))
+    }
   }
-  return imageUrl
+  throw new Error('图像生成失败')
 }
 
-export async function downloadImage(url: string): Promise<ArrayBuffer> {
+// 服务器端下载图像并返回 base64
+export async function downloadImageAsBase64(url: string): Promise<string> {
   const blob = await downloadImageAsBlob(url)
-  return blob.arrayBuffer()
+  const buffer = await blob.arrayBuffer()
+  const base64 = Buffer.from(buffer).toString('base64')
+  const mimeType = blob.type || 'image/png'
+  return `data:${mimeType};base64,${base64}`
 }
 
 export async function generateBookVideo(

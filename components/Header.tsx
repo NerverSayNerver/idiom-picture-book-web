@@ -13,6 +13,9 @@ export function Header() {
           <Link href="/" className="text-gray-600 hover:text-gray-800">
             首页
           </Link>
+          <Link href="/library" className="text-gray-600 hover:text-gray-800">
+            📚 绘本库
+          </Link>
         </nav>
       </div>
     </header>

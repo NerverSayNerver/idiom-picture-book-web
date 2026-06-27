@@ -40,8 +40,21 @@ export async function chatCompletion(
 // 图像生成
 export async function generateImage(
   prompt: string,
-  size = '1024x768'
+  size = '512x512'
 ): Promise<AgnesImageResponse> {
+  // 确保 prompt 存在且为字符串
+  if (!prompt || typeof prompt !== 'string') {
+    prompt = 'A cute cartoon scene for children book'
+  }
+
+  // 截断过长的 prompt 并简化
+  let truncatedPrompt = prompt.length > 300 ? prompt.substring(0, 300) : prompt
+  // 确保 prompt 以 "cartoon style" 结尾
+  if (!truncatedPrompt.toLowerCase().includes('cartoon')) {
+    truncatedPrompt += ', cartoon style'
+  }
+  console.log('生成图像，prompt:', truncatedPrompt.substring(0, 50) + '...')
+
   const response = await fetch(`${API_BASE}/images/generations`, {
     method: 'POST',
     headers: {
@@ -50,13 +63,14 @@ export async function generateImage(
     },
     body: JSON.stringify({
       model: 'agnes-image-2.1-flash',
-      prompt,
-      size,
-      extra_body: { response_format: 'url' },
+      prompt: truncatedPrompt,
+      size: '512x512',
     }),
   })
 
   if (!response.ok) {
+    const errorText = await response.text().catch(() => 'unknown')
+    console.error('Image API error:', response.status, errorText)
     throw new Error(`Image API error: ${response.status}`)
   }
 

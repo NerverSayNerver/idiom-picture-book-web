@@ -68,10 +68,10 @@ export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition>
     meaning: data.meaning,
     scenes: data.scenes.map((s: any, i: number) => ({
       id: i + 1,
-      title: s.title,
-      description: s.description,
-      prompt: s.prompt,
-      narration: s.narration,
+      title: s.title || `场景 ${i + 1}`,
+      description: s.description || '',
+      prompt: s.prompt || `A cartoon scene for ${idiom} story`,
+      narration: s.narration || '',
     })),
   }
 }

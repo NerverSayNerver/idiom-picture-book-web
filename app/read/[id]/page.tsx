@@ -14,7 +14,44 @@ export default function ReadPage() {
   useEffect(() => {
     const loadBook = async () => {
       const id = params.id as string
-      const loadedBook = await getPictureBook(id)
+
+      // 先从 IndexedDB 加载
+      let loadedBook = await getPictureBook(id)
+
+      // 如果没找到，尝试从预生成文件加载
+      if (!loadedBook) {
+        try {
+          // 尝试通过 id 匹配预生成的绘本
+          const response = await fetch('/pre-generated/index.json')
+          if (response.ok) {
+            const index = await response.json()
+            const match = index.find((item: any) => item.id === id)
+            if (match) {
+              const bookResponse = await fetch(`/pre-generated/${match.idiom}.json`)
+              if (bookResponse.ok) {
+                loadedBook = await bookResponse.json()
+              }
+            }
+
+            // 如果还是没找到，尝试通过标题匹配
+            if (!loadedBook) {
+              for (const item of index) {
+                const bookResponse = await fetch(`/pre-generated/${item.idiom}.json`)
+                if (bookResponse.ok) {
+                  const book = await bookResponse.json()
+                  if (book.title === id || book.idiom === id) {
+                    loadedBook = book
+                    break
+                  }
+                }
+              }
+            }
+          }
+        } catch {
+          // no pre-generated books
+        }
+      }
+
       setBook(loadedBook || null)
       setLoading(false)
     }

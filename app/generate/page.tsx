@@ -4,10 +4,23 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { decomposeIdiom } from '@/app/actions/decompose'
-import { generateSceneImage, downloadImage } from '@/app/actions/generate'
+import { generateSceneImage, downloadImageAsBase64 } from '@/app/actions/generate'
 import { savePictureBook, saveSceneImage } from '@/lib/db'
 import { ProgressBar } from '@/components/ProgressBar'
 import { SceneCard } from '@/components/SceneCard'
+
+// 将 base64 转换为 Blob
+function base64ToBlob(base64: string): Blob {
+  const parts = base64.split(',')
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png'
+  const bstr = atob(parts[1])
+  const n = bstr.length
+  const u8arr = new Uint8Array(n)
+  for (let i = 0; i < n; i++) {
+    u8arr[i] = bstr.charCodeAt(i)
+  }
+  return new Blob([u8arr], { type: mime })
+}
 
 export default function GeneratePage() {
   const router = useRouter()
@@ -48,38 +61,52 @@ export default function GeneratePage() {
 
       // 阶段 2: 逐个生成图像
       setGenerating(true)
+      let successCount = 0
+
       for (let i = 0; i < decomposition.scenes.length; i++) {
         const scene = decomposition.scenes[i]
         setGeneratingScene(i + 1)
 
-        // 生成图像
-        const imageUrl = await generateSceneImage(scene.prompt)
+        try {
+          // 生成图像
+          const imageUrl = await generateSceneImage(scene.prompt)
 
-        // 下载图像
-        const imageBuffer = await downloadImage(imageUrl)
-        const imageBlob = new Blob([imageBuffer])
+          // 在服务器端下载图像并转换为 base64
+          const base64 = await downloadImageAsBase64(imageUrl)
 
-        // 保存到 store
-        setSceneImage(i + 1, imageUrl, imageBlob)
-        setCompletedCount(i + 1)
+          // 转换为 Blob
+          const imageBlob = base64ToBlob(base64)
+
+          // 保存到 store
+          setSceneImage(i + 1, imageUrl, imageBlob)
+          setCompletedCount(i + 1)
+          successCount++
+        } catch (err) {
+          console.error(`场景 ${i + 1} 生成失败:`, err)
+          // 继续生成下一个场景
+        }
       }
 
       setGenerating(false)
       setGeneratingScene(null)
 
-      // 保存绘本到 IndexedDB
-      const book = saveCurrentBook()
-      await savePictureBook(book)
+      // 如果至少有一个场景成功，保存绘本
+      if (successCount > 0) {
+        const book = saveCurrentBook()
+        await savePictureBook(book)
 
-      // 保存图像到 IndexedDB
-      for (const scene of book.scenes) {
-        if (scene.imageBlob) {
-          await saveSceneImage(book.id, scene.id, scene.imageBlob)
+        // 保存图像到 IndexedDB
+        for (const scene of book.scenes) {
+          if (scene.imageBlob) {
+            await saveSceneImage(book.id, scene.id, scene.imageBlob)
+          }
         }
-      }
 
-      // 跳转到阅读页
-      router.push(`/read/${book.id}`)
+        // 跳转到阅读页
+        router.push(`/read/${book.id}`)
+      } else {
+        setError('所有场景生成失败，请重试')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败')
       setDecomposing(false)
