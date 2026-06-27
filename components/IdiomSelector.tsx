@@ -5,7 +5,6 @@ import { IDIOM_LIST } from '@/lib/idioms'
 import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import { getAllPictureBooks } from '@/lib/db'
-import { DuplicateCheckDialog } from './DuplicateCheckDialog'
 
 interface IdiomSelectorProps {
   onBatchGenerate?: (idioms: string[]) => void
@@ -16,8 +15,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
   const [selectedIdiom, setSelectedIdiom] = useState<string | null>(null)
   const [selectedIdioms, setSelectedIdioms] = useState<Set<string>>(new Set())
   const [existingIdioms, setExistingIdioms] = useState<Set<string>>(new Set())
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
-  const [duplicateIdiom, setDuplicateIdiom] = useState<string | null>(null)
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
   const router = useRouter()
 
@@ -59,6 +56,11 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
   }
 
   const handleSelect = (idiom: string) => {
+    // 如果已有绘本，直接跳转阅读页
+    if (existingIdioms.has(idiom)) {
+      router.push(`/read/${encodeURIComponent(idiom)}`)
+      return
+    }
     setSelectedIdiom(idiom)
     setCustomIdiom('')
   }
@@ -72,38 +74,15 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
     const idiom = selectedIdiom || customIdiom.trim()
     if (!idiom) return
 
-    // 检查是否已存在
+    // 已有绘本，直接跳转阅读页
     if (existingIdioms.has(idiom)) {
-      setDuplicateIdiom(idiom)
-      setShowDuplicateDialog(true)
+      router.push(`/read/${encodeURIComponent(idiom)}`)
       return
     }
 
     // 不存在，直接生成
     setCurrentIdiom(idiom)
     router.push('/generate')
-  }
-
-  const handleViewExisting = () => {
-    if (duplicateIdiom) {
-      // 跳转到阅读页（需要找到对应的绘本ID）
-      // 这里简化处理，直接跳转到绘本库
-      router.push('/library')
-    }
-    setShowDuplicateDialog(false)
-  }
-
-  const handleRegenerate = () => {
-    if (duplicateIdiom) {
-      setCurrentIdiom(duplicateIdiom)
-      router.push('/generate')
-    }
-    setShowDuplicateDialog(false)
-  }
-
-  const handleCloseDialog = () => {
-    setShowDuplicateDialog(false)
-    setDuplicateIdiom(null)
   }
 
   const activeIdiom = selectedIdiom || customIdiom.trim()
@@ -183,16 +162,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
           </button>
         )}
       </div>
-
-      {/* 重复检查对话框 */}
-      {showDuplicateDialog && duplicateIdiom && (
-        <DuplicateCheckDialog
-          idiom={duplicateIdiom}
-          onViewExisting={handleViewExisting}
-          onRegenerate={handleRegenerate}
-          onClose={handleCloseDialog}
-        />
-      )}
     </div>
   )
 }
