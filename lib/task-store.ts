@@ -344,6 +344,7 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
         failedTasks: state.failedTasks - removedFailed,
       }
     })
+    get().persistTasks()
   },
 
   // ── pauseTask ─────────────────────────────────────────
@@ -461,6 +462,7 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
     set((state) => ({
       tasks: state.tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled' && t.status !== 'failed'),
     }))
+    get().persistTasks()
   },
 
   // ── getTaskById ───────────────────────────────────────
