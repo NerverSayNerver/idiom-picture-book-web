@@ -1,15 +1,15 @@
 {
-  "id": "book-1782549268430-4",
+  "id": "book-1782551731041-3",
   "title": "狐假虎威",
   "idiom": "狐假虎威",
   "meaning": "比喻仰仗别人的权势来欺压人",
-  "createdAt": "2026-06-27T08:34:28.430Z",
+  "createdAt": "2026-06-27T09:15:31.041Z",
   "scenes": [
     {
       "id": 1,
       "title": "狐狸骑虎",
       "description": "狐狸骑老虎",
-      "prompt": "A fox riding on the back of a tiger, cartoon style, forest scene",
+      "prompt": "Chinese children book illustration, cute cartoon style, warm colors, consistent art style, a sly orange fox riding on back of a large striped tiger, forest path, fox looking proud, tiger confused",
       "narration": "狐狸骑在老虎背上，在森林里走。",
       "imageUrl": "/pre-generated/images/狐假虎威_1.png"
     },
@@ -17,7 +17,7 @@
       "id": 2,
       "title": "动物害怕",
       "description": "动物都害怕",
-      "prompt": "Forest animals running away in fear, cartoon style, dramatic scene",
+      "prompt": "Chinese children book illustration, cute cartoon style, warm colors, consistent art style, forest animals rabbit deer bear running away in fear from the tiger with fox on its back, dramatic scene",
       "narration": "其他动物看到都吓得逃跑。",
       "imageUrl": "/pre-generated/images/狐假虎威_2.png"
     },
@@ -25,7 +25,7 @@
       "id": 3,
       "title": "真相大白",
       "description": "老虎发现真相",
-      "prompt": "A tiger looking angry at a scared fox, cartoon style, reveal moment",
+      "prompt": "Chinese children book illustration, cute cartoon style, warm colors, consistent art style, the tiger looking angry at the scared orange fox who is trembling, fox exposed, forest background",
       "narration": "老虎发现真相后，狐狸再也不敢骗人了。",
       "imageUrl": "/pre-generated/images/狐假虎威_3.png"
     }

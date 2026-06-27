@@ -1,18 +1,24 @@
 /**
  * 批量生成20个成语绘本
- * 
+ *
  * 使用方法：
  * node scripts/batch-generate.js
- * 
+ *
  * 此脚本会调用 Agnes API 生成20个成语绘本的数据和图像，
- * 并保存为 JSON 文件，供前端加载到 IndexedDB。
+ * 图片会立即下载保存到本地，避免临时链接过期。
  */
 
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const API_KEY = process.env.AGNES_API_KEY || 'sk-blCDCRpxzjWnPTi0mOpdZqUJcwV0A0EDNHuXbViQ1Mz8fGfM';
 const API_BASE = 'https://apihub.agnes-ai.com/v1';
+
+// 输出目录
+const OUTPUT_DIR = path.join(__dirname, '..', 'public', 'pre-generated');
+const IMAGES_DIR = path.join(OUTPUT_DIR, 'images');
 
 // 20个常用成语
 const IDIOM_LIST = [
@@ -22,111 +28,172 @@ const IDIOM_LIST = [
   '纸上谈兵', '指鹿为马', '完璧归赵', '负荆请罪', '闻鸡起舞'
 ];
 
-// 简化的场景模板（每个成语3个场景，加快生成速度）
+// 场景模板 - 每个成语带有统一的角色描述和风格前缀，保证画面连贯
+const STYLE_PREFIX = 'Chinese children book illustration, cute cartoon style, warm colors, consistent art style, ';
+
 const SCENE_TEMPLATES = {
-  '画蛇添足': [
-    { title: '画蛇比赛', prompt: 'A group of people drawing snakes on paper, cartoon style, competition scene', narration: '从前有几个人比赛画蛇，看谁画得快。' },
-    { title: '添足之人', prompt: 'A person proudly adding feet to a snake drawing, cartoon style, funny scene', narration: '有个人画完了蛇，还给蛇添上了脚。' },
-    { title: '比赛失败', prompt: 'A person looking sad while others celebrate, cartoon style, lesson learned', narration: '结果他反而输了比赛，多此一举反而不好。' }
-  ],
-  '守株待兔': [
-    { title: '兔子撞树', prompt: 'A rabbit running into a tree stump, cartoon style, farm background', narration: '有一天，一只兔子撞到树桩上死了。' },
-    { title: '农夫等待', prompt: 'A lazy farmer sitting by a tree stump waiting, cartoon style, sunny day', narration: '农夫从此每天坐在树桩旁等兔子。' },
-    { title: '田地荒芜', prompt: 'An overgrown field with a sad farmer, cartoon style, lesson scene', narration: '结果田地都荒芜了，再也没有兔子来。' }
-  ],
-  '亡羊补牢': [
-    { title: '羊圈破洞', prompt: 'A sheep pen with a hole, a wolf watching nearby, cartoon style, night scene', narration: '羊圈破了个洞，狼趁机偷走了几只羊。' },
-    { title: '修补羊圈', prompt: 'A shepherd fixing the fence of sheep pen, cartoon style, determined expression', narration: '邻居劝他赶快修补羊圈。' },
-    { title: '羊群安全', prompt: 'A happy shepherd with safe sheep in a repaired pen, cartoon style, happy ending', narration: '他修好羊圈后，再也没有丢过羊。' }
-  ],
-  '井底之蛙': [
-    { title: '青蛙在井底', prompt: 'A frog sitting at the bottom of a well looking up, cartoon style, limited view', narration: '有一只青蛙住在井底，觉得天只有井口那么大。' },
-    { title: '海龟来访', prompt: 'A sea turtle talking to a frog at a well, cartoon style, conversation scene', narration: '海龟告诉它大海有多广阔。' },
-    { title: '青蛙惊讶', prompt: 'A surprised frog learning about the big world, cartoon style, eye-opening moment', narration: '青蛙听了非常惊讶，原来世界这么大！' }
-  ],
-  '狐假虎威': [
-    { title: '狐狸骑虎', prompt: 'A fox riding on the back of a tiger, cartoon style, forest scene', narration: '狐狸骑在老虎背上，在森林里走。' },
-    { title: '动物害怕', prompt: 'Forest animals running away in fear, cartoon style, dramatic scene', narration: '其他动物看到都吓得逃跑。' },
-    { title: '真相大白', prompt: 'A tiger looking angry at a scared fox, cartoon style, reveal moment', narration: '老虎发现真相后，狐狸再也不敢骗人了。' }
-  ],
-  '掩耳盗铃': [
-    { title: '看到铃铛', prompt: 'A person eyeing a beautiful bell, cartoon style, sneaky expression', narration: '有个人想偷别人家的铃铛。' },
-    { title: '捂住耳朵', prompt: 'A person covering own ears while reaching for a bell, cartoon style, funny scene', narration: '他捂住自己的耳朵去偷铃铛。' },
-    { title: '被人发现', prompt: 'A person caught stealing, looking embarrassed, cartoon style, lesson learned', narration: '结果还是被人发现了，自欺欺人是不行的。' }
-  ],
-  '刻舟求剑': [
-    { title: '剑掉入水中', prompt: 'A sword falling from a boat into a river, cartoon style, splash scene', narration: '有个人坐船时，剑掉进了水里。' },
-    { title: '在船上刻记号', prompt: 'A person carving a mark on the boat, cartoon style, river journey', narration: '他在船上刻了个记号，想等船停了再找。' },
-    { title: '找不到剑', prompt: 'A confused person searching in water at a dock, cartoon style, realization', narration: '船已经走了，剑却还在原来的地方，他当然找不到了。' }
-  ],
-  '愚公移山': [
-    { title: '愚公决心', prompt: 'An old man determined to move mountains, cartoon style, mountain background', narration: '愚公年纪很大了，但他决心要移走门前的两座大山。' },
-    { title: '全家人挖山', prompt: 'A whole family digging at a mountain, cartoon style, teamwork scene', narration: '他带领全家人一起挖山不止。' },
-    { title: '山神感动', prompt: 'Mountain gods moved by determination, helping to move mountains, cartoon style', narration: '他的精神感动了天神，帮他把山搬走了。' }
-  ],
-  '拔苗助长': [
-    { title: '禾苗生长', prompt: 'Seedlings growing in a rice field, cartoon style, patient farmer', narration: '有个农夫种了禾苗，希望它们快点长高。' },
-    { title: '拔高禾苗', prompt: 'A farmer pulling seedlings to make them taller, cartoon style, bad idea', narration: '他把禾苗一棵棵往上拔，想让它们长快点。' },
-    { title: '禾苗枯萎', prompt: 'Wilted seedlings in a field with a sad farmer, cartoon style, lesson learned', narration: '结果禾苗全都枯死了，急于求成反而坏事。' }
-  ],
-  '叶公好龙': [
-    { title: '叶公爱龙', prompt: 'A nobleman surrounded by dragon decorations, cartoon style, fancy room', narration: '叶公非常喜欢龙，家里到处都是龙的装饰。' },
-    { title: '真龙降临', prompt: 'A real dragon appearing at the window, cartoon style, magical scene', narration: '有一天，一条真龙听说了，就来拜访他。' },
-    { title: '叶公惊恐', prompt: 'A scared nobleman hiding under a table from a dragon, cartoon style, funny scene', narration: '叶公吓得躲到桌子底下，原来他并不是真的喜欢龙。' }
-  ],
-  '对牛弹琴': [
-    { title: '音乐家弹琴', prompt: 'A musician playing music to a cow, cartoon style, farm background', narration: '有个音乐家对着牛弹奏美妙的音乐。' },
-    { title: '牛不理会', prompt: 'A cow eating grass ignoring the musician, cartoon style, funny scene', narration: '可是牛只顾着吃草，根本不听。' },
-    { title: '恍然大悟', prompt: 'A musician realizing the cow cannot appreciate music, cartoon style, lesson learned', narration: '他这才明白，对不懂的人讲道理是没有用的。' }
-  ],
-  '杯弓蛇影': [
-    { title: '看到蛇影', prompt: 'A person seeing a snake shadow in their wine cup, cartoon style, scared expression', narration: '有个人喝酒时，看到杯中有蛇的影子。' },
-    { title: '疑心生病', prompt: 'A person in bed sick from worry, cartoon style, worried scene', narration: '他疑心很重，回家后就生病了。' },
-    { title: '真相大白', prompt: 'A person relieved after discovering it was just a bow reflection, cartoon style', narration: '后来发现那只是弓的倒影，他的病立刻就好了。' }
-  ],
-  '破釜沉舟': [
-    { title: '砸破锅碗', prompt: 'An army breaking their cooking pots, cartoon style, war preparation', narration: '将军命令砸破锅碗，表示决一死战。' },
-    { title: '沉没船只', prompt: 'An army sinking their boats at the river, cartoon style, determined soldiers', narration: '又把船只沉入河中，断绝退路。' },
-    { title: '英勇胜利', prompt: 'An army winning a great battle, cartoon style, victory celebration', narration: '士兵们奋勇作战，最终取得了胜利。' }
-  ],
-  '卧薪尝胆': [
-    { title: '战败受辱', prompt: 'A defeated king sleeping on firewood, cartoon style, suffering scene', narration: '越王勾践战败后，每天睡在柴草上。' },
-    { title: '尝苦胆', prompt: 'A king tasting bitter gall bladder, cartoon style, determination scene', narration: '他每天尝苦胆，提醒自己不要忘记耻辱。' },
-    { title: '最终复仇', prompt: 'A king leading his army to victory, cartoon style, triumphant scene', narration: '经过多年努力，他终于打败了敌人，报了仇。' }
-  ],
-  '望梅止渴': [
-    { title: '行军口渴', prompt: 'An army marching in hot sun, thirsty soldiers, cartoon style, desert scene', narration: '曹操带兵行军，士兵们都很口渴。' },
-    { title: '说起梅子', prompt: 'A general talking about sour plums to soldiers, cartoon style, clever trick', narration: '曹操说前面有梅林，梅子又酸又甜。' },
-    { title: '士兵流涎', prompt: 'Soldiers imagining plums and feeling less thirsty, cartoon style, imagination scene', narration: '士兵们想到梅子，口水都流出来了，也不那么渴了。' }
-  ],
-  '纸上谈兵': [
-    { title: '熟读兵书', prompt: 'A young general reading military books, cartoon style, study scene', narration: '赵括熟读兵书，谈论军事头头是道。' },
-    { title: '上战场', prompt: 'An inexperienced general leading army to battle, cartoon style, war scene', narration: '他当上将军后，却只会纸上谈兵。' },
-    { title: '惨遭失败', prompt: 'An army defeated in battle, cartoon style, lesson learned', narration: '结果在实战中惨败，只会理论是不够的。' }
-  ],
-  '指鹿为马': [
-    { title: '指着鹿', prompt: 'A minister pointing at a deer, cartoon style, court scene', narration: '赵高牵来一只鹿，对皇帝说是马。' },
-    { title: '大臣争论', prompt: 'Court officials arguing about deer or horse, cartoon style, political scene', narration: '大臣们有的说是鹿，有的附和说是马。' },
-    { title: '忠臣被害', prompt: 'Honest officials being punished, cartoon style, dark scene', narration: '说是鹿的忠臣后来都被赵高害死了。' }
-  ],
-  '完璧归赵': [
-    { title: '蔺相如出使', prompt: 'An envoy traveling with a precious jade, cartoon style, diplomatic mission', narration: '蔺相如带着和氏璧出使秦国。' },
-    { title: '秦王耍赖', prompt: 'A king trying to keep the jade without giving cities, cartoon style, tense scene', narration: '秦王想白白得到宝玉，不肯给城池。' },
-    { title: '完璧归赵', prompt: 'An envoy safely returning with the jade, cartoon style, triumphant return', narration: '蔺相如机智勇敢，终于把宝玉完好带回赵国。' }
-  ],
-  '负荆请罪': [
-    { title: '廉颇不服', prompt: 'A general angry at being outranked, cartoon style, pride scene', narration: '廉颇觉得自己功劳大，不服蔺相如。' },
-    { title: '蔺相如避让', prompt: 'A wise minister avoiding conflict, cartoon style, humble scene', narration: '蔺相如为了国家大局，处处避让廉颇。' },
-    { title: '负荆请罪', prompt: 'A general carrying thorns to apologize, cartoon style, reconciliation scene', narration: '廉颇深受感动，背着荆条去请罪，两人成为好友。' }
-  ],
-  '闻鸡起舞': [
-    { title: '听到鸡叫', prompt: 'A young man waking up to rooster crowing, cartoon style, dawn scene', narration: '祖逖听到鸡叫就起床练剑。' },
-    { title: '刻苦练剑', prompt: 'A young man practicing sword in the early morning, cartoon style, training scene', narration: '他每天天不亮就起来刻苦练武。' },
-    { title: '成为名将', prompt: 'A brave general leading army to victory, cartoon style, achievement scene', narration: '后来他成为了一名英勇的将军，保卫国家。' }
-  ]
+  '画蛇添足': {
+    character: 'a young man in ancient Chinese white robe with a round face',
+    scenes: [
+      { title: '画蛇比赛', prompt: STYLE_PREFIX + 'a young man in white robe drawing a snake on paper with brush, other competitors around, ancient Chinese courtyard, competition scene', narration: '从前有几个人比赛画蛇，看谁画得快。' },
+      { title: '添足之人', prompt: STYLE_PREFIX + 'the same young man in white robe proudly adding feet to his snake drawing, smug expression, others watching in disbelief', narration: '有个人画完了蛇，还给蛇添上了脚。' },
+      { title: '比赛失败', prompt: STYLE_PREFIX + 'the young man in white robe looking sad holding his snake-with-feet drawing, others celebrating winner, lesson scene', narration: '结果他反而输了比赛，多此一举反而不好。' }
+    ]
+  },
+  '守株待兔': {
+    character: 'a middle-aged farmer in brown clothes and straw hat',
+    scenes: [
+      { title: '兔子撞树', prompt: STYLE_PREFIX + 'a rabbit running fast and hitting a tree stump, motion lines, farm field background, sunny day', narration: '有一天，一只兔子撞到树桩上死了。' },
+      { title: '农夫等待', prompt: STYLE_PREFIX + 'the farmer in brown clothes sitting lazily against the same tree stump, waiting, empty field, bored expression', narration: '农夫从此每天坐在树桩旁等兔子。' },
+      { title: '田地荒芜', prompt: STYLE_PREFIX + 'the farmer in brown clothes still sitting by stump, overgrown weeds in field, other farmers working in background, contrast scene', narration: '结果田地都荒芜了，再也没有兔子来。' }
+    ]
+  },
+  '亡羊补牢': {
+    character: 'a young shepherd in blue clothes',
+    scenes: [
+      { title: '羊圈破洞', prompt: STYLE_PREFIX + 'a shepherd in blue clothes discovering a hole in wooden sheep pen fence, wolf eyes glowing in dark night', narration: '羊圈破了个洞，狼趁机偷走了几只羊。' },
+      { title: '修补羊圈', prompt: STYLE_PREFIX + 'the shepherd in blue clothes actively repairing the wooden fence with tools, determined expression, daytime', narration: '邻居劝他赶快修补羊圈。' },
+      { title: '羊群安全', prompt: STYLE_PREFIX + 'the shepherd in blue clothes smiling with sheep safely inside repaired pen, green pasture, happy scene', narration: '他修好羊圈后，再也没有丢过羊。' }
+    ]
+  },
+  '井底之蛙': {
+    character: 'a small green frog with big eyes',
+    scenes: [
+      { title: '青蛙在井底', prompt: STYLE_PREFIX + 'a small green frog sitting at bottom of a stone well, looking up at tiny circle of sky, limited view, claustrophobic', narration: '有一只青蛙住在井底，觉得天只有井口那么大。' },
+      { title: '海龟来访', prompt: STYLE_PREFIX + 'the same green frog at well bottom talking to a friendly sea turtle looking down from well edge, conversation scene', narration: '海龟告诉它大海有多广阔。' },
+      { title: '青蛙惊讶', prompt: STYLE_PREFIX + 'the green frog with wide surprised eyes, imagination bubble showing vast ocean, eye-opening moment', narration: '青蛙听了非常惊讶，原来世界这么大！' }
+    ]
+  },
+  '狐假虎威': {
+    character: 'an orange fox with sly smile and a large striped tiger',
+    scenes: [
+      { title: '狐狸骑虎', prompt: STYLE_PREFIX + 'a sly orange fox riding on back of a large striped tiger, forest path, fox looking proud, tiger confused', narration: '狐狸骑在老虎背上，在森林里走。' },
+      { title: '动物害怕', prompt: STYLE_PREFIX + 'forest animals rabbit deer bear running away in fear from the tiger with fox on its back, dramatic scene', narration: '其他动物看到都吓得逃跑。' },
+      { title: '真相大白', prompt: STYLE_PREFIX + 'the tiger looking angry at the scared orange fox who is trembling, fox exposed, forest background', narration: '老虎发现真相后，狐狸再也不敢骗人了。' }
+    ]
+  },
+  '掩耳盗铃': {
+    character: 'a sneaky thief in dark clothes with a round face',
+    scenes: [
+      { title: '看到铃铛', prompt: STYLE_PREFIX + 'a sneaky man in dark clothes eyeing a beautiful bronze bell hanging from door, greedy expression, night scene', narration: '有个人想偷别人家的铃铛。' },
+      { title: '捂住耳朵', prompt: STYLE_PREFIX + 'the same man in dark clothes covering his own ears with both hands while reaching for the bell, funny pose, bell ringing', narration: '他捂住自己的耳朵去偷铃铛。' },
+      { title: '被人发现', prompt: STYLE_PREFIX + 'the man in dark clothes caught red-handed, embarrassed face, house owner pointing at him, bell on ground', narration: '结果还是被人发现了，自欺欺人是不行的。' }
+    ]
+  },
+  '刻舟求剑': {
+    character: 'a foolish scholar in green robe',
+    scenes: [
+      { title: '剑掉入水中', prompt: STYLE_PREFIX + 'a scholar in green robe on a wooden boat, sword falling from his hand into river with splash, surprised face', narration: '有个人坐船时，剑掉进了水里。' },
+      { title: '在船上刻记号', prompt: STYLE_PREFIX + 'the same scholar in green robe carving a mark on the boat side with a knife, river flowing, other passengers watching', narration: '他在船上刻了个记号，想等船停了再找。' },
+      { title: '找不到剑', prompt: STYLE_PREFIX + 'the scholar in green robe searching in water at dock, boat has moved far away, confused expression, sword visible at original spot underwater', narration: '船已经走了，剑却还在原来的地方，他当然找不到了。' }
+    ]
+  },
+  '愚公移山': {
+    character: 'an old man with white beard in brown clothes',
+    scenes: [
+      { title: '愚公决心', prompt: STYLE_PREFIX + 'an old man with long white beard in brown clothes pointing at two huge mountains blocking his door, determined face, family behind him', narration: '愚公年纪很大了，但他决心要移走门前的两座大山。' },
+      { title: '全家人挖山', prompt: STYLE_PREFIX + 'the old man with white beard leading his whole family digging at mountain with shovels and baskets, teamwork, dust flying', narration: '他带领全家人一起挖山不止。' },
+      { title: '山神感动', prompt: STYLE_PREFIX + 'two mountain gods in clouds looking down at the determined old man, moved expression, mountains floating away, magical scene', narration: '他的精神感动了天神，帮他把山搬走了。' }
+    ]
+  },
+  '拔苗助长': {
+    character: 'an impatient farmer in yellow clothes',
+    scenes: [
+      { title: '禾苗生长', prompt: STYLE_PREFIX + 'an impatient farmer in yellow clothes looking at small green rice seedlings in field, anxious expression, sunny day', narration: '有个农夫种了禾苗，希望它们快点长高。' },
+      { title: '拔高禾苗', prompt: STYLE_PREFIX + 'the farmer in yellow clothes pulling rice seedlings upward from roots, bad idea, sweat drops, field scene', narration: '他把禾苗一棵棵往上拔，想让它们长快点。' },
+      { title: '禾苗枯萎', prompt: STYLE_PREFIX + 'the farmer in yellow clothes crying next to wilted dead seedlings, devastated expression, other healthy field in background', narration: '结果禾苗全都枯死了，急于求成反而坏事。' }
+    ]
+  },
+  '叶公好龙': {
+    character: 'a nobleman in fancy purple robe',
+    scenes: [
+      { title: '叶公爱龙', prompt: STYLE_PREFIX + 'a nobleman in purple robe admiring his room full of dragon paintings, dragon carvings, dragon vases, happy face', narration: '叶公非常喜欢龙，家里到处都是龙的装饰。' },
+      { title: '真龙降临', prompt: STYLE_PREFIX + 'a magnificent real dragon with golden scales appearing at the window of the same purple-robed nobleman house, magical clouds', narration: '有一天，一条真龙听说了，就来拜访他。' },
+      { title: '叶公惊恐', prompt: STYLE_PREFIX + 'the nobleman in purple robe terrified, hiding under table, the same golden dragon looking confused at window, dramatic contrast', narration: '叶公吓得躲到桌子底下，原来他并不是真的喜欢龙。' }
+    ]
+  },
+  '对牛弹琴': {
+    character: 'a musician in white robe with a guqin instrument',
+    scenes: [
+      { title: '音乐家弹琴', prompt: STYLE_PREFIX + 'a musician in white robe playing guqin instrument to a brown cow in green meadow, beautiful music notes floating', narration: '有个音乐家对着牛弹奏美妙的音乐。' },
+      { title: '牛不理会', prompt: STYLE_PREFIX + 'the same musician in white robe playing passionately, the brown cow eating grass ignoring him completely, funny contrast', narration: '可是牛只顾着吃草，根本不听。' },
+      { title: '恍然大悟', prompt: STYLE_PREFIX + 'the musician in white robe packing up guqin, realizing expression, the brown cow still eating, lesson learned scene', narration: '他这才明白，对不懂的人讲道理是没有用的。' }
+    ]
+  },
+  '杯弓蛇影': {
+    character: 'a nervous scholar in blue robe',
+    scenes: [
+      { title: '看到蛇影', prompt: STYLE_PREFIX + 'a scholar in blue robe at banquet table, seeing snake shadow in wine cup, scared expression, bow on wall behind casting shadow', narration: '有个人喝酒时，看到杯中有蛇的影子。' },
+      { title: '疑心生病', prompt: STYLE_PREFIX + 'the scholar in blue robe lying sick in bed, worried face, imagining snakes, dark bedroom', narration: '他疑心很重，回家后就生病了。' },
+      { title: '真相大白', prompt: STYLE_PREFIX + 'the scholar in blue robe at same banquet, showing the bow on wall creating shadow in cup, relieved happy face', narration: '后来发现那只是弓的倒影，他的病立刻就好了。' }
+    ]
+  },
+  '破釜沉舟': {
+    character: 'a brave general in red armor',
+    scenes: [
+      { title: '砸破锅碗', prompt: STYLE_PREFIX + 'a brave general in red armor commanding soldiers to smash cooking pots, determined army, war camp scene', narration: '将军命令砸破锅碗，表示决一死战。' },
+      { title: '沉没船只', prompt: STYLE_PREFIX + 'the general in red armor watching boats sink in river, soldiers cheering, no retreat scene', narration: '又把船只沉入河中，断绝退路。' },
+      { title: '英勇胜利', prompt: STYLE_PREFIX + 'the general in red armor leading victorious army, flags waving, celebration, battle won', narration: '士兵们奋勇作战，最终取得了胜利。' }
+    ]
+  },
+  '卧薪尝胆': {
+    character: 'a determined king in simple grey clothes',
+    scenes: [
+      { title: '战败受辱', prompt: STYLE_PREFIX + 'a king in simple grey clothes sleeping rough on firewood pile, humble room, determined angry expression, night', narration: '越王勾践战败后，每天睡在柴草上。' },
+      { title: '尝苦胆', prompt: STYLE_PREFIX + 'the king in grey clothes tasting a bitter gall bladder hanging from ceiling, grimacing but determined, same humble room', narration: '他每天尝苦胆，提醒自己不要忘记耻辱。' },
+      { title: '最终复仇', prompt: STYLE_PREFIX + 'the same king now in golden armor leading large army to victory, triumphant expression, flags flying', narration: '经过多年努力，他终于打败了敌人，报了仇。' }
+    ]
+  },
+  '望梅止渴': {
+    character: 'a clever general in silver armor',
+    scenes: [
+      { title: '行军口渴', prompt: STYLE_PREFIX + 'a general in silver armor leading tired thirsty soldiers marching in hot sun, dry landscape, desert road', narration: '曹操带兵行军，士兵们都很口渴。' },
+      { title: '说起梅子', prompt: STYLE_PREFIX + 'the general in silver armor pointing ahead telling soldiers about plum trees, clever smile, soldiers listening', narration: '曹操说前面有梅林，梅子又酸又甜。' },
+      { title: '士兵流涎', prompt: STYLE_PREFIX + 'soldiers imagining juicy plums in thought bubbles, salivating, feeling refreshed, the general in silver armor smiling', narration: '士兵们想到梅子，口水都流出来了，也不那么渴了。' }
+    ]
+  },
+  '纸上谈兵': {
+    character: 'a young scholar-general in white armor',
+    scenes: [
+      { title: '熟读兵书', prompt: STYLE_PREFIX + 'a young scholar in white armor reading military books at desk, confident expression, books stacked around', narration: '赵括熟读兵书，谈论军事头头是道。' },
+      { title: '上战场', prompt: STYLE_PREFIX + 'the young scholar now in white armor on horseback leading army, looking nervous, real battlefield, chaotic', narration: '他当上将军后，却只会纸上谈兵。' },
+      { title: '惨遭失败', prompt: STYLE_PREFIX + 'the young scholar in white armor defeated, army scattered, regretful expression, learning moment', narration: '结果在实战中惨败，只会理论是不够的。' }
+    ]
+  },
+  '指鹿为马': {
+    character: 'a scheming minister in black robe and a young emperor',
+    scenes: [
+      { title: '指着鹿', prompt: STYLE_PREFIX + 'a minister in black robe presenting a deer to young emperor on throne, court hall, scheming smile', narration: '赵高牵来一只鹿，对皇帝说是马。' },
+      { title: '大臣争论', prompt: STYLE_PREFIX + 'court officials arguing, some pointing at deer saying horse, some confused, divided court hall scene', narration: '大臣们有的说是鹿，有的附和说是马。' },
+      { title: '忠臣被害', prompt: STYLE_PREFIX + 'honest officials being dragged away by guards, the minister in black robe watching smugly, dark scene', narration: '说是鹿的忠臣后来都被赵高害死了。' }
+    ]
+  },
+  '完璧归赵': {
+    character: 'a clever envoy in white robe with jade',
+    scenes: [
+      { title: '蔺相如出使', prompt: STYLE_PREFIX + 'a clever envoy in white robe carrying a glowing jade piece, traveling to Qin kingdom, determined face', narration: '蔺相如带着和氏璧出使秦国。' },
+      { title: '秦王耍赖', prompt: STYLE_PREFIX + 'the envoy in white robe holding jade protectively, angry king on throne trying to grab it, tense confrontation', narration: '秦王想白白得到宝玉，不肯给城池。' },
+      { title: '完璧归赵', prompt: STYLE_PREFIX + 'the envoy in white robe safely returning home with jade, welcoming crowd, triumphant scene', narration: '蔺相如机智勇敢，终于把宝玉完好带回赵国。' }
+    ]
+  },
+  '负荆请罪': {
+    character: 'an old general with beard and a wise minister in white',
+    scenes: [
+      { title: '廉颇不服', prompt: STYLE_PREFIX + 'an old general with thick beard looking angry and jealous, arms crossed, proud stance', narration: '廉颇觉得自己功劳大，不服蔺相如。' },
+      { title: '蔺相如避让', prompt: STYLE_PREFIX + 'a wise minister in white robe stepping aside on road to let the bearded general pass, humble expression', narration: '蔺相如为了国家大局，处处避让廉颇。' },
+      { title: '负荆请罪', prompt: STYLE_PREFIX + 'the old general with beard carrying thorns on back, kneeling to apologize to the minister in white robe, emotional reconciliation', narration: '廉颇深受感动，背着荆条去请罪，两人成为好友。' }
+    ]
+  },
+  '闻鸡起舞': {
+    character: 'a young warrior with sword',
+    scenes: [
+      { title: '听到鸡叫', prompt: STYLE_PREFIX + 'a young man waking up startled by rooster crowing at dawn, getting out of bed, dark sky, early morning', narration: '祖逖听到鸡叫就起床练剑。' },
+      { title: '刻苦练剑', prompt: STYLE_PREFIX + 'the same young man practicing sword moves in early morning light, sweat drops, determined face, courtyard', narration: '他每天天不亮就起来刻苦练武。' },
+      { title: '成为名将', prompt: STYLE_PREFIX + 'the young man now grown into a brave general in armor leading army, confident smile, victory flag', narration: '后来他成为了一名英勇的将军，保卫国家。' }
+    ]
+  }
 };
 
-// 简化版场景描述（中文）
 const SCENE_DESCRIPTIONS = {
   '画蛇添足': ['众人比赛画蛇', '有人给蛇添脚', '反而输掉比赛'],
   '守株待兔': ['兔子撞树而死', '农夫天天等待', '田地荒芜'],
@@ -173,11 +240,41 @@ const MEANINGS = {
   '闻鸡起舞': '比喻有志报国的人及时奋起'
 };
 
-async function sleep(ms) {
+function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function generateImage(prompt) {
+// 下载图片到本地
+function downloadImage(url, filepath) {
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith('https') ? https : http;
+    const file = fs.createWriteStream(filepath);
+
+    protocol.get(url, (response) => {
+      // 处理重定向
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        downloadImage(response.headers.location, filepath).then(resolve).catch(reject);
+        return;
+      }
+
+      if (response.statusCode !== 200) {
+        reject(new Error(`下载失败: ${response.statusCode}`));
+        return;
+      }
+
+      response.pipe(file);
+      file.on('finish', () => {
+        file.close();
+        resolve(filepath);
+      });
+    }).on('error', (err) => {
+      fs.unlink(filepath, () => {});
+      reject(err);
+    });
+  });
+}
+
+async function generateImage(prompt, idiom, sceneIndex) {
   const truncatedPrompt = prompt.length > 300 ? prompt.substring(0, 300) : prompt;
 
   for (let i = 0; i < 5; i++) {
@@ -197,13 +294,28 @@ async function generateImage(prompt) {
 
       if (response.ok) {
         const data = await response.json();
-        return data.data[0]?.url;
+        const imageUrl = data.data[0]?.url;
+
+        if (imageUrl) {
+          // 立即下载图片
+          const imageFilename = `${idiom}_${sceneIndex + 1}.png`;
+          const imageFilepath = path.join(IMAGES_DIR, imageFilename);
+
+          try {
+            await downloadImage(imageUrl, imageFilepath);
+            console.log(`    ✅ 图片已保存: ${imageFilename}`);
+            return `/pre-generated/images/${imageFilename}`;
+          } catch (downloadErr) {
+            console.log(`    ⚠️ 图片下载失败: ${downloadErr.message}`);
+            return imageUrl; // fallback to URL
+          }
+        }
       }
 
-      console.log(`  重试 ${i + 1}/5...`);
+      console.log(`    重试 ${i + 1}/5...`);
       await sleep(3000 * (i + 1));
     } catch (err) {
-      console.log(`  错误: ${err.message}`);
+      console.log(`    错误: ${err.message}`);
       await sleep(3000 * (i + 1));
     }
   }
@@ -213,25 +325,25 @@ async function generateImage(prompt) {
 async function generateBook(idiom, index) {
   console.log(`\n[${index + 1}/20] 生成: ${idiom}`);
 
-  const templates = SCENE_TEMPLATES[idiom];
+  const template = SCENE_TEMPLATES[idiom];
   const descriptions = SCENE_DESCRIPTIONS[idiom];
   const meaning = MEANINGS[idiom];
 
   const scenes = [];
 
-  for (let i = 0; i < templates.length; i++) {
-    const template = templates[i];
-    console.log(`  场景 ${i + 1}: ${template.title}`);
+  for (let i = 0; i < template.scenes.length; i++) {
+    const scene = template.scenes[i];
+    console.log(`  场景 ${i + 1}: ${scene.title}`);
 
-    const imageUrl = await generateImage(template.prompt);
+    const imagePath = await generateImage(scene.prompt, idiom, i);
 
     scenes.push({
       id: i + 1,
-      title: template.title,
+      title: scene.title,
       description: descriptions[i],
-      prompt: template.prompt,
-      narration: template.narration,
-      imageUrl: imageUrl || ''
+      prompt: scene.prompt,
+      narration: scene.narration,
+      imageUrl: imagePath || ''
     });
 
     await sleep(1000);
@@ -252,31 +364,40 @@ async function main() {
   console.log('批量生成20个成语绘本');
   console.log('========================================\n');
 
-  const outputDir = path.join(__dirname, '..', 'public', 'pre-generated');
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+  // 创建目录
+  if (!fs.existsSync(OUTPUT_DIR)) {
+    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(IMAGES_DIR)) {
+    fs.mkdirSync(IMAGES_DIR, { recursive: true });
   }
 
   const books = [];
 
   for (let i = 0; i < IDIOM_LIST.length; i++) {
     const idiom = IDIOM_LIST[i];
+    const filename = `${idiom}.json`;
+    const filepath = path.join(OUTPUT_DIR, filename);
+
+    // 检查是否已存在
+    if (fs.existsSync(filepath)) {
+      console.log(`\n[${i + 1}/20] 跳过: ${idiom} (已存在)`);
+      const existingBook = JSON.parse(fs.readFileSync(filepath, 'utf-8'));
+      books.push(existingBook);
+      continue;
+    }
+
     const book = await generateBook(idiom, i);
     books.push(book);
 
     // 保存单个绘本
-    const filename = `${idiom}.json`;
-    fs.writeFileSync(
-      path.join(outputDir, filename),
-      JSON.stringify(book, null, 2),
-      'utf-8'
-    );
-    console.log(`  ✅ 保存: ${filename}`);
+    fs.writeFileSync(filepath, JSON.stringify(book, null, 2), 'utf-8');
+    console.log(`  ✅ 绘本已保存: ${filename}`);
 
     // 每5个成语暂停一下
     if ((i + 1) % 5 === 0) {
       console.log(`\n--- 已完成 ${i + 1}/20 ---\n`);
-      await sleep(5000);
+      await sleep(3000);
     }
   }
 
@@ -291,15 +412,19 @@ async function main() {
   }));
 
   fs.writeFileSync(
-    path.join(outputDir, 'index.json'),
+    path.join(OUTPUT_DIR, 'index.json'),
     JSON.stringify(indexData, null, 2),
     'utf-8'
   );
 
+  // 统计
+  const totalImages = books.reduce((sum, b) => sum + b.scenes.filter(s => s.imageUrl && s.imageUrl.includes('/pre-generated/')).length, 0);
+
   console.log('\n========================================');
   console.log('批量生成完成！');
   console.log(`共生成 ${books.length} 本绘本`);
-  console.log(`保存位置: ${outputDir}`);
+  console.log(`已下载 ${totalImages} 张图片`);
+  console.log(`保存位置: ${OUTPUT_DIR}`);
   console.log('========================================');
 }
 
