@@ -16,15 +16,20 @@ const USER_PROMPT_TEMPLATE = (idiom: string) =>
 4. 旁白文本要简洁、有韵律感，适合亲子朗读
 5. 整体风格要适合 3-8 岁儿童
 6. prompt 字段必须是英文，用于 AI 图像生成
+7. 所有场景必须保持统一的画风和色调，确保视觉一致性
+8. 所有场景中的主要角色必须保持一致的外貌特征，确保角色识别度
 
 请严格以以下 JSON 格式返回，不要包含任何其他内容：
 {
   "meaning": "成语的含义解释",
+  "characterDescription": "主要角色的统一外貌描述（英文，用于所有场景的prompt）",
+  "styleDescription": "统一的画风和色调描述（英文，用于所有场景的prompt）",
   "scenes": [
     {
       "title": "场景标题",
       "description": "场景描述",
-      "prompt": "English prompt for AI image generation, cartoon style",
+      "prompt": "English prompt for AI image generation, must include characterDescription and styleDescription",
+      "compositionHint": "English composition instruction, e.g. close-up shot, wide angle scene, bird's eye view, medium shot, over-the-shoulder, low angle, dramatic angle",
       "narration": "旁白文本"
     }
   ]
@@ -63,15 +68,41 @@ export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition>
     throw new Error('LLM 返回格式不正确')
   }
 
+  // 获取角色描述和风格描述
+  const characterDescription = data.characterDescription || ''
+  const styleDescription = data.styleDescription || ''
+
   return {
     idiom,
     meaning: data.meaning,
-    scenes: data.scenes.map((s: any, i: number) => ({
-      id: i + 1,
-      title: s.title || `场景 ${i + 1}`,
-      description: s.description || '',
-      prompt: s.prompt || `A cartoon scene for ${idiom} story`,
-      narration: s.narration || '',
-    })),
+    scenes: data.scenes.map((s: any, i: number) => {
+      // 构建统一的prompt，包含角色描述和风格描述
+      let prompt = s.prompt || `A cartoon scene for ${idiom} story`
+      
+      // 如果有角色描述，添加到prompt开头
+      if (characterDescription) {
+        prompt = `${characterDescription}, ${prompt}`
+      }
+      
+      // 插入构图指令
+      const compositionHint = s.compositionHint || ''
+      if (compositionHint) {
+        prompt = `${prompt}, ${compositionHint}`
+      }
+      
+      // 如果有风格描述，添加到prompt末尾
+      if (styleDescription) {
+        prompt = `${prompt}, ${styleDescription}`
+      }
+
+      return {
+        id: i + 1,
+        title: s.title || `场景 ${i + 1}`,
+        description: s.description || '',
+        prompt: prompt,
+        narration: s.narration || '',
+        compositionHint,
+      }
+    }),
   }
 }
