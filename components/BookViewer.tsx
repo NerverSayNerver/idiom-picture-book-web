@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import type { PictureBook } from '@/lib/types'
+import { VideoGenerator } from './VideoGenerator'
+import { generatePDF } from '@/lib/pdf'
 
 interface BookViewerProps {
   book: PictureBook
@@ -9,6 +11,8 @@ interface BookViewerProps {
 
 export function BookViewer({ book }: BookViewerProps) {
   const [currentPage, setCurrentPage] = useState(0)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [showVideoGenerator, setShowVideoGenerator] = useState(false)
   const totalScenes = book.scenes.length
 
   const goToNext = useCallback(() => {
@@ -55,7 +59,16 @@ export function BookViewer({ book }: BookViewerProps) {
           <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-button text-sm hover:bg-blue-200">
             🔊 朗读
           </button>
-          <button className="px-4 py-2 bg-green-100 text-green-700 rounded-button text-sm hover:bg-green-200">
+          <button
+            onClick={() => setShowVideoGenerator(!showVideoGenerator)}
+            className="px-4 py-2 bg-purple-100 text-purple-700 rounded-button text-sm hover:bg-purple-200"
+          >
+            🎬 视频
+          </button>
+          <button
+            onClick={() => generatePDF(book)}
+            className="px-4 py-2 bg-green-100 text-green-700 rounded-button text-sm hover:bg-green-200"
+          >
             📄 PDF
           </button>
         </div>
@@ -150,6 +163,34 @@ export function BookViewer({ book }: BookViewerProps) {
           {currentPage + 1} / {totalScenes}
         </span>
       </div>
+
+      {/* 视频生成 */}
+      {showVideoGenerator && (
+        <div className="bg-white rounded-card p-6 shadow-md">
+          <h3 className="text-lg font-semibold mb-4">🎬 生成绘本视频</h3>
+          <VideoGenerator
+            imageUrls={book.scenes
+              .map((s) => s.imageUrl)
+              .filter((url): url is string => !!url)}
+            onVideoGenerated={setVideoUrl}
+          />
+        </div>
+      )}
+
+      {/* 视频播放器 */}
+      {videoUrl && (
+        <div className="bg-white rounded-card p-6 shadow-md">
+          <h3 className="text-lg font-semibold mb-4">📺 绘本视频</h3>
+          <video src={videoUrl} controls className="w-full rounded-card" />
+          <a
+            href={videoUrl}
+            download
+            className="mt-4 inline-block text-blue-600 hover:underline"
+          >
+            📥 下载视频
+          </a>
+        </div>
+      )}
     </div>
   )
 }
