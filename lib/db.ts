@@ -1,11 +1,13 @@
 import Dexie, { type Table } from 'dexie'
 import type { PictureBook, Scene } from './types'
 import type { Task } from './task-store'
+import type { IdiomInfo } from './idioms'
 
 export class IdiomPictureBookDB extends Dexie {
   pictureBooks!: Table<PictureBook>
   scenes!: Table<Scene & { bookId: string }>
   tasks!: Table<Task>
+  recommendedIdioms!: Table<IdiomInfo & { id?: number }>
 
   constructor() {
     super('idiom-picture-book-db')
@@ -17,6 +19,12 @@ export class IdiomPictureBookDB extends Dexie {
       pictureBooks: 'id, idiom, createdAt',
       scenes: 'id, bookId, imageHash',
       tasks: 'id, parentId, type, status, idiom',
+    })
+    this.version(3).stores({
+      pictureBooks: 'id, idiom, createdAt',
+      scenes: 'id, bookId, imageHash',
+      tasks: 'id, parentId, type, status, idiom',
+      recommendedIdioms: '++id, idiom',
     })
   }
 }
@@ -94,4 +102,34 @@ export async function loadTasks(): Promise<Task[]> {
 
 export async function clearTasks(): Promise<void> {
   await db.tasks.clear()
+}
+
+// ── 推荐成语 ────────────────────────────────────────────
+
+/** 批量保存推荐成语（去重） */
+export async function saveRecommendedIdioms(idioms: IdiomInfo[]): Promise<void> {
+  const existing = await db.recommendedIdioms.toArray()
+  const existingSet = new Set(existing.map(e => e.idiom))
+  const newIdioms = idioms.filter(i => !existingSet.has(i.idiom))
+  if (newIdioms.length > 0) {
+    await db.recommendedIdioms.bulkAdd(newIdioms)
+  }
+}
+
+/** 获取所有推荐成语 */
+export async function getAllRecommendedIdioms(): Promise<IdiomInfo[]> {
+  return db.recommendedIdioms.toArray()
+}
+
+/** 随机获取 n 个推荐成语 */
+export async function getRandomIdioms(n: number): Promise<IdiomInfo[]> {
+  const all = await db.recommendedIdioms.toArray()
+  if (all.length <= n) return all
+  // Fisher-Yates shuffle
+  const shuffled = [...all]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled.slice(0, n)
 }

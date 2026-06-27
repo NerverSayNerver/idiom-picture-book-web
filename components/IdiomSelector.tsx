@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { IDIOM_LIST, type IdiomInfo } from '@/lib/idioms'
 import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
-import { getAllPictureBooks } from '@/lib/db'
+import { getAllPictureBooks, getRandomIdioms, saveRecommendedIdioms } from '@/lib/db'
 import { fetchRecommendedIdioms } from '@/app/actions/recommend'
 
 interface IdiomSelectorProps {
@@ -18,7 +18,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
   const [existingIdioms, setExistingIdioms] = useState<Set<string>>(new Set())
   const [displayIdioms, setDisplayIdioms] = useState<IdiomInfo[]>(IDIOM_LIST)
   const [refreshing, setRefreshing] = useState(false)
-  const shownIdiomsRef = useRef<Set<string>>(new Set(IDIOM_LIST.map(i => i.idiom)))
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
   const router = useRouter()
 
@@ -32,14 +31,14 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
     setCustomIdiom('')
   }
 
-  // 加载已有的绘本列表
+  // 初始化：加载已有绘本 + 从数据库随机加载推荐成语
   useEffect(() => {
     loadExistingIdioms()
+    loadRandomIdioms()
   }, [])
 
   const loadExistingIdioms = async () => {
     try {
-      // 加载预生成的绘本
       const preGeneratedResponse = await fetch('/pre-generated/index.json')
       if (preGeneratedResponse.ok) {
         const index = await preGeneratedResponse.json()
@@ -47,7 +46,6 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
         setExistingIdioms(idioms)
       }
 
-      // 加载用户生成的绘本
       const userBooks = await getAllPictureBooks()
       setExistingIdioms(prev => {
         const newSet = new Set<string>(prev)
@@ -59,13 +57,32 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
     }
   }
 
+  const loadRandomIdioms = async () => {
+    try {
+      // 数据库为空时，先写入初始成语
+      const random = await getRandomIdioms(10)
+      if (random.length > 0) {
+        setDisplayIdioms(random)
+      }
+      // 数据库有数据但不足 10 个也正常显示
+    } catch (error) {
+      console.error('加载推荐成语失败:', error)
+    }
+  }
+
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      const newIdioms = await fetchRecommendedIdioms(Array.from(shownIdiomsRef.current))
-      // 记录已展示的成语
-      newIdioms.forEach(i => shownIdiomsRef.current.add(i.idiom))
-      setDisplayIdioms(newIdioms)
+      // 传入当前显示的成语作为排除列表
+      const currentIdioms = displayIdioms.map(i => i.idiom)
+      const newIdioms = await fetchRecommendedIdioms(currentIdioms)
+      // 去重保存到数据库
+      await saveRecommendedIdioms(newIdioms)
+      // 从数据库随机取 10 个
+      const random = await getRandomIdioms(10)
+      if (random.length > 0) {
+        setDisplayIdioms(random)
+      }
       setSelectedIdiom(null)
       setSelectedIdioms(new Set())
     } catch (error) {
