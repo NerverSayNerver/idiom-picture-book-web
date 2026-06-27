@@ -7,8 +7,12 @@ import { useTaskStore } from '@/lib/task-store'
 import { TaskExecutor } from '@/lib/task-executor'
 
 export default function Home() {
-  const { createJobs } = useTaskStore()
+  const { createJobs, loadPersistedTasks } = useTaskStore()
   const [executor] = useState(() => new TaskExecutor())
+
+  useEffect(() => {
+    loadPersistedTasks()
+  }, [])
 
   const handleBatchGenerate = (idioms: string[]) => {
     createJobs(idioms)

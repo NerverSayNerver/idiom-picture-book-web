@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
+import { saveTasks, loadTasks } from './db'
 
 // ── 类型定义 ──────────────────────────────────────────────
 
@@ -135,6 +136,10 @@ interface TaskQueueState {
 
   // ── 重置 ─────────────────────────────────────────────
   reset: () => void
+
+  // ── 持久化 ─────────────────────────────────────────────
+  persistTasks: () => void
+  loadPersistedTasks: () => Promise<void>
 }
 
 // ── Store 实现 ───────────────────────────────────────────
@@ -169,6 +174,7 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
       totalTasks: state.totalTasks + 1,
     }))
 
+    get().persistTasks()
     return id
   },
 
@@ -215,6 +221,7 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
       }
     })
 
+    get().persistTasks()
     return newChildIds
   },
 
@@ -309,6 +316,8 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
         failedTasks,
       }
     })
+
+    get().persistTasks()
   },
 
   // ── removeTask ────────────────────────────────────────
@@ -512,5 +521,23 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
       completedTasks: 0,
       failedTasks: 0,
     })
+  },
+
+  // ── 持久化 ─────────────────────────────────────────────
+  persistTasks: () => {
+    const { tasks } = get()
+    saveTasks(tasks).catch(console.error)
+  },
+
+  loadPersistedTasks: async () => {
+    const tasks = await loadTasks()
+    if (tasks.length === 0) return
+    // 恢复任务，但将 running 状态标记为 failed（页面刷新意味着中断）
+    const restored = tasks.map(t => ({
+      ...t,
+      status: t.status === 'running' ? 'failed' as const : t.status,
+      error: t.status === 'running' ? '页面刷新，执行中断' : t.error,
+    }))
+    set({ tasks: restored })
   },
 }))

@@ -1,15 +1,22 @@
 import Dexie, { type Table } from 'dexie'
 import type { PictureBook, Scene } from './types'
+import type { Task } from './task-store'
 
 export class IdiomPictureBookDB extends Dexie {
   pictureBooks!: Table<PictureBook>
   scenes!: Table<Scene & { bookId: string }>
+  tasks!: Table<Task>
 
   constructor() {
     super('idiom-picture-book-db')
     this.version(1).stores({
       pictureBooks: 'id, idiom, createdAt',
       scenes: 'id, bookId, imageHash',
+    })
+    this.version(2).stores({
+      pictureBooks: 'id, idiom, createdAt',
+      scenes: 'id, bookId, imageHash',
+      tasks: 'id, parentId, type, status, idiom',
     })
   }
 }
@@ -73,4 +80,18 @@ async function computeBlobHash(blob: Blob): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+// ── 任务持久化 ────────────────────────────────────────────
+
+export async function saveTasks(tasks: Task[]): Promise<void> {
+  await db.tasks.bulkPut(tasks)
+}
+
+export async function loadTasks(): Promise<Task[]> {
+  return db.tasks.toArray()
+}
+
+export async function clearTasks(): Promise<void> {
+  await db.tasks.clear()
 }
