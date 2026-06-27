@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getAllPictureBooks, deletePictureBook } from '@/lib/db'
+import { getAllPictureBooks, deletePictureBook, savePictureBook } from '@/lib/db'
 import type { PictureBook } from '@/lib/types'
 
 export default function LibraryPage() {
@@ -14,41 +14,47 @@ export default function LibraryPage() {
   }, [])
 
   const loadBooks = async () => {
-    // 先从 IndexedDB 加载
-    const loadedBooks = await getAllPictureBooks()
+    const allBooks: PictureBook[] = []
+    const seenIds = new Set<string>()
 
-    // 如果 IndexedDB 为空，尝试加载预生成的绘本
-    if (loadedBooks.length === 0) {
-      try {
-        const response = await fetch('/pre-generated/index.json')
-        if (response.ok) {
-          const index = await response.json()
-          const preGeneratedBooks: PictureBook[] = []
-
-          for (const item of index) {
-            try {
-              const bookResponse = await fetch(`/pre-generated/${item.idiom}.json`)
-              if (bookResponse.ok) {
-                const book = await bookResponse.json()
-                preGeneratedBooks.push(book)
+    // 1. 先加载预生成的绘本
+    try {
+      const response = await fetch('/pre-generated/index.json')
+      if (response.ok) {
+        const index = await response.json()
+        for (const item of index) {
+          try {
+            const bookResponse = await fetch(`/pre-generated/${item.idiom}.json`)
+            if (bookResponse.ok) {
+              const book = await bookResponse.json()
+              if (!seenIds.has(book.idiom)) {
+                allBooks.push(book)
+                seenIds.add(book.idiom)
               }
-            } catch {
-              // skip failed books
             }
-          }
-
-          if (preGeneratedBooks.length > 0) {
-            setBooks(preGeneratedBooks)
-            setLoading(false)
-            return
+          } catch {
+            // skip
           }
         }
-      } catch {
-        // no pre-generated books
       }
+    } catch {
+      // no pre-generated books
     }
 
-    setBooks(loadedBooks)
+    // 2. 再加载 IndexedDB 中用户生成的绘本
+    try {
+      const userBooks = await getAllPictureBooks()
+      for (const book of userBooks) {
+        if (!seenIds.has(book.idiom)) {
+          allBooks.push(book)
+          seenIds.add(book.idiom)
+        }
+      }
+    } catch {
+      // skip
+    }
+
+    setBooks(allBooks)
     setLoading(false)
   }
 
@@ -120,7 +126,12 @@ function BookCard({
     // 获取封面图像
     const firstScene = book.scenes.find((s) => s.imageUrl)
     if (firstScene?.imageUrl) {
-      setCoverImage(firstScene.imageUrl)
+      // 如果是本地路径，直接使用
+      if (firstScene.imageUrl.startsWith('/pre-generated/')) {
+        setCoverImage(firstScene.imageUrl)
+      } else {
+        setCoverImage(firstScene.imageUrl)
+      }
     } else if (firstScene?.imageBlob) {
       setCoverImage(URL.createObjectURL(firstScene.imageBlob))
     }
