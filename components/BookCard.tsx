@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAppStore } from '@/lib/store'
+import { createJobAPI } from '@/lib/use-jobs'
 import { getStrategy } from '@/lib/content-types'
+import type { ContentCategory } from '@/lib/types'
 
 interface BookCardBook {
   id: string
@@ -20,7 +22,6 @@ interface BookCardBook {
 interface BookCardProps {
   book: BookCardBook
   onDelete: (id: string) => void
-  onRegenerate?: (idiom: string) => void
 }
 
 function formatTime(iso?: string): string {
@@ -31,10 +32,11 @@ function formatTime(iso?: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-export function BookCard({ book, onDelete, onRegenerate }: BookCardProps) {
+export function BookCard({ book, onDelete }: BookCardProps) {
   const [coverImage, setCoverImage] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
+  const setCurrentCategory = useAppStore((s) => s.setCurrentCategory)
   const strategy = book.category ? getStrategy(book.category as any) : null
 
   useEffect(() => {
@@ -45,19 +47,21 @@ export function BookCard({ book, onDelete, onRegenerate }: BookCardProps) {
         return
       }
     }
-    // 尝试从文件系统路径构造封面图 URL
+    // 尝试从文件系统路径构造封面图 URL（优先 SVG 占位图）
     const sourceText = book.sourceText || book.idiom || book.title
     if (sourceText && book.category) {
-      setCoverImage(`/generated/${book.category}/${encodeURIComponent(sourceText)}/1.png`)
+      setCoverImage(`/generated/${book.category}/${sourceText}/1.svg`)
     }
   }, [book.scenes, book.category, book.sourceText, book.idiom, book.title])
 
   const sourceText = book.sourceText || book.idiom || book.title
 
-  const handleRegenerate = async () => {
-    onDelete(book.id)
-    setCurrentIdiom(book.idiom || sourceText)
-    onRegenerate?.(book.idiom || sourceText)
+  const handleRegenerate = () => {
+    if (!sourceText) return
+    setCurrentCategory(book.category as ContentCategory)
+    setCurrentIdiom(sourceText)
+    createJobAPI(sourceText, book.category || 'idiom')
+    setShowConfirm(false)
   }
 
   return (

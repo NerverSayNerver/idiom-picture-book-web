@@ -13,7 +13,7 @@
       "prompt": "A cute, fluffy orange fox with large expressive eyes, standing on hind legs, wearing no clothes but looking mischievous; a large, majestic tiger with golden fur, black stripes, and a gentle but powerful expression., A cute fluffy orange fox running away from a shadowy hunter in a dense green forest, sunlight filtering through leaves, dynamic action shot, soft watercolor style, warm pastel tones., Wide angle shot showing the chase path through the woods., Soft watercolor illustration style, warm pastel tones, whimsical forest background, high quality, detailed textures, suitable for children aged 3-8, consistent lighting.",
       "compositionHint": "Wide angle shot showing the chase path through the woods.",
       "narration": "森林里，小狐狸被猎人追得团团转，吓得拼命跑呀跑。",
-      "imageUrl": "/generated/idiom/狐假虎威/1.png"
+      "imageUrl": "/generated/idiom/狐假虎威/1.svg"
     },
     {
       "id": 2,
@@ -22,7 +22,7 @@
       "prompt": "A cute, fluffy orange fox with large expressive eyes, standing on hind legs, wearing no clothes but looking mischievous; a large, majestic tiger with golden fur, black stripes, and a gentle but powerful expression., An orange fox standing still in front of a large majestic tiger waking up from sleep under a big tree, morning mist, soft watercolor style, warm pastel tones., Medium shot focusing on the interaction between the fox and the tiger., Soft watercolor illustration style, warm pastel tones, whimsical forest background, high quality, detailed textures, suitable for children aged 3-8, consistent lighting.",
       "compositionHint": "Medium shot focusing on the interaction between the fox and the tiger.",
       "narration": "忽然，他看见一只大老虎在睡觉。小狐狸灵机一动，站得直直的。",
-      "imageUrl": "/generated/idiom/狐假虎威/2.png"
+      "imageUrl": "/generated/idiom/狐假虎威/2.svg"
     },
     {
       "id": 3,
@@ -31,7 +31,7 @@
       "prompt": "A cute, fluffy orange fox with large expressive eyes, standing on hind legs, wearing no clothes but looking mischievous; a large, majestic tiger with golden fur, black stripes, and a gentle but powerful expression., Close up of a confident orange fox talking to a curious tiger, fox pointing up, smug expression, tiger listening intently, soft watercolor style, warm pastel tones., Close-up shot emphasizing facial expressions., Soft watercolor illustration style, warm pastel tones, whimsical forest background, high quality, detailed textures, suitable for children aged 3-8, consistent lighting.",
       "compositionHint": "Close-up shot emphasizing facial expressions.",
       "narration": "狐狸说：‘别吃我！我是天帝派来的百兽之王，谁敢不服？’",
-      "imageUrl": "/generated/idiom/狐假虎威/3.png"
+      "imageUrl": "/generated/idiom/狐假虎威/3.svg"
     },
     {
       "id": 4,
@@ -40,7 +40,7 @@
       "prompt": "A cute, fluffy orange fox with large expressive eyes, standing on hind legs, wearing no clothes but looking mischievous; a large, majestic tiger with golden fur, black stripes, and a gentle but powerful expression., The tiger following the fox into the deep forest, fox leading the way, tiger obediently behind, lush green vegetation, soft watercolor style, warm pastel tones., Side view tracking shot of them walking., Soft watercolor illustration style, warm pastel tones, whimsical forest background, high quality, detailed textures, suitable for children aged 3-8, consistent lighting.",
       "compositionHint": "Side view tracking shot of them walking.",
       "narration": "老虎半信半疑：‘我不信！如果你骗我，我就吃了你。’",
-      "imageUrl": "/generated/idiom/狐假虎威/4.png"
+      "imageUrl": "/generated/idiom/狐假虎威/4.svg"
     },
     {
       "id": 5,
@@ -49,7 +49,7 @@
       "prompt": "A cute, fluffy orange fox with large expressive eyes, standing on hind legs, wearing no clothes but looking mischievous; a large, majestic tiger with golden fur, black stripes, and a gentle but powerful expression., Various forest animals like rabbits, deer, and birds running away in fear as the fox and tiger approach, dynamic scene, soft watercolor style, warm pastel tones., Wide angle scene showing the reaction of multiple animals., Soft watercolor illustration style, warm pastel tones, whimsical forest background, high quality, detailed textures, suitable for children aged 3-8, consistent lighting.",
       "compositionHint": "Wide angle scene showing the reaction of multiple animals.",
       "narration": "他们一起往前走，小兔子、小鹿看见都吓跑了！",
-      "imageUrl": "/generated/idiom/狐假虎威/5.png"
+      "imageUrl": "/generated/idiom/狐假虎威/5.svg"
     },
     {
       "id": 6,
@@ -58,7 +58,7 @@
       "prompt": "A cute, fluffy orange fox with large expressive eyes, standing on hind legs, wearing no clothes but looking mischievous; a large, majestic tiger with golden fur, black stripes, and a gentle but powerful expression., The fox walking proudly with an arrogant posture, the tiger looking confused behind him, sunset lighting, long shadows, soft watercolor style, warm pastel tones., Medium-wide shot capturing the contrast in their expressions., Soft watercolor illustration style, warm pastel tones, whimsical forest background, high quality, detailed textures, suitable for children aged 3-8, consistent lighting.",
       "compositionHint": "Medium-wide shot capturing the contrast in their expressions.",
       "narration": "其实大家怕的不是狐狸，而是后面那只大老虎呀！",
-      "imageUrl": "/generated/idiom/狐假虎威/6.png"
+      "imageUrl": "/generated/idiom/狐假虎威/6.svg"
     }
   ]
 }

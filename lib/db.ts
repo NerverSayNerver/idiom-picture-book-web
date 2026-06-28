@@ -1,40 +1,18 @@
 import Dexie, { type Table } from 'dexie'
-import type { Task } from './task-store'
 import type { ContentInfo } from './types'
 
 export class PictureBookDB extends Dexie {
-  tasks!: Table<Task>
   recommendedItems!: Table<ContentInfo & { id?: number }>
 
   constructor() {
     super('picture-book-db')
-    this.version(5).stores({
-      tasks: 'id, parentId, type, status, category',
+    this.version(6).stores({
       recommendedItems: '++id, category, sourceText',
     })
   }
 }
 
 export const db = new PictureBookDB()
-
-// ── 任务持久化 ──
-
-export async function saveTasks(tasks: Task[]): Promise<void> {
-  await db.transaction('rw', db.tasks, async () => {
-    await db.tasks.clear()
-    if (tasks.length > 0) {
-      await db.tasks.bulkAdd(tasks)
-    }
-  })
-}
-
-export async function loadTasks(): Promise<Task[]> {
-  return db.tasks.toArray()
-}
-
-export async function clearTasks(): Promise<void> {
-  await db.tasks.clear()
-}
 
 // ── 推荐缓存 ──
 
@@ -80,11 +58,3 @@ export const getAllRecommendedIdioms = () => getAllRecommendedItems('idiom')
 
 /** @deprecated 使用 getRandomItems */
 export const getRandomIdioms = (n: number) => getRandomItems('idiom', n)
-
-/** @deprecated 不再使用 pictureBooks 表 */
-export async function getAllPictureBooks(): Promise<any[]> { return [] }
-export async function getPictureBook(_id: string): Promise<any> { return undefined }
-export async function savePictureBook(_book: any): Promise<void> {}
-export async function deletePictureBook(_id: string): Promise<void> {}
-export async function saveSceneImage(_bookId: string, _sceneId: number, _blob: Blob): Promise<void> {}
-export async function getSceneImage(_bookId: string, _sceneId: number): Promise<Blob | undefined> { return undefined }

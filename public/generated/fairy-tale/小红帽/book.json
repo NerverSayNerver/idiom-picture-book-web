@@ -1,0 +1,64 @@
+{
+  "id": "小红帽",
+  "category": "fairy-tale",
+  "sourceText": "小红帽",
+  "title": "小红帽",
+  "meaning": "要听爸爸妈妈的话，不要和陌生人说话，遇到危险要保持冷静和勇敢。",
+  "createdAt": "2026-06-28T03:54:56.241Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "去看外婆",
+      "description": "standing at the edge of a forest path, mother waving from a cottage door, sunny morning, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "A cute little girl wearing a red hood carrying a basket with cake and fruits, standing at the edge of a forest path, mother waving from a cottage door, sunny morning, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "小红帽带上蛋糕和水果，要去住在森林里的外婆家。",
+      "imageUrl": "/generated/fairy-tale/小红帽/1.svg"
+    },
+    {
+      "id": 2,
+      "title": "森林里",
+      "description": "colorful flowers and butterflies everywhere, dappled sunlight through trees, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "A little girl in red hood walking happily through a beautiful forest, colorful flowers and butterflies everywhere, dappled sunlight through trees, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "小红帽蹦蹦跳跳地走进了森林，路边有美丽的花朵和蝴蝶。",
+      "imageUrl": "/generated/fairy-tale/小红帽/2.svg"
+    },
+    {
+      "id": 3,
+      "title": "遇到大灰狼",
+      "description": "wolf leaning against a tree casually, the girl chatting happily, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "A sly-looking wolf in disguise talking to the innocent little girl in the forest, wolf leaning against a tree casually, the girl chatting happily, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "大灰狼出现了，假装好心地问小红帽要去哪里。",
+      "imageUrl": "/generated/fairy-tale/小红帽/3.svg"
+    },
+    {
+      "id": 4,
+      "title": "狼先到了",
+      "description": "the old grandmother being hidden in a closet, dramatic scene, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "The wolf running fast toward a small cottage in the woods, the old grandmother being hidden in a closet, dramatic scene, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "大灰狼飞快地跑到外婆家，把外婆藏了起来，自己装成外婆躺在床上。",
+      "imageUrl": "/generated/fairy-tale/小红帽/4.svg"
+    },
+    {
+      "id": 5,
+      "title": "门开了",
+      "description": "seeing the wolf dressed as grandmother in bed, suspicious look on her face, cozy cottage interior, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "The little girl opening the cottage door, seeing the wolf dressed as grandmother in bed, suspicious look on her face, cozy cottage interior, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "小红帽到了外婆家，觉得外婆今天看起来好奇怪呀...",
+      "imageUrl": "/generated/fairy-tale/小红帽/5.svg"
+    },
+    {
+      "id": 6,
+      "title": "勇敢得救",
+      "description": "the wolf running away scared, the girl and grandmother hugging happily, relief and joy, soft watercolor illustration, pastel colors, children book, rescue scene.",
+      "prompt": "A brave hunter arriving at the cottage, the wolf running away scared, the girl and grandmother hugging happily, relief and joy, soft watercolor illustration, pastel colors, children book, rescue scene.",
+      "compositionHint": "",
+      "narration": "猎人叔叔听到了声音赶来，救出了小红帽和外婆，大灰狼被赶跑了！",
+      "imageUrl": "/generated/fairy-tale/小红帽/6.svg"
+    }
+  ]
+}

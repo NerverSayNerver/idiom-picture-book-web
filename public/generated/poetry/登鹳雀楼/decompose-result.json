@@ -1,0 +1,48 @@
+{
+  "idiom": "登鹳雀楼",
+  "meaning": "这首诗告诉我们，想要看到更远的风景，就要站得更高。它鼓励小朋友要有远大的志向，不断努力向上攀登。",
+  "characterDescription": "",
+  "styleDescription": "Chinese classical ink wash painting and gongbi style, soft watercolor tones, gentle lighting, whimsical and child-friendly atmosphere, high quality, detailed brushwork.",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "背景：壮丽的鹳雀楼",
+      "description": "画面展示了一座高耸入云的中国古塔——鹳雀楼，坐落在黄河边。夕阳西下，金色的余晖洒在楼体和河面上，几只小鸟在楼顶盘旋，增添了童趣。",
+      "prompt": "A majestic ancient Chinese tower named Stork Tower standing by a wide river, sunset background with golden glow, soft ink wash style, cute little birds flying around the top, whimsical atmosphere, traditional Chinese aesthetics., Wide angle shot, low perspective looking up at the tower to emphasize height, golden hour lighting., Chinese classical ink wash painting and gongbi style, soft watercolor tones, gentle lighting, whimsical and child-friendly atmosphere, high quality, detailed brushwork.",
+      "narration": "（背景介绍）在黄河边上，有一座高高的楼，名叫鹳雀楼。这里风景美极了！",
+      "compositionHint": "Wide angle shot, low perspective looking up at the tower to emphasize height, golden hour lighting."
+    },
+    {
+      "id": 2,
+      "title": "白日依山尽",
+      "description": "太阳慢慢落向远处的群山。山峦层层叠叠，用淡雅的水墨晕染。一个小男孩（主角）站在楼下仰望，身影渺小但充满好奇。",
+      "prompt": "The sun setting behind layered mountains, gentle ink wash landscape, soft orange and purple hues, a curious little boy looking up from below, peaceful and serene mood, Chinese classical art style., Horizontal composition, focus on the horizon line where sun meets mountains, boy positioned in lower third., Chinese classical ink wash painting and gongbi style, soft watercolor tones, gentle lighting, whimsical and child-friendly atmosphere, high quality, detailed brushwork.",
+      "narration": "白日依山尽。太阳公公慢慢爬下了山坡，躲进了远山的怀抱里，天快要黑啦。",
+      "compositionHint": "Horizontal composition, focus on the horizon line where sun meets mountains, boy positioned in lower third."
+    },
+    {
+      "id": 3,
+      "title": "黄河入海流",
+      "description": "镜头转向宽阔的黄河，河水奔腾向东，仿佛要流向大海。画面用流畅的线条表现水流，色彩清澈明亮，体现生命的活力。",
+      "prompt": "The Yellow River flowing powerfully towards the east, clear blue and white water strokes, dynamic yet gentle flow, vast river scene, traditional Chinese ink painting style with modern soft colors., Diagonal composition leading the eye from foreground to background, emphasizing the flow of the river., Chinese classical ink wash painting and gongbi style, soft watercolor tones, gentle lighting, whimsical and child-friendly atmosphere, high quality, detailed brushwork.",
+      "narration": "黄河入海流。大大的黄河水哗啦啦地往东流，一直流到很远很远的海边去。",
+      "compositionHint": "Diagonal composition leading the eye from foreground to background, emphasizing the flow of the river."
+    },
+    {
+      "id": 4,
+      "title": "欲穷千里目",
+      "description": "小男孩开始攀爬鹳雀楼的楼梯。他一手扶着栏杆，一手指向远方，眼神坚定。周围有飘落的花瓣或祥云，象征美好的愿景。",
+      "prompt": "A cute little boy climbing the stairs of the tower, pointing towards the distance, determined expression, floating petals and auspicious clouds around, warm lighting, storybook illustration style., Vertical composition following the staircase, close-up on the boy's face and gesture., Chinese classical ink wash painting and gongbi style, soft watercolor tones, gentle lighting, whimsical and child-friendly atmosphere, high quality, detailed brushwork.",
+      "narration": "欲穷千里目。我想把更远处的美景都看个够，该怎么办呢？",
+      "compositionHint": "Vertical composition following the staircase, close-up on the boy's face and gesture."
+    },
+    {
+      "id": 5,
+      "title": "更上一层楼",
+      "description": "小男孩登上了更高的楼层，视野豁然开朗。他站在窗前，笑容灿烂。远处山河壮丽，云海翻腾，寓意站得高看得远。",
+      "prompt": "The boy standing on a higher floor of the tower, smiling brightly, panoramic view of mountains and rivers below, vast sky with soft clouds, inspiring and uplifting mood, refined ink brush style., Over-the-shoulder shot from behind the boy, showing the expansive view ahead, bright and airy., Chinese classical ink wash painting and gongbi style, soft watercolor tones, gentle lighting, whimsical and child-friendly atmosphere, high quality, detailed brushwork.",
+      "narration": "更上一层楼。只要再往上走一层，就能看到比现在更远、更美的世界啦！",
+      "compositionHint": "Over-the-shoulder shot from behind the boy, showing the expansive view ahead, bright and airy."
+    }
+  ]
+}

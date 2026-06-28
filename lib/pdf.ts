@@ -1,7 +1,11 @@
 import jsPDF from 'jspdf'
 import type { PictureBook } from './types'
+import { getStrategy } from './content-types'
 
 export async function generatePDF(book: PictureBook): Promise<void> {
+  const categoryLabel = (() => {
+    try { return getStrategy(book.category).label } catch { return '内容' }
+  })()
   const pdf = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -22,7 +26,7 @@ export async function generatePDF(book: PictureBook): Promise<void> {
   })
 
   pdf.setFontSize(16)
-  pdf.text('成语绘本', pageWidth / 2, pageHeight / 2 + 10, {
+  pdf.text(`${categoryLabel}绘本`, pageWidth / 2, pageHeight / 2 + 10, {
     align: 'center',
   })
 
@@ -98,7 +102,7 @@ export async function generatePDF(book: PictureBook): Promise<void> {
 
   pdf.setFontSize(20)
   pdf.setTextColor(255, 255, 255)
-  pdf.text('💡 成语含义', pageWidth / 2, pageHeight / 2 - 20, {
+  pdf.text(`💡 ${categoryLabel}含义`, pageWidth / 2, pageHeight / 2 - 20, {
     align: 'center',
   })
 

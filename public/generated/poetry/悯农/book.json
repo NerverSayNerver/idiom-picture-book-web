@@ -1,0 +1,37 @@
+{
+  "id": "悯农",
+  "category": "poetry",
+  "sourceText": "悯农",
+  "title": "悯农",
+  "meaning": "这首诗告诉我们要珍惜粮食。农民伯伯在炎热的中午顶着太阳辛苦锄地，汗水滴入泥土。每一碗饭都来之不易，我们要感谢他们的劳动，不能浪费食物。",
+  "createdAt": "2026-06-28T04:14:47.042Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "清晨的田野",
+      "description": "晨光熹微，远山如黛，近处是一片绿油油的稻田。微风轻拂，稻浪起伏。一位老农背着农具，身影在晨雾中若隐若现，准备开始一天的劳作。画面充满宁静与希望的气息。",
+      "prompt": "A wide shot of a lush green rice field at dawn, misty mountains in the background, traditional Chinese ink wash style with soft watercolor accents, a silhouette of a farmer walking into the field, peaceful atmosphere, gentle lighting., Wide angle, depth of field, horizon line placed at lower third to emphasize the vastness of the field., Classical Chinese ink wash painting and Gongbi style, soft pastel colors, warm sunlight tones, minimalist background with textured paper effect, cute and child-friendly character design, high definition, artistic.",
+      "compositionHint": "Wide angle, depth of field, horizon line placed at lower third to emphasize the vastness of the field.",
+      "narration": "春天种下一粒粟，秋天收获万颗子。天还没亮，农民伯伯就起床去田里干活啦。",
+      "imageUrl": "/generated/poetry/悯农/1.png"
+    },
+    {
+      "id": 2,
+      "title": "烈日当空",
+      "description": "正午时分，太阳高高挂在天上，像一个大火球。知了在树上不停地叫着“热啊热啊”。农民伯伯弯着腰，挥动锄头除草，衣服已经被汗水浸湿。画面色彩偏暖黄，突出炎热感。",
+      "prompt": "High noon, bright sun shining down on a farmer working in the field, farmer is bending over using a hoe, sweat visible on his forehead, cicadas on trees in the background, warm yellow and orange tones, classical Chinese ink style with vibrant sunlight effects, expressive and cute character., Medium shot focusing on the farmer's upper body and face, strong contrast between the bright sun and the shaded farmer., Classical Chinese ink wash painting and Gongbi style, soft pastel colors, warm sunlight tones, minimalist background with textured paper effect, cute and child-friendly character design, high definition, artistic.",
+      "compositionHint": "Medium shot focusing on the farmer's upper body and face, strong contrast between the bright sun and the shaded farmer.",
+      "narration": "锄禾日当午，汗滴禾下土。中午的太阳火辣辣的，农民伯伯累得满头大汗，汗水滴到了泥土里。",
+      "imageUrl": "/generated/poetry/悯农/2.png"
+    },
+    {
+      "id": 3,
+      "title": "珍惜粮食",
+      "description": "特写镜头：一碗热气腾腾、晶莹剔透的白米饭。旁边放着几株金黄的稻穗。一只可爱的小手正准备拿起筷子。背景虚化，突出米饭的诱人香气和珍贵。画面温馨、明亮。",
+      "prompt": "Close-up of a bowl of steaming white rice, golden rice stalks beside the bowl, a cute small hand holding chopsticks ready to eat, soft focus background, warm lighting, detailed texture of rice grains, Gongbi style details, inviting and appetizing., Macro shot or close-up, shallow depth of field, center composition to draw attention to the food., Classical Chinese ink wash painting and Gongbi style, soft pastel colors, warm sunlight tones, minimalist background with textured paper effect, cute and child-friendly character design, high definition, artistic.",
+      "compositionHint": "Macro shot or close-up, shallow depth of field, center composition to draw attention to the food.",
+      "narration": "谁知盘中餐，粒粒皆辛苦。这碗香喷喷的米饭，每一粒都是农民伯伯用辛苦汗水换来的呀！",
+      "imageUrl": "/generated/poetry/悯农/3.png"
+    }
+  ]
+}

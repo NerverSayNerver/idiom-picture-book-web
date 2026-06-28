@@ -1,0 +1,64 @@
+{
+  "idiom": "两只老虎",
+  "meaning": "通过趣味化的方式帮助幼儿认识身体部位，培养对身体的认知，同时传递乐观、包容的价值观，即使有“小缺点”也是独一无二的可爱宝宝。",
+  "characterDescription": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious.",
+  "styleDescription": "Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "快乐的老虎兄弟",
+      "description": "两只小老虎在阳光明媚的草地上开心地奔跑，它们互相看着对方，脸上洋溢着灿烂的笑容，充满活力。",
+      "prompt": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious., Two cute round tiger cubs running happily on green grass under bright sun, laughing, bright cartoon style, vibrant colors, rounded shapes, joyful expression, Wide shot showing both characters moving forward, dynamic but safe lines., Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+      "narration": "两只老虎，两只老虎",
+      "compositionHint": "Wide shot showing both characters moving forward, dynamic but safe lines."
+    },
+    {
+      "id": 2,
+      "title": "发现第一只小老虎的特点",
+      "description": "特写镜头聚焦在第一只小老虎身上，它正惊讶地摸摸自己光溜溜的屁股后面，原来它没有尾巴，但它依然笑得很开心。",
+      "prompt": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious., Close up of one tiger cub touching its empty lower back where tail should be, surprised but happy expression, missing tail, bright cartoon style, soft focus background, Focus on the character's face and back, highlighting the 'no tail' feature gently., Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+      "narration": "跑得快，跑得快",
+      "compositionHint": "Focus on the character's face and back, highlighting the 'no tail' feature gently."
+    },
+    {
+      "id": 3,
+      "title": "发现第二只小老虎的特点",
+      "description": "第二只小老虎站在旁边，好奇地指着第一只，然后摸摸自己圆圆的脑袋两侧，原来它没有耳朵，看起来呆萌可爱。",
+      "prompt": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious., Second tiger cub pointing at the first one, then touching its head sides where ears should be, missing ears, confused but cute look, bright cartoon style, pastel background, Side profile view to clearly show the lack of ears while maintaining cuteness., Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+      "narration": "一只没有尾巴，一只没有耳朵",
+      "compositionHint": "Side profile view to clearly show the lack of ears while maintaining cuteness."
+    },
+    {
+      "id": 4,
+      "title": "奇怪的疑问",
+      "description": "两只小老虎面对面站着，歪着脑袋，眼睛里充满大大的问号，似乎在思考为什么自己和兄弟长得不一样。",
+      "prompt": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious., Two tiger cubs standing face to face, tilting heads, big question marks floating above them, confused and curious expressions, bright cartoon style, soft yellow background, Centered composition, symmetrical framing to emphasize their interaction., Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+      "narration": "真奇怪，真奇怪",
+      "compositionHint": "Centered composition, symmetrical framing to emphasize their interaction."
+    },
+    {
+      "id": 5,
+      "title": "快乐的重复",
+      "description": "画面回到广阔的草地，两只小老虎手拉手（或爪子搭爪子）一起转圈圈，虽然它们缺少尾巴和耳朵，但它们玩得很开心，周围飞舞着蝴蝶。",
+      "prompt": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious., Two tiger cubs holding paws and spinning around in a circle on grass, butterflies flying around, smiling broadly, bright cartoon style, colorful flowers in background, Circular motion lines to suggest spinning, vibrant and energetic composition., Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+      "narration": "两只老虎，两只老虎，跑得快，跑得快",
+      "compositionHint": "Circular motion lines to suggest spinning, vibrant and energetic composition."
+    },
+    {
+      "id": 6,
+      "title": "再次强调特点",
+      "description": "两只小老虎停下来，并排坐着，分别再次展示自己没有尾巴和没有耳朵的特征，但这次它们是骄傲地展示，而不是困惑。",
+      "prompt": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious., Two tiger cubs sitting side by side, one showing no tail, one showing no ears, proud and confident smiles, bright cartoon style, clean and simple background, Static pose, clear visual identification of each character's unique trait., Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+      "narration": "一只没有尾巴，一只没有耳朵",
+      "compositionHint": "Static pose, clear visual identification of each character's unique trait."
+    },
+    {
+      "id": 7,
+      "title": "温馨的团圆",
+      "description": "夕阳西下，温暖的金色阳光洒满大地。两只小老虎依偎在一起休息，或者邀请其他小动物朋友加入，形成一个温馨的大合照，传递友爱与接纳。",
+      "prompt": "Two cute, round tiger cubs with soft orange fur, big black stripes, and large innocent eyes. One has no tail (tail-less), and the other has no ears (ear-less). They wear simple white bibs. Their expressions are friendly and curious., Golden hour sunset, two tiger cubs cuddling together or hugging other cute animal friends, peaceful and warm atmosphere, bright cartoon style, heartwarming family portrait feel, Low angle shot looking up at the sky, warm color palette, emphasizing unity and love., Bright cartoon style, vibrant colors, rounded shapes, soft edges, suitable for infants and toddlers, high key lighting, cheerful atmosphere.",
+      "narration": "真奇怪，真奇怪",
+      "compositionHint": "Low angle shot looking up at the sky, warm color palette, emphasizing unity and love."
+    }
+  ]
+}

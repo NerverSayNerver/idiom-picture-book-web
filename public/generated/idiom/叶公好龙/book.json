@@ -13,7 +13,7 @@
       "prompt": "A cute young man with short black hair, wearing traditional ancient Chinese Hanfu robes in bright red and gold colors, round face, friendly expression., A cute young man with short black hair, wearing traditional ancient Chinese Hanfu robes in bright red and gold colors, round face, friendly expression. He is sitting in a cozy room filled with dragon decorations. Walls have dragon paintings, pillars have dragon carvings. Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere., Wide angle shot showing the room full of dragon items., Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere.",
       "compositionHint": "Wide angle shot showing the room full of dragon items.",
       "narration": "从前有个叶公，特别喜欢龙。他的家里到处都是龙的图案，连衣服上也绣着龙。",
-      "imageUrl": "/generated/idiom/叶公好龙/1.png"
+      "imageUrl": "/generated/idiom/叶公好龙/1.svg"
     },
     {
       "id": 2,
@@ -22,7 +22,7 @@
       "prompt": "A cute young man with short black hair, wearing traditional ancient Chinese Hanfu robes in bright red and gold colors, round face, friendly expression., A giant, colorful real dragon peeking its head from dark clouds in the sky, looking down at a house. Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere., High angle shot looking down from the sky., Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere.",
       "compositionHint": "High angle shot looking down from the sky.",
       "narration": "有一天，天上的真龙听到了叶公的故事，决定去拜访这位‘好朋友’。",
-      "imageUrl": "/generated/idiom/叶公好龙/2.png"
+      "imageUrl": "/generated/idiom/叶公好龙/2.svg"
     },
     {
       "id": 3,
@@ -31,7 +31,7 @@
       "prompt": "A cute young man with short black hair, wearing traditional ancient Chinese Hanfu robes in bright red and gold colors, round face, friendly expression., A giant, colorful real dragon sticking its head through a window, tail outside. Sunlight shining on shiny dragon scales. Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere., Medium shot focusing on the window and dragon's head., Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere.",
       "compositionHint": "Medium shot focusing on the window and dragon's head.",
       "narration": "真龙把头伸进窗户，想看看叶公。它的鳞片在阳光下闪闪发光，漂亮极了。",
-      "imageUrl": "/generated/idiom/叶公好龙/3.png"
+      "imageUrl": "/generated/idiom/叶公好龙/3.svg"
     },
     {
       "id": 4,
@@ -40,7 +40,7 @@
       "prompt": "A cute young man with short black hair, wearing traditional ancient Chinese Hanfu robes in bright red and gold colors, round face, friendly expression., The cute young man with short black hair and red Hanfu looks terrified, pale face, running away in panic, hands waving. Giant dragon head visible in background. Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere., Close-up on E'gong's fearful face and running body., Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere.",
       "compositionHint": "Close-up on E'gong's fearful face and running body.",
       "narration": "可是，当叶公看到真的龙时，他吓得脸色发白，转身就跑，嘴里喊着：‘哎呀，是龙！’",
-      "imageUrl": "/generated/idiom/叶公好龙/4.png"
+      "imageUrl": "/generated/idiom/叶公好龙/4.svg"
     },
     {
       "id": 5,
@@ -49,7 +49,7 @@
       "prompt": "A cute young man with short black hair, wearing traditional ancient Chinese Hanfu robes in bright red and gold colors, round face, friendly expression., The giant dragon shaking its head disappointedly and flying back into the sky. The cute young man hiding in a corner looking up. Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere., Low angle shot showing the dragon flying away and E'gong below., Children's picture book illustration style, soft pastel watercolor texture, warm lighting, flat 2D vector art, no shadows, high saturation, cute and whimsical atmosphere.",
       "compositionHint": "Low angle shot showing the dragon flying away and E'gong below.",
       "narration": "真龙失望地摇摇头，飞走了。叶公这才明白，他喜欢的只是像龙的装饰，而不是真正的龙。",
-      "imageUrl": "/generated/idiom/叶公好龙/5.png"
+      "imageUrl": "/generated/idiom/叶公好龙/5.svg"
     }
   ]
 }

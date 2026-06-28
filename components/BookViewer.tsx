@@ -5,6 +5,7 @@ import type { PictureBook } from '@/lib/types'
 import { VideoGenerator } from './VideoGenerator'
 import { generatePDF } from '@/lib/pdf'
 import { useTTS } from '@/hooks/useTTS'
+import { getStrategy } from '@/lib/content-types'
 
 interface BookViewerProps {
   book: PictureBook
@@ -15,6 +16,9 @@ const RATES = [0.5, 0.75, 1.0, 1.25, 1.5]
 export function BookViewer({ book }: BookViewerProps) {
   // 页面索引: 0=封面, 1~N=场景, N+1=含义页
   const [currentPage, setCurrentPage] = useState(0)
+  const categoryLabel = (() => {
+    try { return getStrategy(book.category).label } catch { return '内容' }
+  })()
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [showVideoGenerator, setShowVideoGenerator] = useState(false)
   const totalPages = book.scenes.length + 2 // 封面 + 场景 + 含义页
@@ -48,7 +52,7 @@ export function BookViewer({ book }: BookViewerProps) {
     if (scene.imageUrl) return scene.imageUrl
     if (scene.imageBlob) return sceneBlobUrls.get(scene.id) || ''
     if (book.category && book.sourceText) {
-      return `/generated/${book.category}/${book.sourceText}/${scene.id}.png`
+      return `/generated/${book.category}/${book.sourceText}/${scene.id}.svg`
     }
     return ''
   }, [book.category, book.sourceText, sceneBlobUrls])
@@ -320,7 +324,7 @@ export function BookViewer({ book }: BookViewerProps) {
             <div className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-card p-8 shadow-lg text-center">
               <div className="text-6xl mb-6">💡</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                成语含义
+                {categoryLabel}含义
               </h2>
               <p className="text-xl text-gray-700 mb-8 leading-relaxed">
                 {book.meaning}

@@ -20,7 +20,7 @@ function assert(condition, msg) {
 
 async function runE2ETest() {
   console.log('========================================');
-  console.log('成语绘本工坊 - 完整端到端测试');
+  console.log('绘本工坊 - 完整端到端测试');
   console.log('========================================\n');
 
   const browser = await chromium.launch({ headless: true });
@@ -33,20 +33,42 @@ async function runE2ETest() {
     await page.waitForTimeout(3000);
 
     const title = await page.title();
-    assert(title.includes('成语绘本工坊'), `页面标题 "${title}" 包含 "成语绘本工坊"`);
+    assert(title.includes('绘本工坊'), `页面标题 "${title}" 包含 "绘本工坊"`);
 
-    // 检查核心元素
-    const headerExists = await page.locator('header').count() > 0;
-    assert(headerExists, 'header 组件渲染');
+    // 检查品类 Tab 导航（scope 到 CategoryTabs 区域：border-b 父容器内的 rounded-t-lg 按钮）
+    const tabsArea = page.locator('.border-b.border-gray-200');
+    const categoryTabs = await tabsArea.locator('button:has-text("成语")').count() > 0;
+    assert(categoryTabs, '品类 Tab 导航显示');
 
-    const idiomGridExists = await page.locator('text=选择成语').count() > 0;
-    assert(idiomGridExists, '成语选择区域显示');
+    // 检查品类 Tab：古诗、儿歌、谚语、童话
+    const poetryTab = await tabsArea.locator('button:has-text("古诗")').count() > 0;
+    assert(poetryTab, '古诗品类 Tab 显示');
 
+    const nurseryTab = await tabsArea.locator('button:has-text("儿歌")').count() > 0;
+    assert(nurseryTab, '儿歌曲类 Tab 显示');
+
+    const proverbTab = await tabsArea.locator('button:has-text("谚语")').count() > 0;
+    assert(proverbTab, '谚语品类 Tab 显示');
+
+    const fairyTab = await tabsArea.locator('button:has-text("童话")').count() > 0;
+    assert(fairyTab, '童话品类 Tab 显示');
+
+    // 检查内容选择区域
+    const contentSelectorExists = await page.locator('text=选择成语').count() > 0;
+    assert(contentSelectorExists, '内容选择区域显示');
+
+    // 检查任务队列
     const taskQueueExists = await page.locator('text=任务队列').count() > 0;
     assert(taskQueueExists, '任务队列区域显示');
 
-    const bookShelfExists = await page.locator('text=我的绘本书架').count() > 0;
-    assert(bookShelfExists, '绘本书架区域显示');
+    // 检查绘本成品（书架）
+    const bookShelfExists = await page.locator('text=绘本成品').count() > 0;
+    assert(bookShelfExists, '绘本成品区域显示');
+
+    // 检查书架中已加载预生成绘本（index.json 中有 21 本，分布在 5 个品类）
+    const bookCountText = await page.locator('span:has-text("本")').first().textContent();
+    const bookNum = parseInt(bookCountText) || 0;
+    assert(bookNum >= 20, `书架显示 ${bookNum} 本预生成绘本 (>= 20)`);
 
     // 检查内置成语是否显示
     const expectIdioms = ['画蛇添足', '守株待兔', '亡羊补牢', '井底之蛙', '狐假虎威',
@@ -58,14 +80,14 @@ async function runE2ETest() {
 
     // ====== Step 2: 自定义输入验证 ======
     console.log('\n【Step 2】测试自定义输入...');
-    const input = page.locator('input[placeholder="输入自定义成语..."]');
+    const input = page.locator('input[placeholder="输入成语..."]');
     assert(await input.count() > 0, '自定义输入框存在');
 
     await input.fill('杯弓蛇影');
     const inputValue = await input.inputValue();
     assert(inputValue === '杯弓蛇影', `输入框值正确: "${inputValue}"`);
 
-    // 未选中成语时，"开始生成"按钮应禁用
+    // 输入后"开始生成"按钮应启用
     const startBtn = page.locator('button:has-text("开始生成")');
     await page.waitForTimeout(500);
     const isDisabled = await startBtn.isDisabled();
@@ -83,91 +105,52 @@ async function runE2ETest() {
     assert(await refreshBtn.count() > 0, '换一批按钮存在');
 
     // 点击换一批，需要有正常响应
-    const initialIdioms = await page.locator('button:has-text("画蛇添足")').count();
     await refreshBtn.click();
     await page.waitForTimeout(2000);
     // 刷新按钮不应导致崩溃
     const pageOk = await page.locator('text=任务队列').count() > 0;
     assert(pageOk, '换一批后页面仍然正常');
 
-    // ====== Step 4: 批量选择测试 ======
-    console.log('\n【Step 4】测试批量选择...');
-    // 在紧凑模式下（首页），点击成语触发批量选择
-    const selectFirst = page.locator('button:has-text("掩耳盗铃")');
-    const selectSecond = page.locator('button:has-text("刻舟求剑")');
-    
-    if (await selectFirst.count() > 0) {
-      await selectFirst.click();
-      await page.waitForTimeout(300);
-      // 检查是否出现批量生成按钮
-      const batchBtn = page.locator('button:has-text("批量生成")');
-      const batchExists = await batchBtn.count() > 0;
-      assert(batchExists, '选择成语后出现批量生成按钮');
-      
-      if (batchExists) {
-        const batchText = await batchBtn.textContent();
-        assert(batchText.includes('1'), `批量按钮显示数量: "${batchText}"`);
-      }
-      
-      await selectSecond.click();
-      await page.waitForTimeout(300);
-      const batchText2 = await page.locator('button:has-text("批量生成")').textContent();
-      assert(batchText2.includes('2'), `选择两个后批量按钮显示: "${batchText2}"`);
-    }
+    // ====== Step 4: 品类切换测试 ======
+    console.log('\n【Step 4】测试品类切换...');
+    // 点击古诗 Tab
+    const tabsAreaStep4 = page.locator('.border-b.border-gray-200');
+    const poetryTabBtn = tabsAreaStep4.locator('button:has-text("古诗")');
+    if (await poetryTabBtn.count() > 0) {
+      await poetryTabBtn.click();
+      await page.waitForTimeout(1000);
+      // 检查内容选择区域是否更新
+      const poetryContent = await page.locator('text=选择古诗').count() > 0;
+      assert(poetryContent, '切换到古诗品类后，内容选择区域显示"选择古诗"');
 
-    // ====== Step 5: 选中单个成语跳转 ======
-    console.log('\n【Step 5】测试单个成语选择...');
-    // 清除所有选择（点击刷新或重新加载）
-    await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
-
-    // 检查是否有已存在的绘本（预生成的绘本可能有）
-    const existingIdioms = new Set();
-    for (const idiom of expectIdioms) {
-      const btn = page.locator(`button:has-text("${idiom}")`);
-      if (await btn.count() > 0) {
-        // 检查是否有绿色勾（表示已有绘本）
-        const parent = btn.locator('..');
-        const hasCheckmark = await parent.locator('text=✓').count() > 0;
-        if (hasCheckmark) existingIdioms.add(idiom);
-      }
-    }
-    console.log(`  已有绘本的成语: ${[...existingIdioms].join(', ') || '无'}`);
-
-    // 点击已有绘本的成语应跳转到阅读页
-    // 先点击一个没有绘本的成语
-    const targetIdiom = '掩耳盗铃';
-    await page.locator(`button:has-text("${targetIdiom}")`).first().click();
-    await page.waitForTimeout(500);
-    
-    // 检查是否弹出了"开始生成"或"批量生成"（表示进入生成模式）
-    const afterClickBatch = page.locator('button:has-text("批量生成")');
-    const afterClickStart = page.locator('button:has-text("开始生成")');
-    const generationMode = await afterClickBatch.count() > 0 || await afterClickStart.count() > 0;
-    assert(generationMode, `选择 "${targetIdiom}" 后进入生成模式`);
-
-    // ====== Step 6: 导航测试 ======
-    console.log('\n【Step 6】测试导航链接...');
-    const libraryLink = page.locator('a:has-text("绘本库")');
-    if (await libraryLink.count() > 0) {
-      await libraryLink.click();
-      await page.waitForTimeout(2000);
-      const currentUrl = page.url();
-      assert(currentUrl.includes('/') || currentUrl.includes('/library'),
-        `绘本库链接导航正确: "${currentUrl}"`);
-    }
-
-    // 返回首页
-    const homeLink = page.locator('a:has-text("创建")');
-    if (await homeLink.count() > 0) {
-      await homeLink.click();
+      // 切换回成语
+      const idiomTabBtn = tabsAreaStep4.locator('button:has-text("成语")');
+      await idiomTabBtn.click();
       await page.waitForTimeout(2000);
     }
 
-    // ====== Step 7: 阅读预生成绘本 ======
-    console.log('\n【Step 7】测试阅读预生成绘本...');
+    // ====== Step 5: 选中成语后开始生成 ======
+    console.log('\n【Step 5】测试选中成语后开始生成...');
+    // 等待内容列表加载，点击第一个可见的成语按钮
+    await page.waitForTimeout(2000);
+    const contentGrid = page.locator('.grid-cols-5 button').first();
+    const gridCount = await page.locator('.grid-cols-5 button').count();
+    assert(gridCount > 0, `内容选择列表有 ${gridCount} 个条目`);
+
+    if (gridCount > 0) {
+      await contentGrid.click();
+      await page.waitForTimeout(500);
+    }
+
+    // 检查开始按钮是否启用
+    const startBtnAfterSelect = page.locator('button:has-text("开始生成")');
+    const isEnabledAfterSelect = !(await startBtnAfterSelect.isDisabled());
+    assert(isEnabledAfterSelect, '选中成语后开始按钮已启用');
+
+    // ====== Step 6: 阅读预生成绘本 ======
+    console.log('\n【Step 6】测试阅读预生成绘本...');
     // 直接访问叶公好龙的预生成绘本
-    await page.goto(`${BASE_URL}/read/叶公好龙`, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.goto(`${BASE_URL}/read/idiom:叶公好龙`, { waitUntil: 'networkidle', timeout: 15000 });
     await page.waitForTimeout(3000);
 
     const readPageTitle = await page.title();
@@ -208,11 +191,11 @@ async function runE2ETest() {
       await page.locator('text=Speak').count() > 0;
     assert(hasTts, '阅读页有 TTS 按钮');
 
-    // ====== Step 8: 错误页面测试 ======
-    console.log('\n【Step 8】测试错误页面...');
-    await page.goto(`${BASE_URL}/read/nonexistent-book-12345`, { waitUntil: 'networkidle', timeout: 15000 });
-    await page.waitForTimeout(2000);
-    
+    // ====== Step 7: 错误页面测试 ======
+    console.log('\n【Step 7】测试错误页面...');
+    await page.goto(`${BASE_URL}/read/nonexistent-book-12345`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.waitForTimeout(5000);
+
     const errorText = await page.locator('text=绘本未找到').count() > 0;
     const hasHomeLink = await page.locator('a:has-text("返回首页")').count() > 0;
     assert(errorText && hasHomeLink, '不存在的绘本显示错误页和返回按钮');
@@ -221,7 +204,7 @@ async function runE2ETest() {
     console.log('\n========================================');
     console.log(`测试完成！✅ ${passed} 通过, ❌ ${failed} 失败`);
     console.log('========================================');
-    
+
     if (errors.length > 0) {
       console.log('\n失败详情:');
       errors.forEach((e, i) => console.log(`  ${i+1}. ${e}`));

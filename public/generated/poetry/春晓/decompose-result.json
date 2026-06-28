@@ -1,0 +1,40 @@
+{
+  "idiom": "春晓",
+  "meaning": "春天睡觉时不知不觉天就亮了，到处都能听到鸟儿快乐的叫声。想起昨天夜里刮风下雨的声音，不知道有多少美丽的花儿被吹落了呢？",
+  "characterDescription": "",
+  "styleDescription": "Classical Chinese ink wash painting style, soft pastel colors, delicate gongbi details on flowers and birds, whimsical and child-friendly atmosphere, high quality, 8k resolution.",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "春眠不觉晓",
+      "description": "清晨的阳光透过窗纱洒在柔软的床上，一个小孩子还在香甜地睡梦中，窗外是朦胧的绿意。",
+      "prompt": "A cozy bedroom scene in morning light, soft sunlight filtering through paper windows, a cute child sleeping peacefully under a quilt, blurred green plants visible outside the window, classical Chinese ink style, soft warm tones., Close-up on the sleeping child, soft focus background, warm lighting from the left., Classical Chinese ink wash painting style, soft pastel colors, delicate gongbi details on flowers and birds, whimsical and child-friendly atmosphere, high quality, 8k resolution.",
+      "narration": "春眠不觉晓。春天睡得很香，不知不觉天就亮了。",
+      "compositionHint": "Close-up on the sleeping child, soft focus background, warm lighting from the left."
+    },
+    {
+      "id": 2,
+      "title": "处处闻啼鸟",
+      "description": "孩子睁开眼，窗外树枝上停着几只可爱的小鸟，它们正在叽叽喳喳地唱歌，仿佛在打招呼。",
+      "prompt": "View from inside looking out, two or three cute cartoon-style birds perched on willow branches, chirping happily, soft ink brush strokes for leaves, bright and cheerful atmosphere, classical Chinese painting style., Medium shot focusing on the birds on the branch, eye-level perspective., Classical Chinese ink wash painting style, soft pastel colors, delicate gongbi details on flowers and birds, whimsical and child-friendly atmosphere, high quality, 8k resolution.",
+      "narration": "处处闻啼鸟。到处都能听到小鸟们快乐歌唱的声音。",
+      "compositionHint": "Medium shot focusing on the birds on the branch, eye-level perspective."
+    },
+    {
+      "id": 3,
+      "title": "夜来风雨声",
+      "description": "画面切换到昨夜的记忆，月亮躲在云层后，风吹动树枝，雨点轻轻打在屋檐上，带有一丝神秘感。",
+      "prompt": "Nighttime flashback scene, soft moonlight behind clouds, wind blowing willow branches gently, raindrops falling on traditional roof tiles, cool blue and grey tones, mysterious but gentle mood, classical ink style., Wide shot showing the night sky and eaves, dynamic lines for wind and rain., Classical Chinese ink wash painting style, soft pastel colors, delicate gongbi details on flowers and birds, whimsical and child-friendly atmosphere, high quality, 8k resolution.",
+      "narration": "夜来风雨声。想起昨晚刮风下雨的声音，哗啦啦的。",
+      "compositionHint": "Wide shot showing the night sky and eaves, dynamic lines for wind and rain."
+    },
+    {
+      "id": 4,
+      "title": "花落知多少",
+      "description": "第二天早上，地面上铺满了飘落的花瓣，一只小蝴蝶停在花瓣上，花朵虽然落了但依然很美，充满惜春的童趣。",
+      "prompt": "Ground level view, fallen pink and white flower petals scattered on green grass, a small butterfly resting on a petal, soft morning light, detailed floral patterns, melancholic yet beautiful feeling, classical Chinese ink and color style., Low angle shot focusing on fallen flowers and butterfly, depth of field., Classical Chinese ink wash painting style, soft pastel colors, delicate gongbi details on flowers and birds, whimsical and child-friendly atmosphere, high quality, 8k resolution.",
+      "narration": "花落知多少。不知道有多少漂亮的花朵被风吹落了呢？",
+      "compositionHint": "Low angle shot focusing on fallen flowers and butterfly, depth of field."
+    }
+  ]
+}

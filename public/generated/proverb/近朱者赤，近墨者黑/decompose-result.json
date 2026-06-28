@@ -1,0 +1,48 @@
+{
+  "idiom": "近朱者赤，近墨者黑",
+  "meaning": "和什么样的人在一起，自己也会慢慢变成那样的人。所以我们要多交好朋友，学习他们的优点。",
+  "characterDescription": "A cute little red panda named 'Hao Hao' with fluffy red fur, big round ears, and a long striped tail. He wears a simple blue t-shirt and yellow shorts. His expressions are expressive and friendly.",
+  "styleDescription": "Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8. High quality, detailed but not cluttered.",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "爱干净的小兔",
+      "description": "好和好兔子在草地上玩。小兔把掉在地上的树叶捡起来扔进垃圾桶，还帮好好整理歪掉的帽子。好好看着干干净净的草地，心里觉得亮堂堂的，他也开始注意起自己的小爪子了。",
+      "prompt": "A cute little red panda named 'Hao Hao' with fluffy red fur, big round ears, and a long striped tail. He wears a simple blue t-shirt and yellow shorts. His expressions are expressive and friendly., A little red panda and a white rabbit playing on a green grassy field. The rabbit is picking up fallen leaves and putting them in a trash bin. The red panda looks at his own paws, appearing inspired and clean. Soft sunlight, warm watercolor style, peaceful park setting., Medium shot showing both characters interacting with the environment, focusing on the act of cleaning up and the positive reaction of the red panda., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8. High quality, detailed but not cluttered.",
+      "narration": "小兔爱清洁，落叶归筐里。\n好好看一看，也要讲卫生。",
+      "compositionHint": "Medium shot showing both characters interacting with the environment, focusing on the act of cleaning up and the positive reaction of the red panda."
+    },
+    {
+      "id": 2,
+      "title": "爱画画的小猴",
+      "description": "好和好小猴子坐在树桩上。小猴子拿着蜡笔，在纸上画出了彩虹和太阳，色彩鲜艳又开心。好好想试试，于是也拿起笔，跟着小猴子一起涂鸦，发现画画真有趣。",
+      "prompt": "A cute little red panda named 'Hao Hao' with fluffy red fur, big round ears, and a long striped tail. He wears a simple blue t-shirt and yellow shorts. His expressions are expressive and friendly., A little red panda and a playful monkey sitting on a tree stump. The monkey is drawing colorful rainbows and suns with crayons. The red panda is watching intently, holding a crayon, looking curious and happy. Bright colors, artistic vibe, cozy forest corner., Close-up on their hands and the drawing paper, capturing the shared joy of creativity and the red panda's engagement., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8. High quality, detailed but not cluttered.",
+      "narration": "小猴爱画画，颜色真漂亮。\n好好跟着学，心里暖洋洋。",
+      "compositionHint": "Close-up on their hands and the drawing paper, capturing the shared joy of creativity and the red panda's engagement."
+    },
+    {
+      "id": 3,
+      "title": "爱说谎的小狐狸",
+      "description": "好和好小狐狸在一起。小狐狸为了逃避扫地，指着大树说‘是小树先动的’。其他小动物都不理他了。好好觉得有点孤单，他想起小兔和小猴的真诚，悄悄走开了。",
+      "prompt": "A cute little red panda named 'Hao Hao' with fluffy red fur, big round ears, and a long striped tail. He wears a simple blue t-shirt and yellow shorts. His expressions are expressive and friendly., A little red panda standing slightly apart from a mischievous fox. The fox is pointing at a tree blamelessly. Other small animals in the background look away or frown. The red panda has a thoughtful, slightly sad expression. Muted tones compared to previous scenes, emphasizing the emotional distance., Wide shot showing social exclusion. The red panda is visually separated from the group, highlighting the consequence of dishonesty., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8. High quality, detailed but not cluttered.",
+      "narration": "小狐狸撒谎，大家不理他。\n好好多想想，诚实才最好。",
+      "compositionHint": "Wide shot showing social exclusion. The red panda is visually separated from the group, highlighting the consequence of dishonesty."
+    },
+    {
+      "id": 4,
+      "title": "爱运动的小熊",
+      "description": "好和好小熊在操场上跑步。小熊跑得很快，摔倒了也不哭，拍拍土站起来继续跑。好好被这种坚持感染，虽然腿酸酸的，但也咬着牙坚持跑完了全程，感觉自己变强了。",
+      "prompt": "A cute little red panda named 'Hao Hao' with fluffy red fur, big round ears, and a long striped tail. He wears a simple blue t-shirt and yellow shorts. His expressions are expressive and friendly., A little red panda and a strong brown bear running on a playground track. The bear falls but gets up quickly, smiling bravely. The red panda is running beside him, sweating but determined, looking inspired. Dynamic pose, energetic atmosphere, bright daylight., Action shot capturing movement and determination. Focus on the red panda's facial expression of resilience influenced by the bear., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8. High quality, detailed but not cluttered.",
+      "narration": "小熊爱运动，跌倒不害怕。\n好好多努力，勇气变大啦。",
+      "compositionHint": "Action shot capturing movement and determination. Focus on the red panda's facial expression of resilience influenced by the bear."
+    },
+    {
+      "id": 5,
+      "title": "好朋友的力量",
+      "description": "好好身边围着小兔、小猴和小熊。他们一起打扫、一起画画、一起运动。好好笑着说：‘原来和朋友在一起，我也变得这么棒！’",
+      "prompt": "A cute little red panda named 'Hao Hao' with fluffy red fur, big round ears, and a long striped tail. He wears a simple blue t-shirt and yellow shorts. His expressions are expressive and friendly., The little red panda surrounded by the rabbit, monkey, and bear. They are all smiling and holding hands or hugging. The scene is bright, cheerful, and full of friendship. Warm golden hour lighting, heartwarming group portrait., Centered composition with the red panda in the middle, symbolizing his growth through positive influences. Circular arrangement to show unity., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8. High quality, detailed but not cluttered.",
+      "narration": "",
+      "compositionHint": "Centered composition with the red panda in the middle, symbolizing his growth through positive influences. Circular arrangement to show unity."
+    }
+  ]
+}

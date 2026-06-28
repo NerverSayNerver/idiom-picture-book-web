@@ -189,11 +189,13 @@ function updateIndex(category, id, book) {
   const existing = cat.items.findIndex(i => i.id === id)
   const entry = {
     id,
+    sourceText: book.sourceText || id,
     title: book.title,
     meaning: book.meaning,
     sceneCount: book.scenes.length,
     author: book.author,
     dynasty: book.dynasty,
+    createdAt: book.createdAt,
   }
 
   if (existing >= 0) cat.items[existing] = entry

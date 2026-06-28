@@ -1,0 +1,73 @@
+{
+  "id": "小燕子",
+  "category": "nursery-rhyme",
+  "sourceText": "小燕子",
+  "title": "小燕子",
+  "meaning": "这首儿歌通过描绘小燕子的迁徙与生活习性，向幼儿传递热爱自然、观察动物习性的教育意义，同时旋律轻快，有助于培养宝宝的语言韵律感和对春天的喜爱之情。",
+  "createdAt": "2026-06-28T04:36:50.598Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "小燕子，穿花衣",
+      "description": "一只圆滚滚的小燕子穿着黑色‘外套’和白色‘衬衫’，在春日阳光下开心地向镜头飞来，翅膀微微张开，脸上带着灿烂的笑容。",
+      "prompt": "A cute little swallow with glossy black feathers, a white belly, and a forked tail. It has large, expressive dark eyes, small orange beak, and tiny red feet. The character design is round and soft, suitable for toddlers., A cute little swallow flying towards the viewer, wearing its black and white feathers like clothes, bright sunny spring background, glossy black wings, white belly, happy expression, bright cartoon style, vivid colors, soft focus background of blooming flowers., Center composition, close-up shot focusing on the swallow's face and upper body, eye-level angle., Bright cartoon style, vivid colors, soft edges, rounded and cute aesthetic, high saturation, warm lighting, ideal for infants and toddlers.",
+      "compositionHint": "Center composition, close-up shot focusing on the swallow's face and upper body, eye-level angle.",
+      "narration": "小燕子，穿花衣，",
+      "imageUrl": "/generated/nursery-rhyme/小燕子/1.png"
+    },
+    {
+      "id": 2,
+      "title": "年年春天来这里",
+      "description": "小燕子从远处飞入一个充满生机的庭院，背景是嫩绿的柳枝和粉红的桃花，它好奇地四处张望，眼神明亮，显得非常兴奋。",
+      "prompt": "A cute little swallow with glossy black feathers, a white belly, and a forked tail. It has large, expressive dark eyes, small orange beak, and tiny red feet. The character design is round and soft, suitable for toddlers., The swallow flying into a vibrant garden courtyard, willow branches with fresh green leaves, pink peach blossoms in background, swallow looking around curiously with wide bright eyes, joyful atmosphere, bright cartoon style, soft pastel colors mixed with vivid greens and pinks., Wide shot showing the environment and the bird entering from the top left, leading the eye into the center., Bright cartoon style, vivid colors, soft edges, rounded and cute aesthetic, high saturation, warm lighting, ideal for infants and toddlers.",
+      "compositionHint": "Wide shot showing the environment and the bird entering from the top left, leading the eye into the center.",
+      "narration": "年年春天来这里，",
+      "imageUrl": "/generated/nursery-rhyme/小燕子/2.png"
+    },
+    {
+      "id": 3,
+      "title": "我问燕子你为啥来",
+      "description": "一个可爱的卡通幼儿（穿着背带裤）仰着头，双手托腮，一脸天真地问着面前盘旋的小燕子。小燕子停在幼儿的手指上，歪着头似乎在思考。",
+      "prompt": "A cute little swallow with glossy black feathers, a white belly, and a forked tail. It has large, expressive dark eyes, small orange beak, and tiny red feet. The character design is round and soft, suitable for toddlers., A cute toddler boy/girl in overalls looking up with hands on cheeks, asking a question. A little swallow perched on the child's finger, tilting head as if thinking, soft smile on child's face, spring garden background, bright cartoon style, gentle interaction, rounded shapes., Medium shot, capturing the interaction between the child and the bird, shallow depth of field to blur the background slightly., Bright cartoon style, vivid colors, soft edges, rounded and cute aesthetic, high saturation, warm lighting, ideal for infants and toddlers.",
+      "compositionHint": "Medium shot, capturing the interaction between the child and the bird, shallow depth of field to blur the background slightly.",
+      "narration": "我问燕子你为啥来？",
+      "imageUrl": "/generated/nursery-rhyme/小燕子/3.png"
+    },
+    {
+      "id": 4,
+      "title": "燕子说，这里的春天最美丽",
+      "description": "小燕子展翅飞翔，身后留下一道优美的弧线，它回头看向镜头，眼神自信而快乐。周围环绕着蝴蝶和花朵，象征着春天的美好。",
+      "prompt": "A cute little swallow with glossy black feathers, a white belly, and a forked tail. It has large, expressive dark eyes, small orange beak, and tiny red feet. The character design is round and soft, suitable for toddlers., The swallow flying dynamically with wings spread wide, looking back at the viewer with a confident and happy expression, trailing a soft motion line, surrounded by fluttering butterflies and blooming flowers, celebrating the beauty of spring, bright cartoon style, energetic composition., Diagonal composition creating a sense of movement, bird positioned in the upper right moving towards lower left., Bright cartoon style, vivid colors, soft edges, rounded and cute aesthetic, high saturation, warm lighting, ideal for infants and toddlers.",
+      "compositionHint": "Diagonal composition creating a sense of movement, bird positioned in the upper right moving towards lower left.",
+      "narration": "燕子说，这里的春天最美丽！",
+      "imageUrl": "/generated/nursery-rhyme/小燕子/4.png"
+    },
+    {
+      "id": 5,
+      "title": "小燕子，告诉你",
+      "description": "小燕子飞回巢穴，巢穴搭建在屋檐下，温暖舒适。燕子妈妈正在喂食小燕子，小燕子张大嘴巴等待食物，表情期待又满足。",
+      "prompt": "A cute little swallow with glossy black feathers, a white belly, and a forked tail. It has large, expressive dark eyes, small orange beak, and tiny red feet. The character design is round and soft, suitable for toddlers., Close up of a cozy nest under an eave. Mother swallow feeding baby swallow. Baby swallow with open beak, eager and happy expression, mother swallow smiling gently. Warm homey atmosphere, soft textures, bright cartoon style, safe and nurturing environment., Close-up on the nest and the birds, emphasizing the emotional connection and care., Bright cartoon style, vivid colors, soft edges, rounded and cute aesthetic, high saturation, warm lighting, ideal for infants and toddlers.",
+      "compositionHint": "Close-up on the nest and the birds, emphasizing the emotional connection and care.",
+      "narration": "小燕子，告诉你，",
+      "imageUrl": "/generated/nursery-rhyme/小燕子/5.png"
+    },
+    {
+      "id": 6,
+      "title": "我的新家在这里",
+      "description": "全景展示温馨的家庭画面。燕子爸爸、妈妈和孩子在屋前的空地上一起玩耍，背景是美丽的乡村小屋和蓝天白云，大家手拉手（或翅膀挨翅膀），笑容满面。",
+      "prompt": "A cute little swallow with glossy black feathers, a white belly, and a forked tail. It has large, expressive dark eyes, small orange beak, and tiny red feet. The character design is round and soft, suitable for toddlers., Full scene of the swallow family (mom, dad, baby) playing together in front of a cute country house under blue sky with fluffy clouds. They are standing close together, wings touching, big smiles on their faces. Peaceful, happy, harmonious setting, bright cartoon style, inviting colors., Wide shot establishing the setting and the family unit, balanced composition, horizontal orientation., Bright cartoon style, vivid colors, soft edges, rounded and cute aesthetic, high saturation, warm lighting, ideal for infants and toddlers.",
+      "compositionHint": "Wide shot establishing the setting and the family unit, balanced composition, horizontal orientation.",
+      "narration": "我的新家在这里。",
+      "imageUrl": "/generated/nursery-rhyme/小燕子/6.png"
+    },
+    {
+      "id": 7,
+      "title": "快乐的大合唱",
+      "description": "所有小动物（小燕子、小兔子、小鸭子等）围成一圈，在春天的草地上开演唱会。小燕子站在中间指挥，大家张嘴歌唱，气氛热烈欢快，阳光洒满整个画面。",
+      "prompt": "A cute little swallow with glossy black feathers, a white belly, and a forked tail. It has large, expressive dark eyes, small orange beak, and tiny red feet. The character design is round and soft, suitable for toddlers., A group of cute animal friends including swallows, rabbits, and ducks sitting in a circle on green grass. The main swallow stands in the center conducting or singing lead. All animals have open mouths singing joyfully. Sunlight streaming down, sparkles in the air, festive and cheerful mood, bright cartoon style, highly saturated colorful palette., Circular composition drawing the eye to the center conductor, dynamic energy radiating outwards., Bright cartoon style, vivid colors, soft edges, rounded and cute aesthetic, high saturation, warm lighting, ideal for infants and toddlers.",
+      "compositionHint": "Circular composition drawing the eye to the center conductor, dynamic energy radiating outwards.",
+      "narration": "啦啦啦，啦啦啦，春天来了真美丽！",
+      "imageUrl": "/generated/nursery-rhyme/小燕子/7.png"
+    }
+  ]
+}

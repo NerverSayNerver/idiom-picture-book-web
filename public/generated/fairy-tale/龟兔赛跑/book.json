@@ -1,0 +1,55 @@
+{
+  "id": "龟兔赛跑",
+  "category": "fairy-tale",
+  "sourceText": "龟兔赛跑",
+  "title": "龟兔赛跑",
+  "meaning": "做事情不能骄傲自大，坚持到底的人才能获得最终的胜利。",
+  "createdAt": "2026-06-28T03:54:56.242Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "骄傲的兔子",
+      "description": "other animals watching, the turtle looking determined, competitive atmosphere, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "A proud white rabbit laughing at a small green turtle on a forest path, other animals watching, the turtle looking determined, competitive atmosphere, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "兔子嘲笑乌龟走路太慢，乌龟不服气，要和兔子比赛跑步！",
+      "imageUrl": "/generated/fairy-tale/龟兔赛跑/1.svg"
+    },
+    {
+      "id": 2,
+      "title": "比赛开始",
+      "description": "a start line with a flag, forest track, dynamic motion contrast, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "A rabbit zooming away in a dust cloud while a small turtle slowly starts walking, a start line with a flag, forest track, dynamic motion contrast, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "随着一声哨响，兔子飞快地跑远了，乌龟慢吞吞地往前爬。",
+      "imageUrl": "/generated/fairy-tale/龟兔赛跑/2.svg"
+    },
+    {
+      "id": 3,
+      "title": "兔子睡觉",
+      "description": "the turtle slowly passing by in the background, peaceful forest setting, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "A rabbit yawning and falling asleep under a shady tree, the turtle slowly passing by in the background, peaceful forest setting, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "兔子跑了一半，回头看看乌龟还在很远的地方。它打了个哈欠，在树下睡着了。",
+      "imageUrl": "/generated/fairy-tale/龟兔赛跑/3.svg"
+    },
+    {
+      "id": 4,
+      "title": "乌龟坚持",
+      "description": "sunset in background, sweat drops showing effort, focused expression, inspiring mood, soft watercolor illustration, pastel colors, children book.",
+      "prompt": "A determined turtle walking step by step along a forest path, sunset in background, sweat drops showing effort, focused expression, inspiring mood, soft watercolor illustration, pastel colors, children book.",
+      "compositionHint": "",
+      "narration": "太阳快下山了，乌龟还在一步一步地往前爬，从来没有停下来。",
+      "imageUrl": "/generated/fairy-tale/龟兔赛跑/4.svg"
+    },
+    {
+      "id": 5,
+      "title": "乌龟赢了",
+      "description": "the rabbit running up behind looking shocked, all forest animals cheering, celebration scene, soft watercolor illustration, pastel colors, children book, triumphant moment.",
+      "prompt": "The turtle crossing the finish line with a flag, the rabbit running up behind looking shocked, all forest animals cheering, celebration scene, soft watercolor illustration, pastel colors, children book, triumphant moment.",
+      "compositionHint": "",
+      "narration": "乌龟到达了终点！兔子醒来的时候，乌龟已经赢了！坚持就是胜利！",
+      "imageUrl": "/generated/fairy-tale/龟兔赛跑/5.svg"
+    }
+  ]
+}

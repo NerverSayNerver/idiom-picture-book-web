@@ -1,0 +1,48 @@
+{
+  "idiom": "三个臭皮匠，顶个诸葛亮",
+  "meaning": "一个人的力量是有限的，但大家一起努力、互相帮忙，就能解决大难题，发挥出比一个人强大得多的力量。",
+  "characterDescription": "Three cute, fluffy red panda cubs named Ben, Bin, and Bun. They wear different colored knitted scarves: Ben wears blue, Bin wears yellow, and Bun wears pink. They have big expressive eyes and soft round ears.",
+  "styleDescription": "Warm, cozy watercolor illustration style with soft pastel colors. Soft lighting, rounded shapes suitable for children aged 3-8. Gentle texture, inviting and friendly atmosphere.",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "搬不动的大蜂蜜罐",
+      "description": "在温暖的树洞里，三只小熊猫发现了一个巨大的蜂蜜罐。本（Ben）一个人怎么推也推不动，累得满头大汗。斌（Bin）和奔（Bun）走过来，大家商量了一下，一起用手推、用背顶，终于把蜂蜜罐滚到了桌子下。",
+      "prompt": "Three cute, fluffy red panda cubs named Ben, Bin, and Bun. They wear different colored knitted scarves: Ben wears blue, Bin wears yellow, and Bun wears pink. They have big expressive eyes and soft round ears., Three fluffy red panda cubs trying to move a giant honey jar in a cozy wooden cave. One cub is pushing alone looking tired, two other cubs join in helping push from behind. Warm sunlight streaming through a window, watercolor style, soft textures., Focus on the effort and teamwork. Show the transition from struggling alone to succeeding together., Warm, cozy watercolor illustration style with soft pastel colors. Soft lighting, rounded shapes suitable for children aged 3-8. Gentle texture, inviting and friendly atmosphere.",
+      "narration": "一个大罐子，重又沉，\n一个人呀，推不动。\n好朋友，手拉手，\n嘿哟嘿哟，动起来！",
+      "compositionHint": "Focus on the effort and teamwork. Show the transition from struggling alone to succeeding together."
+    },
+    {
+      "id": 2,
+      "title": "散落的积木城堡",
+      "description": "在幼儿园的建构区，一场大风把刚搭好的积木城堡吹倒了一大半。三个小朋友看着满地散落的积木，有点着急。他们分工合作：有的找形状对的积木，有的负责搭建底座，有的负责装饰屋顶。很快，一座更漂亮的城堡站了起来。",
+      "prompt": "Three cute, fluffy red panda cubs named Ben, Bin, and Bun. They wear different colored knitted scarves: Ben wears blue, Bin wears yellow, and Bun wears pink. They have big expressive eyes and soft round ears., A bright kindergarten classroom. Three diverse children standing around scattered building blocks. One child is holding a block, another is stacking, third is pointing. A partially built colorful block tower stands strong. Cheerful expression, soft pastel background, picture book style., Highlight the division of labor and the joy of completion. Show distinct roles for each character., Warm, cozy watercolor illustration style with soft pastel colors. Soft lighting, rounded shapes suitable for children aged 3-8. Gentle texture, inviting and friendly atmosphere.",
+      "narration": "风儿呼呼，城堡倒，\n积木散落一地跑。\n你一块，我一块，\n大家一起，拼得好！",
+      "compositionHint": "Highlight the division of labor and the joy of completion. Show distinct roles for each character."
+    },
+    {
+      "id": 3,
+      "title": "够不着的彩虹风筝",
+      "description": "公园里，一只彩色的风筝挂在了高高的树枝上。小熊猫们抬头看着，谁也够不着。他们发现旁边有一根长长的竹竿，于是三人合力抬起竹竿，小心翼翼地伸向树枝。风筝终于取下来了，大家开心地在草地上奔跑。",
+      "prompt": "Three cute, fluffy red panda cubs named Ben, Bin, and Bun. They wear different colored knitted scarves: Ben wears blue, Bin wears yellow, and Bun wears pink. They have big expressive eyes and soft round ears., A sunny park with tall trees. A colorful kite stuck in high branches. Three red panda cubs holding a long bamboo pole together, reaching up towards the kite. Blue sky, green grass, dynamic pose showing cooperation. Warm watercolor style., Emphasize the height difference and the use of a tool combined with collective strength., Warm, cozy watercolor illustration style with soft pastel colors. Soft lighting, rounded shapes suitable for children aged 3-8. Gentle texture, inviting and friendly atmosphere.",
+      "narration": "风筝高高，挂枝头，\n小手伸伸，够不着。\n长竹竿，三人抬，\n轻轻一提，飞下来！",
+      "compositionHint": "Emphasize the height difference and the use of a tool combined with collective strength."
+    },
+    {
+      "id": 4,
+      "title": "雨天共撑一把伞",
+      "description": "突然下起了大雨，三个小熊猫只有一个小雨伞。如果一个人打，其他两个会淋湿。于是，他们挤在一起，把伞尽量往中间倾斜，虽然肩膀湿了一点，但大家都开心地笑着，一起跑向家门。",
+      "prompt": "Three cute, fluffy red panda cubs named Ben, Bin, and Bun. They wear different colored knitted scarves: Ben wears blue, Bin wears yellow, and Bun wears pink. They have big expressive eyes and soft round ears., Rainy day scene. Three red panda cubs huddled closely under a small yellow umbrella. Raindrops falling, puddles on ground. The cubs are smiling despite being slightly wet, leaning into each other for warmth and cover. Soft grey-blue tones with bright yellow umbrella contrast. Cozy atmosphere., Show physical closeness and emotional support. Focus on the shared experience rather than the discomfort., Warm, cozy watercolor illustration style with soft pastel colors. Soft lighting, rounded shapes suitable for children aged 3-8. Gentle texture, inviting and friendly atmosphere.",
+      "narration": "雨哗哗，天变暗，\n一把伞呀，不够宽。\n你挨我，我挨你，\n互相照顾，心暖暖。",
+      "compositionHint": "Show physical closeness and emotional support. Focus on the shared experience rather than the discomfort."
+    },
+    {
+      "id": 5,
+      "title": "星星下的悄悄话",
+      "description": "夜晚，三个小熊猫坐在山坡上看星星。他们回顾今天发生的事情，明白了为什么大家一起做事总是那么顺利。月亮微笑着看着他们，仿佛在说：团结的力量真大。",
+      "prompt": "Three cute, fluffy red panda cubs named Ben, Bin, and Bun. They wear different colored knitted scarves: Ben wears blue, Bin wears yellow, and Bun wears pink. They have big expressive eyes and soft round ears., Nighttime scene on a grassy hill. Three red panda cubs sitting together looking at a starry sky and a crescent moon. Peaceful expressions, fireflies glowing around them. Dreamy, magical atmosphere, deep blues and purples with soft yellow stars. Watercolor style., Create a calm, reflective mood. The characters should look content and connected., Warm, cozy watercolor illustration style with soft pastel colors. Soft lighting, rounded shapes suitable for children aged 3-8. Gentle texture, inviting and friendly atmosphere.",
+      "narration": "星星亮，月亮弯，\n今天事情真圆满。\n一个人，力量小，\n三个人，智慧多。\n手牵手，心连心，\n什么困难都克服！",
+      "compositionHint": "Create a calm, reflective mood. The characters should look content and connected."
+    }
+  ]
+}
