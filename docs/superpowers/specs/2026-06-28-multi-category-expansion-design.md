@@ -40,6 +40,18 @@ export interface PictureBook {
 
 **向后兼容**：所有已有成语绘本的 `category` 自动标记为 `'idiom'`，`sourceText = idiom`。
 
+**泛化内容条目**（替换 IdiomInfo）：
+
+```typescript
+export interface ContentInfo {
+  sourceText: string       // 成语/诗句/谚语/歌词 的原文
+  meaning: string          // 含义解释
+  category: ContentCategory
+  author?: string          // 古诗需要作者
+  dynasty?: string         // 古诗需要朝代
+}
+```
+
 ### 2. ContentType 策略模式
 
 封装各品类的差异行为，新增品类只需注册一个策略类。
@@ -179,7 +191,6 @@ public/generated/
 Dexie v5 schema（只保留运行时数据）:
 - tasks: 'id, parentId, type, status, category'
 - recommendedItems: '++id, category, sourceText'  // 推荐缓存
-- settings: 'key'                                   // 用户偏好设置
 ```
 
 原有的 `pictureBooks` 和 `scenes` 表**不再需要**——已完成绘本走文件系统。
@@ -199,13 +210,18 @@ Dexie v5 schema（只保留运行时数据）:
 用户生成新绘本（运行中）：
   1. 运行时状态在 Zustand store 内存中
   2. 任务队列持久化到 IndexedDB（防刷新丢失）
-  3. 生成完成后 → 组装为 book.json + 下载图片 → 保存到 public/ 目录
-  4. 更新 index.json
+  3. 生成完成后通过 **Server Action** 写入文件系统：
+     a. 前端任务执行完毕 → 调用保存 API（server action）
+     b. Server action 写入 `public/generated/{category}/{bookId}/` 目录
+     c. 更新 `public/generated/index.json`
+  4. 若文件系统写入失败（如 serverless 环境），降级到 IndexedDB 存储 book.json
+
+> 注意：Next.js 的 `public/` 目录在运行时可通过 Server Action 写入（使用 `fs.writeFile`），适用于自部署环境。Serverless 部署需改用外部存储（如 S3），此方案为 v1 设计，v2 可扩展存储后端。
 ```
 
-### 7. 预生成内容 — 走真实流水线 + 统一目录
+### 7. 内容生成流水线 — 统一目录输出
 
-预生成内容不再手写 JSON，采用上一节定义的文件系统结构，**每本绘本一个文件夹，包含所有过程数据**。
+所有内容（批量生成 + 用户生成）均走同一流水线，输出到 `public/generated/` 统一目录结构。
 
 #### 生成流水线
 
@@ -286,7 +302,6 @@ Dexie v5 schema（只保留运行时数据）:
   node scripts/batch-generate.js --category=all                  # 生成所有品类
   node scripts/batch-generate.js --category=poetry --items=静夜思,春晓  # 指定条目
   node scripts/batch-generate.js --category=idiom --regenerate    # 重新生成
-```
 	```
 
 ### 8. 绘本列表页改造 — 分类筛选与展示
@@ -374,6 +389,8 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 | 谚语 | 推荐生活智慧类谚语，通俗易懂，有教育意义 |
 | 童话 | 推荐经典童话和寓言故事，情节完整，寓意正面 |
 
+## 品类详细设计
+
 ### 首个扩展品类：古诗
 
 **产品逻辑**：
@@ -399,7 +416,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 - 图像风格描述偏向中国古典水墨/工笔画
 - 角色可以是诗人形象或拟人化的诗意角色
 
-## 古诗 Decompose Prompt 模板
+### 古诗 Decompose Prompt 模板
 
 古诗品类的核心差异在于 decompose prompt。以下为 《静夜思》 风格的 prompt 模板：
 
@@ -431,7 +448,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 }
 ```
 
-## 谚语 Decompose Prompt 模板
+### 谚语 Decompose Prompt 模板
 
 谚语的分解逻辑和古诗/成语都不同——它没有故事线，而是用一个抽象的道理指导生活。分解时需要将道理转化为多个具象的生活场景，每个场景展示谚语的一个侧面。
 
@@ -472,9 +489,9 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 场景 5（总结页）: 大家一起开心的画面，旁白点题
 ```
 
-## 儿歌品类详细设计
+### 儿歌品类详细设计
 
-### 产品逻辑
+#### 产品逻辑
 
 儿歌绘本的特点是**韵律感**和**重复性**——很多儿歌有副歌（重复段落），场景需要体现这种节奏。
 
@@ -485,7 +502,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 5. 旁白就是歌词本身，用朗读方式呈现韵律感
 6. 最后一个场景是合唱/欢聚画面
 
-### 儿歌示例 — 《小兔子乖乖》分解
+#### 儿歌示例 — 《小兔子乖乖》分解
 
 ```
 场景 1: "小兔子乖乖，把门儿开开" — 小兔子在家，听到敲门声
@@ -496,7 +513,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 场景 6: 大家安全在一起，总结安全知识
 ```
 
-### 儿歌 Decompose Prompt 模板
+#### 儿歌 Decompose Prompt 模板
 
 ```
 你是一位儿童绘本策划师，擅长将儿歌/童谣转化为适合 0-6 岁婴幼儿的绘本画面。
@@ -526,9 +543,9 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 }
 ```
 
-## 童话故事品类详细设计
+### 童话故事品类详细设计
 
-### 产品逻辑
+#### 产品逻辑
 
 童话故事是最复杂的内容类型——它有完整的叙事弧线（引入→上升→高潮→回落→寓意），场景数量也最多。
 
@@ -539,7 +556,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 5. 旁白为完整的叙事文本，适合亲子朗读
 6. 角色数量较多，prompt 需精确描述每个角色的外貌
 
-### 童话故事示例 — 《三只小猪》分解
+#### 童话故事示例 — 《三只小猪》分解
 
 ```
 场景 1: 三只小猪离开妈妈，去盖自己的房子（背景引入）
@@ -555,7 +572,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 场景 11: 三只小猪安全生活在一起（寓意总结）
 ```
 
-### 童话故事 Decompose Prompt 模板
+#### 童话故事 Decompose Prompt 模板
 
 ```
 你是一位专业的儿童绘本故事策划师，擅长将童话故事改编为适合 3-8 岁儿童的绘本场景。
@@ -648,13 +665,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 3. 谚语 — 抽象→具象生活场景，不需原文逐字对应
 4. 童话 — 最长场景数（8-12），故事弧线拆分需精细控制
 
-**成语重制**：现有预生成成语质量不达标（仅 3 场景、无角色/风格描述等），需按新流水线和目录结构重制：
-
-1. 删除旧版 `public/generated/images/`（所有平铺 PNG）
-2. 删除旧版 `public/generated/*.json`（idiom 平铺 JSON）
-3. 用 `IdiomStrategy.getDecomposePrompt()` 重新分解
-4. 按统一目录结构输出：`public/generated/idiom/守株待兔/book.json + 1.png...`
-5. 扩充至 15-20 个常见成语
+成语重制见阶段四。
 
 
 ### 阶段四：现有预生成成语重制
