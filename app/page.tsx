@@ -41,8 +41,13 @@ export default function Home() {
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [loading, setLoading] = useState(true)
 
+  // 加载超时兜底：5秒后自动停止加载状态
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 5000)
+    return () => clearTimeout(timer)
+  }, [])
+
   const loadIndex = async () => {
-    setLoading(true)
     try {
       const res = await fetch('/generated/index.json')
       if (res.ok) {
