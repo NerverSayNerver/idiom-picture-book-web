@@ -1,6 +1,6 @@
 // app/api/jobs/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createTask, listJobs } from '@/lib/task-db'
+import { createTask, listJobs, getAllTasks } from '@/lib/task-db'
 import type { TaskStatus } from '@/lib/task-types'
 
 // POST /api/jobs — 创建任务
@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
   try {
     const status = request.nextUrl.searchParams.get('status') as TaskStatus | null
     const jobs = listJobs(status ? { status } : undefined)
-    return NextResponse.json({ jobs })
+    const allTasks = getAllTasks()
+    return NextResponse.json({ jobs, allTasks })
   } catch (error) {
     console.error('查询任务失败:', error)
     return NextResponse.json({ error: String(error) }, { status: 500 })

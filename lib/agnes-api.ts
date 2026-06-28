@@ -26,7 +26,7 @@ export async function chatCompletion(
       model: 'agnes-2.0-flash',
       messages,
       temperature: 0.7,
-      max_tokens: 2048,
+      max_tokens: 8192,
     }),
   })
 

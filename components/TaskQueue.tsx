@@ -13,7 +13,7 @@ interface TaskQueueProps {
 type FilterMode = 'all' | 'pending' | 'running' | 'paused' | 'completed' | 'failed'
 
 export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
-  const { jobs } = useJobs()
+  const { jobs, allTasks } = useJobs()
   const [filter, setFilter] = useState<FilterMode>('all')
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
   const [notify, setNotify] = useState<string | null>(null)
@@ -203,8 +203,8 @@ export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
                   <span className="ml-1 text-xs text-gray-400">{collapsedGroups.has(group.label) ? '▶' : '▼'}</span>
                 </h3>
                 {!collapsedGroups.has(group.label) && group.jobs.map(job => {
-                  // 从全局 jobs 列表中查找子任务
-                  const childTasks = jobs.filter(j => j.parentId === job.id)
+                  // 从 allTasks 中查找子任务（子任务不是 job 类型，不在 jobs 列表里）
+                  const childTasks = allTasks.filter(t => t.parentId === job.id)
                   const completedCount = childTasks.filter(c => c.status === 'completed').length
                   const total = childTasks.length
                   const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0

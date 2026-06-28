@@ -284,7 +284,7 @@ export function pollPendingJob(): Task | null {
 }
 
 export function markRunning(id: string): void {
-  const now = Math.floor(Date.now() / 1000)
+  const now = Date.now() // 毫秒，和前端 formatDuration 一致
   getDb().prepare(
     "UPDATE tasks SET status = 'running', start_time = ?, updated_at = ? WHERE id = ?"
   ).run(now, now, id)
@@ -309,6 +309,13 @@ export function listJobs(filter?: { status?: TaskStatus }): Task[] {
     task.childTaskIds = getChildIds(task.id)
     return task
   })
+}
+
+/** 获取所有任务（含子任务），供前端渲染完整队列用 */
+export function getAllTasks(): Task[] {
+  const db = getDb()
+  const rows = db.prepare('SELECT * FROM tasks ORDER BY created_at DESC').all() as TaskRow[]
+  return rows.map(rowToTask)
 }
 
 export function getJobWithChildren(id: string): { job: Task; children: Task[] } | null {

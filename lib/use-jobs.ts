@@ -8,6 +8,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 interface JobsResponse {
   jobs: Task[]
+  allTasks: Task[]
 }
 
 interface JobDetailResponse {
@@ -30,6 +31,7 @@ export function useJobs(options?: { status?: string }) {
 
   return {
     jobs: data?.jobs ?? [],
+    allTasks: data?.allTasks ?? [],
     error,
     isLoading,
     refresh: mutate,
