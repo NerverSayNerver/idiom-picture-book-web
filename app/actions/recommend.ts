@@ -1,7 +1,7 @@
 'use server'
 
 import { chatCompletion } from '@/lib/agnes-api'
-import type { IdiomInfo } from '@/lib/idioms'
+import type { ContentInfo } from '@/lib/types'
 
 const SYSTEM_PROMPT =
   '你是一位专业的儿童教育专家，擅长为3-8岁儿童推荐适合的成语故事。请始终以 JSON 格式返回结果。'
@@ -27,7 +27,7 @@ function buildUserPrompt(exclude: string[]): string {
 
 export async function fetchRecommendedIdioms(
   exclude: string[] = []
-): Promise<IdiomInfo[]> {
+): Promise<ContentInfo[]> {
   // 限制排除列表长度，防止 LLM 提示词过大
   if (exclude.length > 50) {
     exclude = exclude.slice(0, 50)
@@ -63,9 +63,9 @@ export async function fetchRecommendedIdioms(
   }
 
   return data
-    .filter((item: any) => item.idiom && item.meaning && item.category)
+    .filter((item: any) => (item.idiom || item.sourceText) && item.meaning && item.category)
     .map((item: any) => ({
-      idiom: item.idiom,
+      sourceText: item.idiom || item.sourceText,
       meaning: item.meaning,
       category: item.category,
     }))

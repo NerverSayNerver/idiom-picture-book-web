@@ -1,13 +1,13 @@
 import Dexie, { type Table } from 'dexie'
 import type { PictureBook, Scene } from './types'
 import type { Task } from './task-store'
-import type { IdiomInfo } from './idioms'
+import type { ContentInfo } from './types'
 
 export class IdiomPictureBookDB extends Dexie {
   pictureBooks!: Table<PictureBook>
   scenes!: Table<{ id?: number } & Omit<Scene, 'id'> & { bookId: string; sceneId: number }>
   tasks!: Table<Task>
-  recommendedIdioms!: Table<IdiomInfo & { id?: number }>
+  recommendedIdioms!: Table<ContentInfo & { id?: number }>
 
   constructor() {
     super('idiom-picture-book-db')
@@ -119,11 +119,11 @@ export async function clearTasks(): Promise<void> {
 // ── 推荐成语 ────────────────────────────────────────────
 
 /** 批量保存推荐成语（去重） */
-export async function saveRecommendedIdioms(idioms: IdiomInfo[]): Promise<void> {
+export async function saveRecommendedIdioms(idioms: ContentInfo[]): Promise<void> {
   await db.transaction('rw', db.recommendedIdioms, async () => {
     const existing = await db.recommendedIdioms.toArray()
-    const existingSet = new Set(existing.map(e => e.idiom))
-    const newIdioms = idioms.filter(i => !existingSet.has(i.idiom))
+    const existingSet = new Set(existing.map(e => e.sourceText))
+    const newIdioms = idioms.filter(i => !existingSet.has(i.sourceText))
     if (newIdioms.length > 0) {
       await db.recommendedIdioms.bulkAdd(newIdioms)
     }
@@ -131,12 +131,12 @@ export async function saveRecommendedIdioms(idioms: IdiomInfo[]): Promise<void> 
 }
 
 /** 获取所有推荐成语 */
-export async function getAllRecommendedIdioms(): Promise<IdiomInfo[]> {
+export async function getAllRecommendedIdioms(): Promise<ContentInfo[]> {
   return db.recommendedIdioms.toArray()
 }
 
 /** 随机获取 n 个推荐成语 */
-export async function getRandomIdioms(n: number): Promise<IdiomInfo[]> {
+export async function getRandomIdioms(n: number): Promise<ContentInfo[]> {
   const all = await db.recommendedIdioms.toArray()
   if (all.length <= n) return all
   // Fisher-Yates shuffle

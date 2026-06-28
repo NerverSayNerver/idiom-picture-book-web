@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { getPictureBook } from '@/lib/db'
+import { getPictureBook, getAllPictureBooks } from '@/lib/db'
 import { BookViewer } from '@/components/BookViewer'
 import type { PictureBook, PreGeneratedIndexItem } from '@/lib/types'
 
@@ -16,19 +16,25 @@ export default function ReadPage() {
     const { signal } = abortController
 
     const loadBook = async () => {
-      const id = params.id as string
+      // useParams 在某些场景下返回的还是 URL 编码值，需要解码
+      const rawId = params.id as string
+      const id = decodeURIComponent(rawId)
 
-      // 先从 IndexedDB 加载
+      // 先从 IndexedDB 加载（用 id 匹配，可能是 UUID 或成语名）
       let loadedBook = await getPictureBook(id)
 
-      // 如果没找到，尝试从预生成文件加载
+      // 如果 IndexedDB 没找到，尝试通过成语名匹配用户生成的绘本
+      if (!loadedBook && !signal.aborted) {
+        const allBooks = await getAllPictureBooks()
+        loadedBook = allBooks.find(b => b.idiom === id || b.title === id || b.id === id)
+      }
+
+      // 如果还是没找到，尝试从预生成文件加载
       if (!loadedBook && !signal.aborted) {
         try {
-          // 尝试通过 id 匹配预生成的绘本
           const response = await fetch('/pre-generated/index.json', { signal })
           if (response.ok) {
             const index = await response.json()
-            // 先通过 index.idiom 或 index.id 匹配（避免逐个加载 JSON）
             const match = index.find((item: PreGeneratedIndexItem) => item.idiom === id || item.id === id)
             if (match && !signal.aborted) {
               const bookResponse = await fetch(`/pre-generated/${match.idiom}.json`, { signal })
@@ -54,7 +60,6 @@ export default function ReadPage() {
           }
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') return
-          // no pre-generated books or fetch error
         }
       }
 

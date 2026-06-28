@@ -112,8 +112,9 @@ export function BookViewer({ book }: BookViewerProps) {
     if (isCover) return
 
     if (isMeaningPage) {
-      // 含义页使用 useTTS hook 的 speak 方法，保持状态同步
       speak(book.meaning)
+      // 朗读完含义后退出朗读模式（后续由用户手动触发朗读）
+      isReadingModeRef.current = false
     }
     // 场景页朗读由 speakScenes 处理，无需在此创建 utterance
   }, [currentPage, isCover, isMeaningPage, book.meaning, speak])
@@ -122,8 +123,10 @@ export function BookViewer({ book }: BookViewerProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault()
         goToNext()
       } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
         goToPrev()
       }
     }

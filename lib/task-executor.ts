@@ -185,6 +185,11 @@ export class TaskExecutor {
         status: 'completed',
         progress: 1,
         total: 1,
+        // 将分解结果存储到 task 本身上，避免批量生成时被后续 job 覆盖
+        decomposeMeaning: result.meaning,
+        decomposeCharacterDescription: result.characterDescription,
+        decomposeStyleDescription: result.styleDescription,
+        decomposeScenesJson: JSON.stringify(result.scenes),
       })
     } catch (error) {
       useTaskStore.getState().updateTask(taskId, {

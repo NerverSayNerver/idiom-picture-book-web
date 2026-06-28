@@ -54,6 +54,11 @@ export default function GeneratePage() {
 
     const allCompleted = jobs.every((j) => j.status === 'completed')
     const hasFailed = jobs.some((j) => j.status === 'failed')
+    const allDone = jobs.every((j) =>
+      ['completed', 'failed', 'cancelled'].includes(j.status)
+    )
+    const completedCount = jobs.filter((j) => j.status === 'completed').length
+    const failedCount = jobs.filter((j) => j.status === 'failed').length
 
     if (allCompleted) {
       // 所有任务完成，自动跳转
@@ -63,27 +68,53 @@ export default function GeneratePage() {
       return () => clearTimeout(timer)
     }
 
-    if (hasFailed) {
+    if (hasFailed && !allDone) {
+      // 有任务失败但还有未完成的，设置失败状态（显示提示）
+      setFailed(true)
+    }
+
+    if (allDone && hasFailed && completedCount > 0) {
+      // 部分完成部分失败：保持 failed 状态但不清除已成功生成的数据
+      setFailed(true)
+    }
+
+    if (allDone && hasFailed && completedCount === 0) {
+      // 全部失败
       setFailed(true)
     }
   }, [tasks, router])
 
   if (!currentIdiom) return null
 
+  const jobs = tasks.filter((t) => t.type === 'job')
+  const allCompleted = jobs.length > 0 && jobs.every((j) => j.status === 'completed')
+  const completedCount = jobs.filter((j) => j.status === 'completed').length
+  const failedCount = jobs.filter((j) => j.status === 'failed').length
+
+  // 生成状态标题
+  let statusTitle = '⏳ 正在生成绘本'
+  let statusSubtitle = ''
+  if (failed && completedCount > 0) {
+    statusTitle = '⚠️ 部分生成完成'
+    statusSubtitle = `${completedCount} 个成功，${failedCount} 个失败`
+  } else if (failed) {
+    statusTitle = '⚠️ 生成出现问题'
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-2xl space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-primary">
-            {failed ? '⚠️ 生成出现问题' : '⏳ 正在生成绘本'}
+            {statusTitle}
           </h1>
-          <p className="mt-2 text-lg text-gray-600">{currentIdiom}</p>
+          <p className="mt-2 text-lg text-gray-600">{currentIdiom}{statusSubtitle && ` — ${statusSubtitle}`}</p>
         </div>
 
         <TaskQueue />
 
         {/* 所有任务完成提示 */}
-        {tasks.filter((t) => t.type === 'job').every((j) => j.status === 'completed') && (
+        {allCompleted && (
           <div className="text-center">
             <p className="text-green-600 font-medium">✅ 生成完成，即将跳转到书架...</p>
           </div>

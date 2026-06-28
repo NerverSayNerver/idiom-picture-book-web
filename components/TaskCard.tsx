@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useShallow } from 'zustand/react/shallow'
 import type { Task, TaskStatus, TaskType } from '@/lib/task-store'
 import { useTaskStore } from '@/lib/task-store'
-import { useAppStore } from '@/lib/store'
+import type { SceneTemplate } from '@/lib/types'
 import Link from 'next/link'
 
 interface TaskCardProps {
@@ -66,16 +65,15 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
   const elapsed = task.startTime ? formatDuration((task.endTime || Date.now()) - task.startTime) : null
   const progressPercent = task.total > 0 ? Math.round((task.progress / task.total) * 100) : 0
 
-  // 合并 selector 减少独立渲染触发
-  const appData = useAppStore(useShallow((s) => ({
-    currentScenes: s.currentScenes,
-    currentMeaning: s.currentMeaning,
-    characterDescription: s.characterDescription,
-    styleDescription: s.styleDescription,
-  })))
-  const { currentScenes, currentMeaning, characterDescription, styleDescription } = appData
+  // 获取分解结果 — 优先从 task 自身读取（防止批量生成时被后续 job 覆盖）
+  const decomposeMeaning = task.decomposeMeaning ?? undefined
+  const decomposeCharacterDescription = task.decomposeCharacterDescription ?? undefined
+  const decomposeStyleDescription = task.decomposeStyleDescription ?? undefined
+  const decomposeScenes = task.decomposeScenesJson ? (() => {
+    try { return JSON.parse(task.decomposeScenesJson) as SceneTemplate[] } catch { return null }
+  })() : null
 
-  // 获取分解结果
+  // 获取父 job 信息
   const parentJob = task.parentId ? getTaskById(task.parentId) : null
   const decomposeIdiom = parentJob?.idiom
 
@@ -87,7 +85,7 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
   }
 
   const hasImage = task.status === 'completed' && task.type === 'generate' && !!task.imageUrl
-  const canShowDecompose = task.status === 'completed' && task.type === 'decompose' && !!currentMeaning
+  const canShowDecompose = task.status === 'completed' && task.type === 'decompose' && !!decomposeMeaning
   const isClickable = task.status === 'failed' || hasImage || canShowDecompose
 
   return (
@@ -219,33 +217,33 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
               {/* 含义 */}
               <div>
                 <span className="text-xs text-gray-400 uppercase tracking-wide">含义</span>
-                <p className="text-gray-700 leading-relaxed">{currentMeaning}</p>
+                <p className="text-gray-700 leading-relaxed">{decomposeMeaning}</p>
               </div>
 
               {/* 角色描述 */}
-              {characterDescription && (
+              {decomposeCharacterDescription && (
                 <div>
                   <span className="text-xs text-gray-400 uppercase tracking-wide">角色设定</span>
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{characterDescription}</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{decomposeCharacterDescription}</p>
                 </div>
               )}
 
               {/* 画风描述 */}
-              {styleDescription && (
+              {decomposeStyleDescription && (
                 <div>
                   <span className="text-xs text-gray-400 uppercase tracking-wide">画风</span>
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{styleDescription}</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{decomposeStyleDescription}</p>
                 </div>
               )}
 
               {/* 场景列表 */}
               <div>
-                <span className="text-xs text-gray-400 uppercase tracking-wide">场景规划（{currentScenes.length} 幕）</span>
+                <span className="text-xs text-gray-400 uppercase tracking-wide">场景规划（{decomposeScenes?.length ?? 0} 幕）</span>
                 <div className="mt-2 space-y-3">
-                  {currentScenes.map((s) => (
-                    <div key={s.id} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                  {decomposeScenes?.map((s, i) => (
+                    <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                       <h4 className="font-semibold text-gray-800 text-sm">
-                        场景 {s.id}：{s.title}
+                        场景 {i + 1}：{s.title}
                       </h4>
                       <p className="text-xs text-gray-600 mt-1 line-clamp-2">{s.description}</p>
                       {s.narration && (

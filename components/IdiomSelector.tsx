@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { IDIOM_LIST, type IdiomInfo } from '@/lib/idioms'
+import { IDIOM_LIST } from '@/lib/content-info'
+import type { ContentInfo } from '@/lib/types'
 import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import { getAllPictureBooks, getRandomIdioms, saveRecommendedIdioms } from '@/lib/db'
@@ -18,7 +19,7 @@ export function IdiomSelector({ onBatchGenerate, compact }: IdiomSelectorProps) 
   const [selectedIdiom, setSelectedIdiom] = useState<string | null>(null)
   const [selectedIdioms, setSelectedIdioms] = useState<Set<string>>(new Set())
   const [existingIdioms, setExistingIdioms] = useState<Set<string>>(new Set())
-  const [displayIdioms, setDisplayIdioms] = useState<IdiomInfo[]>(IDIOM_LIST)
+  const [displayIdioms, setDisplayIdioms] = useState<ContentInfo[]>(IDIOM_LIST)
   const [refreshing, setRefreshing] = useState(false)
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
   const router = useRouter()
@@ -83,7 +84,7 @@ export function IdiomSelector({ onBatchGenerate, compact }: IdiomSelectorProps) 
     setRefreshing(true)
     try {
       // 传入当前显示的成语作为排除列表
-      const currentIdioms = displayIdioms.map(i => i.idiom)
+      const currentIdioms = displayIdioms.map(i => i.sourceText)
       const newIdioms = await fetchRecommendedIdioms(currentIdioms)
       // 去重保存到数据库
       await saveRecommendedIdioms(newIdioms)
@@ -149,23 +150,23 @@ export function IdiomSelector({ onBatchGenerate, compact }: IdiomSelectorProps) 
         </div>
         <div className="grid grid-cols-5 gap-1.5 mb-3 max-h-[220px] overflow-y-auto">
           {displayIdioms.map((item) => {
-            const isMultiSelected = selectedIdioms.has(item.idiom)
-            const isSingleSelected = selectedIdiom === item.idiom
+            const isMultiSelected = selectedIdioms.has(item.sourceText)
+            const isSingleSelected = selectedIdiom === item.sourceText
             return (
               <button
-                key={item.idiom}
-                onClick={() => onBatchGenerate ? toggleIdiom(item.idiom) : handleSelect(item.idiom)}
+                key={item.sourceText}
+                onClick={() => onBatchGenerate ? toggleIdiom(item.sourceText) : handleSelect(item.sourceText)}
                 className={`py-1.5 px-1 rounded-lg text-[11px] font-medium transition-all relative leading-tight ${
                   isMultiSelected || isSingleSelected
                     ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
                     : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
-                {item.idiom}
+                {item.sourceText}
                 {isMultiSelected && (
                   <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
                 )}
-                {!isMultiSelected && existingIdioms.has(item.idiom) && (
+                {!isMultiSelected && existingIdioms.has(item.sourceText) && (
                   <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
                 )}
               </button>
@@ -227,23 +228,23 @@ export function IdiomSelector({ onBatchGenerate, compact }: IdiomSelectorProps) 
         </div>
         <div className="grid grid-cols-5 gap-2.5 max-h-[280px] overflow-y-auto">
           {displayIdioms.map((item) => {
-            const isMultiSelected = selectedIdioms.has(item.idiom)
-            const isSingleSelected = selectedIdiom === item.idiom
+            const isMultiSelected = selectedIdioms.has(item.sourceText)
+            const isSingleSelected = selectedIdiom === item.sourceText
             return (
               <button
-                key={item.idiom}
-                onClick={() => onBatchGenerate ? toggleIdiom(item.idiom) : handleSelect(item.idiom)}
+                key={item.sourceText}
+                onClick={() => onBatchGenerate ? toggleIdiom(item.sourceText) : handleSelect(item.sourceText)}
                 className={`p-2 rounded-lg text-xs font-medium transition-all relative ${
                   isMultiSelected || isSingleSelected
                     ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
                     : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
-                {item.idiom}
+                {item.sourceText}
                 {isMultiSelected && (
                   <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
                 )}
-                {!isMultiSelected && existingIdioms.has(item.idiom) && (
+                {!isMultiSelected && existingIdioms.has(item.sourceText) && (
                   <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
                 )}
               </button>

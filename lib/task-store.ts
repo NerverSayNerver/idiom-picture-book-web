@@ -60,6 +60,14 @@ export interface Task {
   retryCount: number
   maxRetries: number
   childTaskIds: string[]
+  /** 分解任务的结果：含义（跨 job 持久，避免批量生成时被覆盖） */
+  decomposeMeaning?: string
+  /** 分解任务的结果：角色描述 */
+  decomposeCharacterDescription?: string
+  /** 分解任务的结果：画风描述 */
+  decomposeStyleDescription?: string
+  /** 分解任务的结果：场景列表（JSON 序列化） */
+  decomposeScenesJson?: string
 }
 
 // ── 子任务定义（用于 addChildTasks） ─────────────────────

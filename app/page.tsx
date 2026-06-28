@@ -16,26 +16,30 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  // 监听任务状态：当所有 job 都结束（completed/failed/cancelled）时重置 isGenerating
+  // 监听任务状态：当所有 job 都结束（completed/failed/cancelled）时重置 isGenerating 并刷新书架
   useEffect(() => {
     if (!isGenerating) return
     const jobs = tasks.filter(t => t.type === 'job')
     if (jobs.length === 0) return
     const allDone = jobs.every(j => j.status === 'completed' || j.status === 'failed' || j.status === 'cancelled')
     if (allDone) {
-      // 延迟重置，避免闪烁
-      const timer = setTimeout(() => setIsGenerating(false), 500)
+      // 延迟重置，避免闪烁，同时刷新书架
+      const timer = setTimeout(() => {
+        setIsGenerating(false)
+        loadBooks()
+      }, 500)
       return () => clearTimeout(timer)
     }
   }, [tasks, isGenerating])
 
-  // 初始化：加载持久化任务和绘本列表
+  // 初始化：加载绘本列表，检查是否有未完成的持久化任务
   useEffect(() => {
     const init = async () => {
+      // 先加载持久化的任务（仅加载，不重复读取）
       await useTaskStore.getState().loadPersistedTasks()
       await loadBooks()
 
-      // 如果有持久化的 pending 任务，自动恢复执行
+      // 如果有持久化的 pending 任务，自动启动执行器恢复执行
       const tasks = useTaskStore.getState().tasks
       const hasPendingJobs = tasks.some(t => t.type === 'job' && t.status === 'pending')
       if (hasPendingJobs && !executorRef.current) {
@@ -107,6 +111,16 @@ export default function Home() {
     }
   }, [])
 
+  const handleRegenerate = useCallback((idiom: string) => {
+    // 直接在当前页创建任务并启动执行器，无需跳转
+    setIsGenerating(true)
+    createJobs([idiom])
+    if (!executorRef.current) {
+      executorRef.current = new TaskExecutor()
+    }
+    executorRef.current.start()
+  }, [createJobs])
+
   const handleBatchGenerate = useCallback((idioms: string[]) => {
     if (isGenerating) {
       console.warn('批量生成已在运行中，忽略重复调用')
@@ -167,6 +181,7 @@ export default function Home() {
                   key={book.id}
                   book={book}
                   onDelete={handleDelete}
+                  onRegenerate={handleRegenerate}
                 />
               ))}
             </div>

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { deletePictureBook } from '@/lib/db'
 import type { PictureBook } from '@/lib/types'
@@ -10,12 +9,12 @@ import type { PictureBook } from '@/lib/types'
 interface BookCardProps {
   book: PictureBook
   onDelete: (id: string) => void
+  onRegenerate?: (idiom: string) => void
 }
 
-export function BookCard({ book, onDelete }: BookCardProps) {
+export function BookCard({ book, onDelete, onRegenerate }: BookCardProps) {
   const [coverImage, setCoverImage] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
-  const router = useRouter()
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
 
   // 使用 book.scenes 作为依赖（而非整个 book 对象），避免对象引用变化导致频繁 re-render
@@ -43,8 +42,9 @@ export function BookCard({ book, onDelete }: BookCardProps) {
   const handleRegenerate = async () => {
     await deletePictureBook(book.id)
     onDelete(book.id)
+    // 不再跳转到 /generate，而是通过回调在当前页直接创建任务
     setCurrentIdiom(book.idiom)
-    router.push('/generate')
+    onRegenerate?.(book.idiom)
   }
 
   return (
