@@ -17,6 +17,15 @@ export function getAllStrategies(): ContentTypeStrategy[] {
   return Array.from(registry.values())
 }
 
-// 注册成语策略
+// 注册所有策略
 import { idiomStrategy } from './idiom-strategy'
+import { poetryStrategy } from './poetry-strategy'
+import { nurseryRhymeStrategy } from './nursery-rhyme-strategy'
+import { proverbStrategy } from './proverb-strategy'
+import { fairyTaleStrategy } from './fairy-tale-strategy'
+
 registerStrategy(idiomStrategy)
+registerStrategy(poetryStrategy)
+registerStrategy(nurseryRhymeStrategy)
+registerStrategy(proverbStrategy)
+registerStrategy(fairyTaleStrategy)
