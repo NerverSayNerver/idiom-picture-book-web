@@ -43,6 +43,16 @@ export function BookViewer({ book }: BookViewerProps) {
     return urls
   }, [book.scenes])
 
+  // 获取场景图片 URL：优先 imageUrl，其次 Blob，最后构造文件系统路径
+  const getSceneImageUrl = useCallback((scene: typeof book.scenes[0]) => {
+    if (scene.imageUrl) return scene.imageUrl
+    if (scene.imageBlob) return sceneBlobUrls.get(scene.id) || ''
+    if (book.category && book.sourceText) {
+      return `/generated/${book.category}/${book.sourceText}/${scene.id}.png`
+    }
+    return ''
+  }, [book.category, book.sourceText, sceneBlobUrls])
+
   // 组件卸载时释放所有 blob URL
   useEffect(() => {
     return () => {
@@ -215,7 +225,7 @@ export function BookViewer({ book }: BookViewerProps) {
               {/* 所有插图网格 */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {book.scenes.map((s, i) => {
-                  const imgSrc = s.imageUrl || sceneBlobUrls.get(s.id) || null
+                  const imgSrc = getSceneImageUrl(s) || null
                   return (
                     <div
                       key={i}
@@ -262,7 +272,7 @@ export function BookViewer({ book }: BookViewerProps) {
                 </div>
                 {(scene.imageUrl || scene.imageBlob) && (
                   <img
-                    src={scene.imageUrl || sceneBlobUrls.get(scene.id) || ''}
+                    src={getSceneImageUrl(scene) || ''}
                     alt={scene.title}
                     className="w-full h-auto rounded-lg shadow-md"
                   />

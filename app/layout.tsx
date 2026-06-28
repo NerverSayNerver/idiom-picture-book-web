@@ -11,8 +11,8 @@ const notoSansSC = Noto_Sans_SC({
 })
 
 export const metadata: Metadata = {
-  title: '成语绘本工坊',
-  description: '和宝贝一起创造成语故事',
+  title: '绘本工坊',
+  description: '和宝贝一起创建绘本故事',
 }
 
 export default function RootLayout({
