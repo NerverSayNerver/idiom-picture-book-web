@@ -11,10 +11,10 @@ export function Header() {
         </Link>
         <nav className="flex gap-4">
           <Link href="/" className="text-gray-600 hover:text-gray-800">
-            首页
-          </Link>
-          <Link href="/library" className="text-gray-600 hover:text-gray-800">
             📚 绘本库
+          </Link>
+          <Link href="/#create" className="text-gray-600 hover:text-gray-800">
+            ✏️ 创建
           </Link>
         </nav>
       </div>

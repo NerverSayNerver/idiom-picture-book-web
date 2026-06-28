@@ -75,3 +75,30 @@ export interface AgnesVideoResultResponse {
   remixed_from_video_id?: string
   error?: string
 }
+
+// 预生成绘本索引条目
+export interface PreGeneratedIndexItem {
+  id: string
+  title: string
+  idiom: string
+  meaning: string
+  createdAt: string
+  sceneCount: number
+}
+
+// LLM 返回的原始场景模板（反序列化前）
+export interface SceneTemplateRaw {
+  title?: string
+  description?: string
+  prompt?: string
+  narration?: string
+  compositionHint?: string
+}
+
+// LLM 返回的原始分解结果（反序列化前）
+export interface DecompositionRaw {
+  meaning?: string
+  characterDescription?: string
+  styleDescription?: string
+  scenes?: SceneTemplateRaw[]
+}

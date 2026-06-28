@@ -13,7 +13,12 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 
-const API_KEY = process.env.AGNES_API_KEY || 'sk-blCDCRpxzjWnPTi0mOpdZqUJcwV0A0EDNHuXbViQ1Mz8fGfM';
+const API_KEY = process.env.AGNES_API_KEY;
+if (!API_KEY) {
+  console.error('错误: 未设置 AGNES_API_KEY 环境变量');
+  console.error('请在 .env.local 中设置 AGNES_API_KEY，或以 AGNES_API_KEY=your_key node scripts/batch-generate.js 方式运行');
+  process.exit(1);
+}
 const API_BASE = 'https://apihub.agnes-ai.com/v1';
 
 // 输出目录

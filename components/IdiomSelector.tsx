@@ -6,12 +6,14 @@ import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import { getAllPictureBooks, getRandomIdioms, saveRecommendedIdioms } from '@/lib/db'
 import { fetchRecommendedIdioms } from '@/app/actions/recommend'
+import type { PreGeneratedIndexItem } from '@/lib/types'
 
 interface IdiomSelectorProps {
   onBatchGenerate?: (idioms: string[]) => void
+  compact?: boolean
 }
 
-export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
+export function IdiomSelector({ onBatchGenerate, compact }: IdiomSelectorProps) {
   const [customIdiom, setCustomIdiom] = useState('')
   const [selectedIdiom, setSelectedIdiom] = useState<string | null>(null)
   const [selectedIdioms, setSelectedIdioms] = useState<Set<string>>(new Set())
@@ -33,38 +35,45 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
 
   // 初始化：加载已有绘本 + 从数据库随机加载推荐成语
   useEffect(() => {
-    loadExistingIdioms()
+    const abortController = new AbortController()
+    const { signal } = abortController
+
+    const loadExisting = async () => {
+      try {
+        const preGeneratedResponse = await fetch('/pre-generated/index.json', { signal })
+        if (preGeneratedResponse.ok) {
+          const index = await preGeneratedResponse.json()
+          const idioms = new Set<string>(index.map((item: PreGeneratedIndexItem) => item.idiom))
+          setExistingIdioms(idioms)
+        }
+
+        const userBooks = await getAllPictureBooks()
+        setExistingIdioms(prev => {
+          const newSet = new Set<string>(prev)
+          userBooks.forEach(book => newSet.add(book.idiom))
+          return newSet
+        })
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        console.error('加载绘本列表失败:', error)
+      }
+    }
+    loadExisting()
     loadRandomIdioms()
+
+    return () => {
+      abortController.abort()
+    }
   }, [])
 
-  const loadExistingIdioms = async () => {
-    try {
-      const preGeneratedResponse = await fetch('/pre-generated/index.json')
-      if (preGeneratedResponse.ok) {
-        const index = await preGeneratedResponse.json()
-        const idioms = new Set<string>(index.map((item: any) => item.idiom))
-        setExistingIdioms(idioms)
-      }
-
-      const userBooks = await getAllPictureBooks()
-      setExistingIdioms(prev => {
-        const newSet = new Set<string>(prev)
-        userBooks.forEach(book => newSet.add(book.idiom))
-        return newSet
-      })
-    } catch (error) {
-      console.error('加载绘本列表失败:', error)
-    }
-  }
+  const IDIOM_DISPLAY_COUNT = 40
 
   const loadRandomIdioms = async () => {
     try {
-      // 数据库为空时，先写入初始成语
-      const random = await getRandomIdioms(10)
+      const random = await getRandomIdioms(IDIOM_DISPLAY_COUNT)
       if (random.length > 0) {
         setDisplayIdioms(random)
       }
-      // 数据库有数据但不足 10 个也正常显示
     } catch (error) {
       console.error('加载推荐成语失败:', error)
     }
@@ -78,8 +87,8 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
       const newIdioms = await fetchRecommendedIdioms(currentIdioms)
       // 去重保存到数据库
       await saveRecommendedIdioms(newIdioms)
-      // 从数据库随机取 10 个
-      const random = await getRandomIdioms(10)
+      // 从数据库随机取 40 个
+      const random = await getRandomIdioms(IDIOM_DISPLAY_COUNT)
       if (random.length > 0) {
         setDisplayIdioms(random)
       }
@@ -124,6 +133,77 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
 
   const activeIdiom = selectedIdiom || customIdiom.trim()
 
+  if (compact) {
+    return (
+      <div id="create" className="w-full bg-white rounded-card p-4 shadow-md">
+        <div className="flex items-center gap-3 mb-3">
+          <h2 className="text-base font-semibold text-gray-800">🎭 选择成语</h2>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
+            {refreshing ? '获取中...' : '换一批'}
+          </button>
+        </div>
+        <div className="grid grid-cols-5 gap-1.5 mb-3 max-h-[220px] overflow-y-auto">
+          {displayIdioms.map((item) => {
+            const isMultiSelected = selectedIdioms.has(item.idiom)
+            const isSingleSelected = selectedIdiom === item.idiom
+            return (
+              <button
+                key={item.idiom}
+                onClick={() => onBatchGenerate ? toggleIdiom(item.idiom) : handleSelect(item.idiom)}
+                className={`py-1.5 px-1 rounded-lg text-[11px] font-medium transition-all relative leading-tight ${
+                  isMultiSelected || isSingleSelected
+                    ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                {item.idiom}
+                {isMultiSelected && (
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
+                )}
+                {!isMultiSelected && existingIdioms.has(item.idiom) && (
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={customIdiom}
+            onChange={(e) => handleCustomInput(e.target.value)}
+            placeholder="输入自定义成语..."
+            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+          />
+          {onBatchGenerate && selectedIdioms.size > 0 ? (
+            <button
+              onClick={() => onBatchGenerate(Array.from(selectedIdioms))}
+              className="px-4 py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap"
+            >
+              🚀 批量生成（{selectedIdioms.size}）
+            </button>
+          ) : (
+            <button
+              onClick={handleStart}
+              disabled={!activeIdiom}
+              className="px-4 py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              🚀 开始生成
+            </button>
+          )}
+        </div>
+        {customIdiom.trim() && existingIdioms.has(customIdiom.trim()) && (
+          <p className="text-xs text-green-600 mt-2">✓ 该成语已有绘本</p>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
       {/* 标题 */}
@@ -145,7 +225,7 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
             {refreshing ? '获取中...' : '换一批'}
           </button>
         </div>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-5 gap-2.5 max-h-[280px] overflow-y-auto">
           {displayIdioms.map((item) => {
             const isMultiSelected = selectedIdioms.has(item.idiom)
             const isSingleSelected = selectedIdiom === item.idiom
@@ -153,18 +233,18 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
               <button
                 key={item.idiom}
                 onClick={() => onBatchGenerate ? toggleIdiom(item.idiom) : handleSelect(item.idiom)}
-                className={`p-3 rounded-lg text-sm font-medium transition-all relative ${
+                className={`p-2 rounded-lg text-xs font-medium transition-all relative ${
                   isMultiSelected || isSingleSelected
-                    ? 'bg-blue-600 text-white shadow-md scale-105 ring-2 ring-blue-300'
+                    ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
                     : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
                 {item.idiom}
                 {isMultiSelected && (
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">✓</span>
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
                 )}
                 {!isMultiSelected && existingIdioms.has(item.idiom) && (
-                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">✓</span>
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
                 )}
               </button>
             )

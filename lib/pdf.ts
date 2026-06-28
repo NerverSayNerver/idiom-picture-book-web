@@ -51,18 +51,34 @@ export async function generatePDF(book: PictureBook): Promise<void> {
     if (scene.imageBlob) {
       const imageUrl = URL.createObjectURL(scene.imageBlob)
       const img = new Image()
-      await new Promise((resolve) => {
-        img.onload = resolve
-        img.src = imageUrl
-      })
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error(`场景 "${scene.title}" 图片加载超时`))
+          }, 10000)
 
-      const imgWidth = 120
-      const imgHeight = (img.height / img.width) * imgWidth
-      const imgX = (pageWidth - imgWidth) / 2
-      const imgY = 30
+          img.onload = () => {
+            clearTimeout(timeout)
+            resolve()
+          }
+          img.onerror = () => {
+            clearTimeout(timeout)
+            reject(new Error(`场景 "${scene.title}" 图片加载失败`))
+          }
+          img.src = imageUrl
+        })
 
-      pdf.addImage(img, 'PNG', imgX, imgY, imgWidth, imgHeight)
-      URL.revokeObjectURL(imageUrl)
+        const imgWidth = 120
+        const imgHeight = (img.height / img.width) * imgWidth
+        const imgX = (pageWidth - imgWidth) / 2
+        const imgY = 30
+
+        pdf.addImage(img, 'PNG', imgX, imgY, imgWidth, imgHeight)
+      } catch (err) {
+        console.warn('PDF 插图加载失败，跳过:', err)
+      } finally {
+        URL.revokeObjectURL(imageUrl)
+      }
     }
 
     // 旁白

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import type { PictureBook } from '@/lib/types'
 import { VideoGenerator } from './VideoGenerator'
 import { generatePDF } from '@/lib/pdf'
@@ -25,24 +25,39 @@ export function BookViewer({ book }: BookViewerProps) {
     rate,
     currentCharIndex,
     speak,
+    speakScenes,
     stop,
     togglePause,
     setRate: setTTSRate,
     isSupported,
   } = useTTS()
 
-  // 连续朗读模式标记
-  const isReadingModeRef = useRef(false)
-  // 防止 effect 递归触发
-  const isSpeakingRef = useRef(false)
+  // 缓存从 Blob 创建的 URL，避免每次渲染创建新 URL
+  const sceneBlobUrls = useMemo(() => {
+    const urls: Map<number, string> = new Map()
+    book.scenes.forEach((s) => {
+      if (!s.imageUrl && s.imageBlob) {
+        urls.set(s.id, URL.createObjectURL(s.imageBlob))
+      }
+    })
+    return urls
+  }, [book.scenes])
 
+  // 组件卸载时释放所有 blob URL
+  useEffect(() => {
+    return () => {
+      sceneBlobUrls.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [sceneBlobUrls])
+  const isReadingModeRef = useRef(false)
+  // 确保只在非 Strict Mode 双重调用时有问题时仍能正常工作
   const goToNext = useCallback(() => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
-  }, [totalPages])
+    setCurrentPage((prev) => Math.min(prev + 1, book.scenes.length + 1))
+  }, [book.scenes.length])
 
   const goToPrev = useCallback(() => {
     setCurrentPage((prev) => Math.max(prev - 1, 0))
-  }, [totalPages])
+  }, [])
 
   // 循环切换语速
   const cycleRate = useCallback(() => {
@@ -68,8 +83,22 @@ export function BookViewer({ book }: BookViewerProps) {
     isReadingModeRef.current = true
     const startIndex = isCover ? 0 : isMeaningPage ? book.scenes.length : sceneIndex
     if (startIndex >= book.scenes.length) return
-    setCurrentPage(startIndex + 1)
-  }, [isPlaying, stop, isCover, isMeaningPage, sceneIndex, book.scenes])
+
+    // 使用 useTTS hook 的 speakScenes，确保 isPlaying/isPaused 状态同步
+    speakScenes(
+      book.scenes.map(s => ({ narration: s.narration })),
+      startIndex,
+      (sceneIdx) => {
+        // 每个场景结束后的回调：翻到对应页面
+        const nextPage = sceneIdx + 2 // +1 for cover, +1 for next scene
+        if (nextPage < totalPages) {
+          setCurrentPage(nextPage)
+        } else {
+          isReadingModeRef.current = false
+        }
+      }
+    )
+  }, [isPlaying, stop, isCover, isMeaningPage, sceneIndex, book.scenes, speakScenes, totalPages])
 
   // 停止朗读并退出朗读模式
   const handleStop = useCallback(() => {
@@ -77,39 +106,17 @@ export function BookViewer({ book }: BookViewerProps) {
     isReadingModeRef.current = false
   }, [stop])
 
-  // 页面变化时，在朗读模式下自动开始新页朗读
+  // 页面变化时，在朗读模式下处理含义页朗读
   useEffect(() => {
     if (!isReadingModeRef.current) return
-    if (isSpeakingRef.current) return
     if (isCover) return
 
     if (isMeaningPage) {
-      // 含义页朗读含义文本
-      isSpeakingRef.current = true
+      // 含义页使用 useTTS hook 的 speak 方法，保持状态同步
       speak(book.meaning)
-      return
     }
-
-    if (!scene) return
-
-    // 停止之前的朗读，开始新页
-    isSpeakingRef.current = true
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(scene.narration)
-    utterance.lang = 'zh-CN'
-    utterance.rate = rate
-    utterance.onend = () => {
-      isSpeakingRef.current = false
-      const nextPage = currentPage + 1
-      if (nextPage < totalPages) {
-        setCurrentPage(nextPage)
-      } else {
-        isReadingModeRef.current = false
-      }
-    }
-    window.speechSynthesis.speak(utterance)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage])
+    // 场景页朗读由 speakScenes 处理，无需在此创建 utterance
+  }, [currentPage, isCover, isMeaningPage, book.meaning, speak])
 
   // 键盘事件
   useEffect(() => {
@@ -205,7 +212,7 @@ export function BookViewer({ book }: BookViewerProps) {
               {/* 所有插图网格 */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {book.scenes.map((s, i) => {
-                  const imgSrc = s.imageUrl || (s.imageBlob ? URL.createObjectURL(s.imageBlob) : null)
+                  const imgSrc = s.imageUrl || sceneBlobUrls.get(s.id) || null
                   return (
                     <div
                       key={i}
@@ -252,7 +259,7 @@ export function BookViewer({ book }: BookViewerProps) {
                 </div>
                 {(scene.imageUrl || scene.imageBlob) && (
                   <img
-                    src={scene.imageUrl || URL.createObjectURL(scene.imageBlob!)}
+                    src={scene.imageUrl || sceneBlobUrls.get(scene.id) || ''}
                     alt={scene.title}
                     className="w-full h-auto rounded-lg shadow-md"
                   />

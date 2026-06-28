@@ -1,13 +1,13 @@
 'use server'
 
 import { chatCompletion } from '@/lib/agnes-api'
-import type { IdiomDecomposition } from '@/lib/types'
+import type { IdiomDecomposition, SceneTemplateRaw, DecompositionRaw } from '@/lib/types'
 
 const SYSTEM_PROMPT =
   '你是一位专业的儿童绘本故事策划，擅长将成语故事拆分为适合儿童阅读的场景。请始终以 JSON 格式返回结果。'
 
 const USER_PROMPT_TEMPLATE = (idiom: string) =>
-  `请将成语「${idiom}」的故事拆分为 6 个关键场景。
+  `请将成语「${idiom}」的故事拆分为 5-10 个关键场景。简单的故事拆分为 5-6 个场景，复杂的故事拆分为 7-10 个场景。
 
 要求：
 1. 每个场景需要包含：标题、场景描述（用于生成图像的提示词）、旁白文本（适合朗读给孩子听）
@@ -61,7 +61,14 @@ export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition>
     jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1)
   }
 
-  const data = JSON.parse(jsonStr)
+  let data: DecompositionRaw
+  try {
+    data = JSON.parse(jsonStr)
+  } catch (parseError) {
+    throw new Error(
+      `LLM 返回的 JSON 解析失败：${parseError instanceof Error ? parseError.message : String(parseError)}\n原始内容：${jsonStr.substring(0, 500)}`
+    )
+  }
 
   // 验证返回格式
   if (!data.meaning || !Array.isArray(data.scenes) || data.scenes.length === 0) {
@@ -75,7 +82,7 @@ export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition>
   return {
     idiom,
     meaning: data.meaning,
-    scenes: data.scenes.map((s: any, i: number) => {
+    scenes: data.scenes.map((s: SceneTemplateRaw, i: number) => {
       // 构建统一的prompt，包含角色描述和风格描述
       let prompt = s.prompt || `A cartoon scene for ${idiom} story`
       

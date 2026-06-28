@@ -64,7 +64,7 @@ export async function generateImage(
     body: JSON.stringify({
       model: 'agnes-image-2.1-flash',
       prompt: truncatedPrompt,
-      size: '512x512',
+      size,
     }),
   })
 

@@ -8,23 +8,13 @@ import {
 } from '@/lib/agnes-api'
 
 export async function generateSceneImage(prompt: string): Promise<string> {
-  // 重试逻辑，最多5次
-  for (let i = 0; i < 5; i++) {
-    try {
-      const result = await generateImage(prompt)
-      const imageUrl = result.data[0]?.url
-      if (!imageUrl) {
-        throw new Error('图像生成失败')
-      }
-      return imageUrl
-    } catch (error) {
-      console.log(`图像生成重试 ${i + 1}/5...`)
-      if (i === 4) throw error
-      // 等待更长时间再重试
-      await new Promise((resolve) => setTimeout(resolve, 3000 * (i + 1)))
-    }
+  // 不内置重试，由 task-executor 层统一管理重试逻辑
+  const result = await generateImage(prompt)
+  const imageUrl = result.data?.[0]?.url
+  if (!imageUrl) {
+    throw new Error('图像生成失败：API 返回空 URL')
   }
-  throw new Error('图像生成失败')
+  return imageUrl
 }
 
 // 服务器端下载图像并返回 base64
@@ -38,7 +28,7 @@ export async function downloadImageAsBase64(url: string): Promise<string> {
 
 export async function generateBookVideo(
   imageUrls: string[]
-): Promise<{ videoUrl: string }> {
+): Promise<{ videoId: string }> {
   // 1. 创建视频任务
   const task = await createVideoTask(imageUrls)
   const videoId = task.video_id
@@ -48,8 +38,11 @@ export async function generateBookVideo(
     await new Promise((resolve) => setTimeout(resolve, 10000))
     const result = await getVideoResult(videoId)
 
-    if (result.status === 'completed' && result.remixed_from_video_id) {
-      return { videoUrl: result.remixed_from_video_id }
+    if (result.status === 'completed' && result.video_id) {
+      // 注意: remixed_from_video_id 是视频 ID 而非 URL。
+      // 实际视频访问方式需要查阅 Agnes Video API 文档确认。
+      // 暂时使用 video_id 作为标识，前端可尝试以 ID 构建访问 URL。
+      return { videoId: result.video_id }
     } else if (result.status === 'failed') {
       throw new Error('视频生成失败')
     }

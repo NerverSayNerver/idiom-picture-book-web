@@ -7,6 +7,8 @@ interface AppState {
   currentIdiom: string | null
   currentMeaning: string | null
   currentScenes: Scene[]
+  characterDescription: string | null
+  styleDescription: string | null
   isDecomposing: boolean
   isGenerating: boolean
   generatingSceneId: number | null
@@ -17,13 +19,13 @@ interface AppState {
 
   // Actions
   setCurrentIdiom: (idiom: string) => void
-  setDecomposition: (meaning: string, scenes: SceneTemplate[]) => void
+  setDecomposition: (meaning: string, scenes: SceneTemplate[], characterDescription?: string, styleDescription?: string) => void
   setSceneImage: (sceneId: number, imageUrl: string, imageBlob: Blob) => void
   setGeneratingScene: (sceneId: number | null) => void
   setDecomposing: (isDecomposing: boolean) => void
   setGenerating: (isGenerating: boolean) => void
   setError: (error: string | null) => void
-  saveCurrentBook: () => PictureBook
+  saveCurrentBook: (existingId?: string) => PictureBook
   reset: () => void
   loadBooks: (books: PictureBook[]) => void
   deleteBook: (id: string) => void
@@ -33,6 +35,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentIdiom: null,
   currentMeaning: null,
   currentScenes: [],
+  characterDescription: null,
+  styleDescription: null,
   isDecomposing: false,
   isGenerating: false,
   generatingSceneId: null,
@@ -41,13 +45,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setCurrentIdiom: (idiom) => set({ currentIdiom: idiom, error: null }),
 
-  setDecomposition: (meaning, scenes) =>
+  setDecomposition: (meaning, scenes, characterDescription, styleDescription) =>
     set({
       currentMeaning: meaning,
       currentScenes: scenes.map((s, i) => ({
         ...s,
         id: i + 1,
       })),
+      characterDescription: characterDescription ?? null,
+      styleDescription: styleDescription ?? null,
     }),
 
   setSceneImage: (sceneId, imageUrl, imageBlob) =>
@@ -62,18 +68,31 @@ export const useAppStore = create<AppState>((set, get) => ({
   setGenerating: (isGenerating) => set({ isGenerating }),
   setError: (error) => set({ error }),
 
-  saveCurrentBook: () => {
+  saveCurrentBook: (existingId?: string) => {
     const state = get()
+    // 守卫：确保当前成语和含义非空，避免保存损坏的绘本
+    if (!state.currentIdiom || !state.currentMeaning) {
+      console.warn('saveCurrentBook: currentIdiom 或 currentMeaning 为空，放弃保存')
+      throw new Error('无法保存：成语或含义缺失')
+    }
+
+    // 如果已有同名绘本且传入 existingId，用旧 id 覆盖（防止 retry 创建重复）
+    const existingBook = existingId
+      ? state.pictureBooks.find(b => b.id === existingId)
+      : state.pictureBooks.find(b => b.idiom === state.currentIdiom)
+
     const book: PictureBook = {
-      id: uuidv4(),
-      title: state.currentIdiom!,
-      idiom: state.currentIdiom!,
-      meaning: state.currentMeaning!,
-      createdAt: new Date().toISOString(),
+      id: existingBook?.id ?? uuidv4(),
+      title: state.currentIdiom,
+      idiom: state.currentIdiom,
+      meaning: state.currentMeaning,
+      createdAt: existingBook?.createdAt ?? new Date().toISOString(),
       scenes: state.currentScenes,
     }
     set((state) => ({
-      pictureBooks: [...state.pictureBooks, book],
+      pictureBooks: existingBook
+        ? state.pictureBooks.map(b => b.id === existingBook.id ? book : b)
+        : [...state.pictureBooks, book],
     }))
     return book
   },
@@ -83,6 +102,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       currentIdiom: null,
       currentMeaning: null,
       currentScenes: [],
+      characterDescription: null,
+      styleDescription: null,
       isDecomposing: false,
       isGenerating: false,
       generatingSceneId: null,

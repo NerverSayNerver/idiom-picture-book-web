@@ -41,15 +41,22 @@ export function SceneCard({ scene, status }: SceneCardProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // fallback
-      const textArea = document.createElement('textarea')
-      textArea.value = scene.prompt
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      // Fallback: 使用已废弃的 execCommand（仅在 clipboard API 不可用时）
+      try {
+        const textArea = document.createElement('textarea')
+        textArea.value = scene.prompt
+        textArea.style.position = 'fixed'
+        textArea.style.opacity = '0'
+        document.body.appendChild(textArea)
+        textArea.select()
+        // execCommand 已废弃，但作为 clipboard API 不可用时的 fallback
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch {
+        // 两种方式都失败，静默处理
+      }
     }
   }
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { getPictureBook } from '@/lib/db'
 import { BookViewer } from '@/components/BookViewer'
-import type { PictureBook } from '@/lib/types'
+import type { PictureBook, PreGeneratedIndexItem } from '@/lib/types'
 
 export default function ReadPage() {
   const params = useParams()
@@ -12,6 +12,9 @@ export default function ReadPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const abortController = new AbortController()
+    const { signal } = abortController
+
     const loadBook = async () => {
       const id = params.id as string
 
@@ -19,24 +22,26 @@ export default function ReadPage() {
       let loadedBook = await getPictureBook(id)
 
       // 如果没找到，尝试从预生成文件加载
-      if (!loadedBook) {
+      if (!loadedBook && !signal.aborted) {
         try {
           // 尝试通过 id 匹配预生成的绘本
-          const response = await fetch('/pre-generated/index.json')
+          const response = await fetch('/pre-generated/index.json', { signal })
           if (response.ok) {
             const index = await response.json()
-            const match = index.find((item: any) => item.id === id)
-            if (match) {
-              const bookResponse = await fetch(`/pre-generated/${match.idiom}.json`)
+            // 先通过 index.idiom 或 index.id 匹配（避免逐个加载 JSON）
+            const match = index.find((item: PreGeneratedIndexItem) => item.idiom === id || item.id === id)
+            if (match && !signal.aborted) {
+              const bookResponse = await fetch(`/pre-generated/${match.idiom}.json`, { signal })
               if (bookResponse.ok) {
                 loadedBook = await bookResponse.json()
               }
             }
 
-            // 如果还是没找到，尝试通过标题匹配
-            if (!loadedBook) {
+            // 如果还是没找到，尝试遍历所有文件
+            if (!loadedBook && !signal.aborted) {
               for (const item of index) {
-                const bookResponse = await fetch(`/pre-generated/${item.idiom}.json`)
+                if (signal.aborted) break
+                const bookResponse = await fetch(`/pre-generated/${item.idiom}.json`, { signal })
                 if (bookResponse.ok) {
                   const book = await bookResponse.json()
                   if (book.title === id || book.idiom === id) {
@@ -47,15 +52,22 @@ export default function ReadPage() {
               }
             }
           }
-        } catch {
-          // no pre-generated books
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') return
+          // no pre-generated books or fetch error
         }
       }
 
-      setBook(loadedBook || null)
-      setLoading(false)
+      if (!signal.aborted) {
+        setBook(loadedBook || null)
+        setLoading(false)
+      }
     }
     loadBook()
+
+    return () => {
+      abortController.abort()
+    }
   }, [params.id])
 
   if (loading) {

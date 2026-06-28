@@ -28,6 +28,11 @@ function buildUserPrompt(exclude: string[]): string {
 export async function fetchRecommendedIdioms(
   exclude: string[] = []
 ): Promise<IdiomInfo[]> {
+  // 限制排除列表长度，防止 LLM 提示词过大
+  if (exclude.length > 50) {
+    exclude = exclude.slice(0, 50)
+  }
+
   const result = await chatCompletion([
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: buildUserPrompt(exclude) },

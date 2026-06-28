@@ -20,7 +20,7 @@ const config: Config = {
         'button': '25px',
       },
       fontFamily: {
-        sans: ['Noto Sans SC', 'sans-serif'],
+        sans: ['var(--font-noto-sans-sc)', 'Noto Sans SC', 'sans-serif'],
       },
     },
   },

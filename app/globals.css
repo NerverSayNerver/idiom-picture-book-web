@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
-
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-rgb: 250, 247, 245;
@@ -12,7 +10,6 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
-  font-family: 'Noto Sans SC', sans-serif;
 }
 
 /* 童趣绘本风全局样式 */

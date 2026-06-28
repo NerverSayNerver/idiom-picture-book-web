@@ -2,6 +2,35 @@ import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
 import { saveTasks, loadTasks } from './db'
 
+// ── 持久化防抖 ──────────────────────────────────────────
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+const DEBOUNCE_MS = 300
+
+/**
+ * 立即持久化任务（createJob、addChildTasks 等关键操作使用）
+ */
+function persistImmediate(tasks: Task[]): void {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+  saveTasks(tasks).catch(console.error)
+}
+
+/**
+ * 防抖持久化任务（updateTask、removeTask 等高频操作使用）
+ */
+function persistDebounced(tasks: Task[]): void {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null
+    saveTasks(tasks).catch(console.error)
+  }, DEBOUNCE_MS)
+}
+
 // ── 类型定义 ──────────────────────────────────────────────
 
 export type TaskStatus =
@@ -22,6 +51,7 @@ export interface Task {
   idiom?: string
   sceneId?: number
   sceneTitle?: string
+  imageUrl?: string        // 生成任务完成后的图片 URL（跨 job 持久）
   progress: number
   total: number
   error?: string
@@ -77,15 +107,10 @@ interface TaskQueueState {
   // 任务列表
   tasks: Task[]
 
-  // 全局状态（向后兼容）
+  // 全局状态（用于执行器控制）
   isRunning: boolean
   isPaused: boolean
   currentTaskId: string | null
-
-  // 统计信息（向后兼容）
-  totalTasks: number
-  completedTasks: number
-  failedTasks: number
 
   // ── Job 相关 actions ──────────────────────────────────
   createJob: (idiom: string) => string
@@ -149,9 +174,6 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
   isRunning: false,
   isPaused: false,
   currentTaskId: null,
-  totalTasks: 0,
-  completedTasks: 0,
-  failedTasks: 0,
 
   // ── createJob ─────────────────────────────────────────
   createJob: (idiom: string) => {
@@ -171,10 +193,9 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
 
     set((state) => ({
       tasks: [...state.tasks, job],
-      totalTasks: state.totalTasks + 1,
     }))
 
-    get().persistTasks()
+    persistImmediate(get().tasks)
     return id
   },
 
@@ -217,17 +238,25 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
 
       return {
         tasks: [...updatedTasks, ...newChildren],
-        totalTasks: state.totalTasks + newChildren.length,
       }
     })
 
-    get().persistTasks()
+    persistImmediate(get().tasks)
     return newChildIds
   },
 
   // ── createJobs ────────────────────────────────────────
   createJobs: (idioms: string[]) => {
-    return idioms.map(idiom => get().createJob(idiom))
+    // 去重：跳过已在队列中（pending/running/paused）的相同成语
+    const existing = new Set(
+      get().tasks
+        .filter(t => t.type === 'job' && ['pending', 'running', 'paused'].includes(t.status))
+        .map(t => t.idiom)
+        .filter(Boolean)
+    )
+    const newIdioms = idioms.filter(idiom => !existing.has(idiom))
+    if (newIdioms.length === 0) return []
+    return newIdioms.map(idiom => get().createJob(idiom))
   },
 
   // ── addTask（向后兼容） ───────────────────────────────
@@ -253,7 +282,6 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
 
     set((state) => ({
       tasks: [...state.tasks, newTask],
-      totalTasks: state.totalTasks + 1,
     }))
 
     return taskId
@@ -306,14 +334,8 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
         })
       }
 
-      // 重新计算统计信息
-      const completedTasks = newTasks.filter(t => t.status === 'completed').length
-      const failedTasks = newTasks.filter(t => t.status === 'failed').length
-
       return {
         tasks: newTasks,
-        completedTasks,
-        failedTasks,
       }
     })
 
@@ -332,16 +354,9 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
         task.childTaskIds.forEach(id => idsToRemove.add(id))
       }
 
-      const removedTasks = state.tasks.filter(t => idsToRemove.has(t.id))
-      const removedCompleted = removedTasks.filter(t => t.status === 'completed').length
-      const removedFailed = removedTasks.filter(t => t.status === 'failed').length
-
       const newTasks = state.tasks.filter(t => !idsToRemove.has(t.id))
       return {
         tasks: newTasks,
-        totalTasks: state.totalTasks - removedTasks.length,
-        completedTasks: state.completedTasks - removedCompleted,
-        failedTasks: state.failedTasks - removedFailed,
       }
     })
     get().persistTasks()
@@ -460,7 +475,7 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
   // ── clearCompleted ────────────────────────────────────
   clearCompleted: () => {
     set((state) => ({
-      tasks: state.tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled' && t.status !== 'failed'),
+      tasks: state.tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled'),
     }))
     get().persistTasks()
   },
@@ -519,27 +534,30 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
       isRunning: false,
       isPaused: false,
       currentTaskId: null,
-      totalTasks: 0,
-      completedTasks: 0,
-      failedTasks: 0,
     })
   },
 
   // ── 持久化 ─────────────────────────────────────────────
   persistTasks: () => {
     const { tasks } = get()
-    saveTasks(tasks).catch(console.error)
+    persistDebounced(tasks)
   },
 
   loadPersistedTasks: async () => {
     const tasks = await loadTasks()
-    if (tasks.length === 0) return
-    // 恢复任务，但将 running 状态标记为 failed（页面刷新意味着中断）
-    const restored = tasks.map(t => ({
-      ...t,
-      status: t.status === 'running' ? 'failed' as const : t.status,
-      error: t.status === 'running' ? '页面刷新，执行中断' : t.error,
-    }))
+    if (tasks.length === 0) {
+      set({ tasks: [] })
+      return
+    }
+    // 恢复任务，但将 running / paused 标记为 failed（页面刷新意味着中断）
+    const restored = tasks.map(t => {
+      const needsReset = t.status === 'running' || t.status === 'paused'
+      return {
+        ...t,
+        status: needsReset ? 'failed' as const : t.status,
+        error: needsReset ? '页面刷新，执行中断' : t.error,
+      }
+    })
     set({ tasks: restored })
   },
 }))
