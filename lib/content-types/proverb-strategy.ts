@@ -4,7 +4,7 @@ export const proverbStrategy: ContentTypeStrategy = {
   category: 'proverb',
   label: '谚语',
   icon: '💬',
-  getDecomposePrompt: (proverb) => `你是一位儿童绘本策划师，擅长将谚语/俗语转化为适合 3-8 岁儿童理解的生活场景绘本。
+  getDecomposePrompt: (proverb, _fullText) => `你是一位儿童绘本策划师，擅长将谚语/俗语转化为适合 3-8 岁儿童理解的生活场景绘本。
 
 请将谚语「${proverb}」拆分为 4-6 个生活场景，帮助儿童理解这条谚语的含义。要求：
 1. 每个场景展示谚语寓意的一个侧面，用小动物或小朋友的生活故事来呈现
@@ -17,14 +17,14 @@ export const proverbStrategy: ContentTypeStrategy = {
 请严格按照以下 JSON 格式返回：
 {
   "meaning": "谚语的含义解释（适合儿童理解）",
-  "characterDescription": "主要角色的统一外貌描述（英文）",
-  "styleDescription": "统一的画风和色调描述（英文，建议温暖明快的绘本风格）",
+  "characterDescription": "主要角色的统一外貌描述（中文）",
+  "styleDescription": "统一的画风和色调描述（中文，建议温暖明快的绘本风格）",
   "scenes": [
     {
       "title": "场景标题",
       "description": "场景描述（中文）",
-      "prompt": "English prompt for AI image generation, warm picture book style...",
-      "compositionHint": "English composition instruction",
+      "prompt": "中文生图提示词，温暖明快的绘本风格...",
+      "compositionHint": "中文构图提示",
       "narration": "旁白文本"
     }
   ]

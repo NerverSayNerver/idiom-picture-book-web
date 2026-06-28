@@ -4,7 +4,7 @@ export const nurseryRhymeStrategy: ContentTypeStrategy = {
   category: 'nursery-rhyme',
   label: '儿歌',
   icon: '🎵',
-  getDecomposePrompt: (rhyme) => `你是一位儿童绘本策划师，擅长将儿歌/童谣转化为适合 0-6 岁婴幼儿的绘本画面。
+  getDecomposePrompt: (rhyme, _fullText) => `你是一位儿童绘本策划师，擅长将儿歌/童谣转化为适合 0-6 岁婴幼儿的绘本画面。
 
 请将儿歌「${rhyme}」拆分为 5-8 个童趣场景。要求：
 1. 每段歌词（或每 1-2 句）作为一个场景，歌词有副歌时可重复展现但画面不同
@@ -17,14 +17,14 @@ export const nurseryRhymeStrategy: ContentTypeStrategy = {
 请严格按照以下 JSON 格式返回：
 {
   "meaning": "儿歌的教育意义或主题说明",
-  "characterDescription": "主要角色的统一外貌描述（英文）",
-  "styleDescription": "统一的画风和色调描述（英文，建议明亮卡通风格）",
+  "characterDescription": "主要角色的统一外貌描述（中文）",
+  "styleDescription": "统一的画风和色调描述（中文，建议明亮卡通风格）",
   "scenes": [
     {
       "title": "场景标题（可用歌词首句）",
       "description": "场景描述（中文）",
-      "prompt": "English prompt for AI image generation, bright cartoon style...",
-      "compositionHint": "English composition instruction",
+      "prompt": "中文生图提示词，明亮卡通风格，色彩鲜艳，圆润可爱...",
+      "compositionHint": "中文构图提示",
       "narration": "原歌词（保留重复和韵律）"
     }
   ]

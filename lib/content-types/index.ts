@@ -17,6 +17,9 @@ export function getAllStrategies(): ContentTypeStrategy[] {
   return Array.from(registry.values())
 }
 
+// 透传 content-info 的导出，方便其他模块统一从 content-types 导入
+export { getContentInfo } from '@/lib/content-info'
+
 // 注册所有策略
 import { idiomStrategy } from './idiom-strategy'
 import { poetryStrategy } from './poetry-strategy'

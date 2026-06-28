@@ -12,21 +12,21 @@ const DECOMPOSE_USER_TEMPLATE = (idiom: string) =>
 3. 场景描述要具体、生动，适合 AI 图像生成
 4. 旁白文本要简洁、有韵律感，适合亲子朗读
 5. 整体风格要适合 3-8 岁儿童
-6. prompt 字段必须是英文，用于 AI 图像生成
+6. prompt 字段必须是中文，用于 AI 图像生成
 7. 所有场景必须保持统一的画风和色调，确保视觉一致性
 8. 所有场景中的主要角色必须保持一致的外貌特征，确保角色识别度
 
 请严格以以下 JSON 格式返回，不要包含任何其他内容：
 {
   "meaning": "成语的含义解释",
-  "characterDescription": "主要角色的统一外貌描述（英文，用于所有场景的prompt）",
-  "styleDescription": "统一的画风和色调描述（英文，用于所有场景的prompt）",
+  "characterDescription": "主要角色的统一外貌描述（中文，用于所有场景的 prompt）",
+  "styleDescription": "统一的画风和色调描述（中文，用于所有场景的 prompt）",
   "scenes": [
     {
       "title": "场景标题",
       "description": "场景描述",
-      "prompt": "English prompt for AI image generation, must include characterDescription and styleDescription",
-      "compositionHint": "English composition instruction, e.g. close-up shot, wide angle scene",
+      "prompt": "中文生图提示词，卡通绘本风格...",
+      "compositionHint": "中文构图提示",
       "narration": "旁白文本"
     }
   ]
@@ -52,7 +52,7 @@ export const idiomStrategy: ContentTypeStrategy = {
   category: 'idiom',
   label: '成语',
   icon: '🎭',
-  getDecomposePrompt: (text) => `${DECOMPOSE_SYSTEM_PROMPT}\n\n${DECOMPOSE_USER_TEMPLATE(text)}`,
+  getDecomposePrompt: (text, _fullText) => `${DECOMPOSE_SYSTEM_PROMPT}\n\n${DECOMPOSE_USER_TEMPLATE(text)}`,
   getRecommendPrompt: (exclude) => RECOMMEND_USER_TEMPLATE(exclude),
   validate: (text) => VALID_IDIOM_RE.test(text),
 }

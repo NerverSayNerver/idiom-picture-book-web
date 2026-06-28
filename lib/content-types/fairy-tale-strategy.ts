@@ -4,7 +4,7 @@ export const fairyTaleStrategy: ContentTypeStrategy = {
   category: 'fairy-tale',
   label: '童话',
   icon: '🏰',
-  getDecomposePrompt: (tale) => `你是一位专业的儿童绘本故事策划师，擅长将童话故事改编为适合 3-8 岁儿童的绘本场景。
+  getDecomposePrompt: (tale, _fullText) => `你是一位专业的儿童绘本故事策划师，擅长将童话故事改编为适合 3-8 岁儿童的绘本场景。
 
 请将童话故事「${tale}」拆分为 8-12 个绘本场景。要求：
 1. 按经典故事弧线拆分：背景/角色介绍 → 冲突出现 → 困难升级 → 转折/高潮 → 解决 → 寓意
@@ -18,14 +18,14 @@ export const fairyTaleStrategy: ContentTypeStrategy = {
 请严格按照以下 JSON 格式返回：
 {
   "meaning": "故事寓意（适合儿童理解的总结）",
-  "characterDescription": "所有主要角色的外貌描述（英文，逐个角色描述）",
-  "styleDescription": "统一的画风和色调描述（英文，建议经典故事绘本插画风）",
+  "characterDescription": "所有主要角色的外貌描述（中文，逐个角色描述）",
+  "styleDescription": "统一的画风和色调描述（中文，建议经典故事绘本插画风）",
   "scenes": [
     {
       "title": "场景标题",
       "description": "场景描述（中文，包含角色动作、环境细节）",
-      "prompt": "English prompt for AI image generation, classic storybook illustration style...",
-      "compositionHint": "English composition instruction",
+      "prompt": "中文生图提示词，经典故事绘本插画风...",
+      "compositionHint": "中文构图提示",
       "narration": "旁白叙事文本"
     }
   ]

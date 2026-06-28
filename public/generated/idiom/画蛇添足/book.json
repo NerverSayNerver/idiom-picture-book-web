@@ -1,0 +1,65 @@
+{
+  "id": "0a48e867-30c5-4c55-9ff9-1f3e385e46be",
+  "category": "idiom",
+  "sourceText": "画蛇添足",
+  "title": "画蛇添足",
+  "idiom": "画蛇添足",
+  "meaning": "比喻做了多余的事，反而把事情弄糟。指多此一举，适得其反。",
+  "createdAt": "2026-06-28T07:14:04.592Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "比赛开始",
+      "description": "一群可爱的小动物围坐在草地上，中间有一壶酒。那条绿色的小蛇正自信地准备画蛇。",
+      "prompt": "A cute, stylized cartoon snake with bright green scales, large expressive eyes, and a friendly smile, wearing a small red sash., A group of cute cartoon animals sitting on grass in a circle, watching a bright green cartoon snake with a red sash preparing to draw on the ground. A pot of wine is in the center. Soft pastel watercolor style, warm sunlight., Wide angle shot, establishing the scene., Soft pastel watercolor illustration style, warm sunlight, gentle shadows, whimsical forest background, suitable for children aged 3-8, high quality, detailed texture.",
+      "narration": "好朋友，来比赛，看谁画蛇最快哉！",
+      "compositionHint": "Wide angle shot, establishing the scene.",
+      "imageUrl": "/generated/idiom/画蛇添足/1.png"
+    },
+    {
+      "id": 2,
+      "title": "一人领先",
+      "description": "绿色小蛇已经画好了第一条蛇，它抬起头，得意洋洋地看着其他人，尾巴翘得高高的。",
+      "prompt": "A cute, stylized cartoon snake with bright green scales, large expressive eyes, and a friendly smile, wearing a small red sash., The green cartoon snake looks proud and happy, with a completed simple snake drawing on the ground next to him. He is looking up confidently. Other animals look surprised. Soft pastel watercolor style., Medium shot, focusing on the snake's expression., Soft pastel watercolor illustration style, warm sunlight, gentle shadows, whimsical forest background, suitable for children aged 3-8, high quality, detailed texture.",
+      "narration": "小蛇画得快又快，抬头看看真神气！",
+      "compositionHint": "Medium shot, focusing on the snake's expression.",
+      "imageUrl": "/generated/idiom/画蛇添足/2.png"
+    },
+    {
+      "id": 3,
+      "title": "得意忘形",
+      "description": "小蛇觉得比赛太简单了，决定给刚画好的蛇加上脚。他手里拿着树枝，正要画脚。",
+      "prompt": "A cute, stylized cartoon snake with bright green scales, large expressive eyes, and a friendly smile, wearing a small red sash., The green cartoon snake holds a twig in his mouth, looking at the snake he just drew. He is adding feet to the snake's body. The other animals watch with confusion. Soft pastel watercolor style., Close-up on the snake and the drawing., Soft pastel watercolor illustration style, warm sunlight, gentle shadows, whimsical forest background, suitable for children aged 3-8, high quality, detailed texture.",
+      "narration": "画完一条不算赢，还要加脚显威风！",
+      "compositionHint": "Close-up on the snake and the drawing.",
+      "imageUrl": "/generated/idiom/画蛇添足/3.png"
+    },
+    {
+      "id": 4,
+      "title": "众人劝阻",
+      "description": "其他小动物围过来，摇头摆手，指着地上的蛇，表情着急，告诉小蛇蛇没有脚。",
+      "prompt": "A cute, stylized cartoon snake with bright green scales, large expressive eyes, and a friendly smile, wearing a small red sash., Other cartoon animals shaking their heads and waving hands, pointing at the snake with feet. They look worried and trying to stop the green snake. Soft pastel watercolor style., Group shot, showing interaction between characters., Soft pastel watercolor illustration style, warm sunlight, gentle shadows, whimsical forest background, suitable for children aged 3-8, high quality, detailed texture.",
+      "narration": "大家急得直摆手：蛇没脚呀别乱添！",
+      "compositionHint": "Group shot, showing interaction between characters.",
+      "imageUrl": "/generated/idiom/画蛇添足/4.png"
+    },
+    {
+      "id": 5,
+      "title": "最终失败",
+      "description": "小蛇画完了脚，但其他小动物已经画好了蛇并拿走了酒壶。小蛇看着空空的酒壶，一脸懊恼。",
+      "prompt": "A cute, stylized cartoon snake with bright green scales, large expressive eyes, and a friendly smile, wearing a small red sash., The green cartoon snake looks sad and regretful, holding the twig with feet drawn on the snake. Other animals are drinking wine happily nearby. The pot is empty. Soft pastel watercolor style., Focus on the snake's disappointed face., Soft pastel watercolor illustration style, warm sunlight, gentle shadows, whimsical forest background, suitable for children aged 3-8, high quality, detailed texture.",
+      "narration": "多此一举太可惜，美酒喝不到嘴里。",
+      "compositionHint": "Focus on the snake's disappointed face.",
+      "imageUrl": "/generated/idiom/画蛇添足/5.png"
+    },
+    {
+      "id": 6,
+      "title": "道理记心间",
+      "description": "小蛇低头看着自己画的长脚蛇，旁边出现一个大大的问号或感叹号图标，强调“画蛇添足”这个成语。",
+      "prompt": "A cute, stylized cartoon snake with bright green scales, large expressive eyes, and a friendly smile, wearing a small red sash., The green cartoon snake looks at the snake with feet, looking ashamed. A large question mark appears above. Soft pastel watercolor style, educational tone., Top-down view or eye-level shot emphasizing the moral., Soft pastel watercolor illustration style, warm sunlight, gentle shadows, whimsical forest background, suitable for children aged 3-8, high quality, detailed texture.",
+      "narration": "做事千万别多嘴，画蛇添足最不对！",
+      "compositionHint": "Top-down view or eye-level shot emphasizing the moral.",
+      "imageUrl": "/generated/idiom/画蛇添足/6.png"
+    }
+  ]
+}

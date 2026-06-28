@@ -13,7 +13,7 @@
       "prompt": "Three cute little pigs with backpacks waving goodbye to their mother pig at a doorway, green countryside road ahead, sunny day, soft watercolor illustration, pastel colors, children book.",
       "compositionHint": "",
       "narration": "三只小猪长大了，要离开妈妈，去外面建自己的房子。",
-      "imageUrl": "/generated/fairy-tale/三只小猪/1.svg"
+      "imageUrl": "/generated/fairy-tale/三只小猪/1.png"
     },
     {
       "id": 2,
@@ -22,7 +22,7 @@
       "prompt": "The eldest pig happily building a house with straw, looking lazy and quick, simple structure barely standing, other pigs watching, soft watercolor illustration, pastel colors, children book.",
       "compositionHint": "",
       "narration": "大哥很懒，用稻草随便搭了一间房子，很快就盖好了。",
-      "imageUrl": "/generated/fairy-tale/三只小猪/2.svg"
+      "imageUrl": "/generated/fairy-tale/三只小猪/2.png"
     },
     {
       "id": 3,
@@ -31,7 +31,7 @@
       "prompt": "The middle pig building a house with wooden planks, looking somewhat pleased, a sturdier but still simple house, tools scattered around, soft watercolor illustration, pastel colors, children book.",
       "compositionHint": "",
       "narration": "二哥也不太认真，用木头搭了一间房子，比草房子好一点。",
-      "imageUrl": "/generated/fairy-tale/三只小猪/3.svg"
+      "imageUrl": "/generated/fairy-tale/三只小猪/3.png"
     },
     {
       "id": 4,
@@ -40,7 +40,7 @@
       "prompt": "The youngest pig carefully laying bricks one by one, sweating but determined, a beautiful sturdy brick house taking shape, other pigs watching from their weaker houses, soft watercolor illustration, pastel colors, children book.",
       "compositionHint": "",
       "narration": "小弟最认真，一块一块地砌砖头，盖了一间又结实又漂亮的大房子。",
-      "imageUrl": "/generated/fairy-tale/三只小猪/4.svg"
+      "imageUrl": "/generated/fairy-tale/三只小猪/4.png"
     },
     {
       "id": 5,
@@ -49,7 +49,7 @@
       "prompt": "A big gray wolf blowing hard at the straw house which is falling apart, straw flying everywhere, the first pig running to the brick house in panic, dramatic scene, soft watercolor illustration, pastel colors, children book.",
       "compositionHint": "",
       "narration": "大灰狼来了！它轻轻一吹，草房子就倒了！木房子也倒了！",
-      "imageUrl": "/generated/fairy-tale/三只小猪/5.svg"
+      "imageUrl": "/generated/fairy-tale/三只小猪/5.png"
     },
     {
       "id": 6,
@@ -58,7 +58,7 @@
       "prompt": "The wolf blowing furiously at the sturdy brick house which stands firm, three pigs peeking from a window safely inside, wolf tired and frustrated, soft watercolor illustration, pastel colors, children book.",
       "compositionHint": "",
       "narration": "大灰狼使劲吹砖房子，可是怎么也吹不倒！三只小猪在砖房里安全了！",
-      "imageUrl": "/generated/fairy-tale/三只小猪/6.svg"
+      "imageUrl": "/generated/fairy-tale/三只小猪/6.png"
     },
     {
       "id": 7,
@@ -67,7 +67,7 @@
       "prompt": "Three happy pigs dancing and celebrating inside their sturdy brick house, wolf running away in the distance, warm interior with furniture, soft watercolor illustration, pastel colors, children book, happy ending.",
       "compositionHint": "",
       "narration": "从此以后，三只小猪住在坚固的砖房里，快乐地生活在一起。",
-      "imageUrl": "/generated/fairy-tale/三只小猪/7.svg"
+      "imageUrl": "/generated/fairy-tale/三只小猪/7.png"
     }
   ]
 }

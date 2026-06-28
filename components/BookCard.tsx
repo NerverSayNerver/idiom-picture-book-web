@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAppStore } from '@/lib/store'
 import { createJobAPI } from '@/lib/use-jobs'
 import { getStrategy } from '@/lib/content-types'
+import { getBookCardSubtitle, getBookCardAttribution, formatPoetryAttribution } from '@/lib/book-display'
 import type { ContentCategory } from '@/lib/types'
 
 interface BookCardBook {
@@ -15,7 +16,10 @@ interface BookCardBook {
   meaning: string
   createdAt?: string
   sceneCount?: number
-  scenes?: Array<{ imageUrl?: string; imageBlob?: Blob }>
+  author?: string
+  dynasty?: string
+  fullText?: string
+  scenes?: Array<{ imageUrl?: string; imageBlob?: Blob; narration?: string; title?: string }>
   idiom?: string
 }
 
@@ -47,14 +51,21 @@ export function BookCard({ book, onDelete }: BookCardProps) {
         return
       }
     }
-    // 尝试从文件系统路径构造封面图 URL（优先 SVG 占位图）
+    // 尝试从文件系统路径构造封面图 URL
     const sourceText = book.sourceText || book.idiom || book.title
     if (sourceText && book.category) {
-      setCoverImage(`/generated/${book.category}/${sourceText}/1.svg`)
+      setCoverImage(`/generated/${book.category}/${sourceText}/1.png`)
     }
   }, [book.scenes, book.category, book.sourceText, book.idiom, book.title])
 
   const sourceText = book.sourceText || book.idiom || book.title
+  const isPoetry = book.category === 'poetry'
+  const isNurseryRhyme = book.category === 'nursery-rhyme'
+  const cardSubtitle = getBookCardSubtitle(book as any)
+  const poetryAttribution = isPoetry
+    ? formatPoetryAttribution({ ...book, sourceText, category: book.category } as any)
+    : undefined
+  const cardAttribution = getBookCardAttribution(book as any)
 
   const handleRegenerate = () => {
     if (!sourceText) return
@@ -87,8 +98,16 @@ export function BookCard({ book, onDelete }: BookCardProps) {
       {/* 信息 */}
       <div className="p-4">
         <h3 className="text-lg font-bold text-gray-800 mb-1">{book.title}</h3>
+        {isPoetry && poetryAttribution && (
+          <p className="text-xs text-amber-700 mb-1">{poetryAttribution}</p>
+        )}
+        {!isPoetry && cardAttribution && (
+          <p className="text-xs text-gray-500 mb-1">{cardAttribution}</p>
+        )}
         <p className="text-xs text-gray-400 mb-2 font-mono">{formatTime(book.createdAt)}</p>
-        <p className="text-sm text-gray-600 line-clamp-2 mb-4">{book.meaning}</p>
+        <p className={`text-sm text-gray-600 mb-4 ${isNurseryRhyme ? 'line-clamp-3 italic' : 'line-clamp-2'}`}>
+          {cardSubtitle}
+        </p>
 
         <div className="flex items-center gap-2 mb-4">
           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">

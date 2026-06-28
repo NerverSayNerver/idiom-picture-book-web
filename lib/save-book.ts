@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import type { PictureBook } from './types'
+import { getBookFullText } from './book-display'
 
 /**
  * 保存绘本到文件系统 + 更新 index.json
@@ -59,6 +60,7 @@ async function updateIndex(baseDir: string, book: PictureBook) {
     sceneCount: book.scenes.length,
     author: book.author,
     dynasty: book.dynasty,
+    fullText: book.fullText ?? getBookFullText(book),
     createdAt: book.createdAt,
   }
 

@@ -1,8 +1,93 @@
 'use server'
 
 import { chatCompletion } from '@/lib/agnes-api'
-import { getStrategy } from '@/lib/content-types'
+import { getStrategy, getContentInfo } from '@/lib/content-types'
 import type { IdiomDecomposition, SceneTemplateRaw, DecompositionRaw, ContentCategory } from '@/lib/types'
+
+// ---------------------------------------------------------------------------
+// 工具函数
+// ---------------------------------------------------------------------------
+
+/**
+ * 从 fullText 中提取逐句诗行（去除标点、空白）
+ */
+function extractPoemLines(fullText: string): string[] {
+  return fullText
+    .split(/[，。？！\n；：、]+/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+}
+
+/**
+ * 计算两个字符串的编辑距离（Levenshtein）
+ */
+function levenshtein(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      )
+    }
+  }
+  return dp[m][n]
+}
+
+/**
+ * 古诗后处理：将 LLM 返回的场景标题强制对齐到全诗的诗句原文。
+ * 按场景在 scenes 数组中的顺序依次匹配诗句（顺序匹配 + 编辑距离兜底）。
+ */
+function normalizePoetrySceneTitles(
+  scenes: SceneTemplateRaw[],
+  poemLines: string[]
+): SceneTemplateRaw[] {
+  if (poemLines.length === 0 || scenes.length === 0) return scenes
+
+  const used = new Set<number>()
+
+  const bestMatch = (target: string): number => {
+    let bestIdx = -1
+    let bestDist = Infinity
+    for (let i = 0; i < poemLines.length; i++) {
+      if (used.has(i)) continue
+      const dist = levenshtein(target, poemLines[i])
+      if (dist < bestDist) {
+        bestDist = dist
+        bestIdx = i
+      }
+    }
+    return bestIdx
+  }
+
+  return scenes.map((s) => {
+    const title = (s.title || '').trim()
+    // 优先：正文子串匹配（处理 LLM 加了前后文的情况）
+    let matchedIdx = poemLines.findIndex(
+      (line) => !used.has(poemLines.indexOf(line)) && title.includes(line) && line.length >= 2
+    )
+    if (matchedIdx >= 0 && !used.has(matchedIdx)) {
+      used.add(matchedIdx)
+      return { ...s, title: poemLines[matchedIdx] }
+    }
+    // 兜底：编辑距离最近
+    const idx = bestMatch(title)
+    if (idx >= 0) {
+      used.add(idx)
+      return { ...s, title: poemLines[idx] }
+    }
+    return s
+  })
+}
+
+// ---------------------------------------------------------------------------
+// 原有代码（json 清理函数保持不变）
+// ---------------------------------------------------------------------------
 
 /**
  * 清理 LLM 输出中的常见 JSON 问题
@@ -60,12 +145,21 @@ function repairTruncatedJson(str: string): string | null {
   try { JSON.parse(fixed); return fixed } catch { return null }
 }
 
+// ---------------------------------------------------------------------------
+// 主函数
+// ---------------------------------------------------------------------------
+
 export async function decomposeSource(
   sourceText: string,
   category: ContentCategory = 'idiom'
 ): Promise<IdiomDecomposition> {
   const strategy = getStrategy(category)
-  const prompt = strategy.getDecomposePrompt(sourceText)
+  // 对古诗品类传入 fullText，供 prompt 和后处理使用
+  const info = category === 'poetry'
+    ? getContentInfo(sourceText, category)
+    : undefined
+  const fullText = info?.fullText
+  const prompt = strategy.getDecomposePrompt(sourceText, fullText)
 
   const result = await chatCompletion([
     { role: 'system', content: '你是一位专业的儿童绘本策划师。请始终以 JSON 格式返回结果。' },
@@ -119,18 +213,27 @@ export async function decomposeSource(
     ? data.styleDescription.join('. ')
     : (data.styleDescription || '')
 
+  // 古诗：以 fullText 中的诗句原文作为每个场景的标题
+  const poemLines = category === 'poetry' && fullText
+    ? extractPoemLines(fullText)
+    : []
+  const normalizedScenes = category === 'poetry'
+    ? normalizePoetrySceneTitles(data.scenes, poemLines)
+    : data.scenes
+
   return {
     idiom: sourceText,
     meaning: data.meaning,
     characterDescription,
     styleDescription,
-    scenes: data.scenes.map((s: SceneTemplateRaw, i: number) => {
-      let prompt = s.prompt || `A cartoon scene for ${sourceText}`
+    scenes: normalizedScenes.map((s: SceneTemplateRaw, i: number) => {
+      let prompt = s.prompt || `卡通绘本风格，${sourceText}`
       if (characterDescription) prompt = `${characterDescription}, ${prompt}`
       if (s.compositionHint) prompt = `${prompt}, ${s.compositionHint}`
       if (styleDescription) prompt = `${prompt}, ${styleDescription}`
       return {
         id: i + 1,
+        // 古诗：优先使用诗句原文（后处理已保证）；兜底使用 LLM 返回的 title
         title: s.title || `场景 ${i + 1}`,
         description: s.description || '',
         prompt,

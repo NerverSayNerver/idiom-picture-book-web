@@ -8,6 +8,8 @@ export interface ContentInfo {
   category: ContentCategory
   author?: string
   dynasty?: string
+  /** 古诗全诗 / 儿歌完整歌词 */
+  fullText?: string
 }
 
 // 成语分解结果
@@ -46,6 +48,8 @@ export interface PictureBook {
   meaning: string
   author?: string
   dynasty?: string
+  /** 古诗全诗 / 儿歌完整歌词 */
+  fullText?: string
   createdAt: string
   scenes: Scene[]
   videoBlob?: Blob
@@ -100,6 +104,9 @@ export interface PreGeneratedIndexItem {
   meaning: string
   createdAt: string
   sceneCount: number
+  author?: string
+  dynasty?: string
+  fullText?: string
 }
 
 // LLM 返回的原始场景模板（反序列化前）

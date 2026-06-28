@@ -15,23 +15,23 @@ export const IDIOM_LIST: ContentInfo[] = [
 ]
 
 export const POETRY_LIST: ContentInfo[] = [
-  { sourceText: '静夜思', meaning: '床前明月光，疑是地上霜', category: 'poetry', author: '李白', dynasty: '唐' },
-  { sourceText: '春晓', meaning: '春眠不觉晓，处处闻啼鸟', category: 'poetry', author: '孟浩然', dynasty: '唐' },
-  { sourceText: '咏鹅', meaning: '鹅鹅鹅，曲项向天歌', category: 'poetry', author: '骆宾王', dynasty: '唐' },
-  { sourceText: '悯农', meaning: '锄禾日当午，汗滴禾下土', category: 'poetry', author: '李绅', dynasty: '唐' },
-  { sourceText: '登鹳雀楼', meaning: '白日依山尽，黄河入海流', category: 'poetry', author: '王之涣', dynasty: '唐' },
-  { sourceText: '江雪', meaning: '千山鸟飞绝，万径人踪灭', category: 'poetry', author: '柳宗元', dynasty: '唐' },
-  { sourceText: '望庐山瀑布', meaning: '日照香炉生紫烟，遥看瀑布挂前川', category: 'poetry', author: '李白', dynasty: '唐' },
-  { sourceText: '绝句', meaning: '两个黄鹂鸣翠柳，一行白鹭上青天', category: 'poetry', author: '杜甫', dynasty: '唐' },
+  { sourceText: '静夜思', meaning: '诗人在安静的夜晚思念家乡', category: 'poetry', author: '李白', dynasty: '唐', fullText: '床前明月光，疑是地上霜。举头望明月，低头思故乡。' },
+  { sourceText: '春晓', meaning: '春天的早晨，鸟儿歌唱，风雨过后花落多少', category: 'poetry', author: '孟浩然', dynasty: '唐', fullText: '春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多少。' },
+  { sourceText: '咏鹅', meaning: '描写白鹅在水中游动的可爱姿态', category: 'poetry', author: '骆宾王', dynasty: '唐', fullText: '鹅，鹅，鹅，曲项向天歌。白毛浮绿水，红掌拨清波。' },
+  { sourceText: '悯农', meaning: '农民辛苦劳作，粮食来之不易', category: 'poetry', author: '李绅', dynasty: '唐', fullText: '锄禾日当午，汗滴禾下土。谁知盘中餐，粒粒皆辛苦。' },
+  { sourceText: '登鹳雀楼', meaning: '想要看得更远，就要站得更高', category: 'poetry', author: '王之涣', dynasty: '唐', fullText: '白日依山尽，黄河入海流。欲穷千里目，更上一层楼。' },
+  { sourceText: '江雪', meaning: '天寒地冻的江面上，老渔翁独自垂钓', category: 'poetry', author: '柳宗元', dynasty: '唐', fullText: '千山鸟飞绝，万径人踪灭。孤舟蓑笠翁，独钓寒江雪。' },
+  { sourceText: '望庐山瀑布', meaning: '描写庐山瀑布的壮观景象', category: 'poetry', author: '李白', dynasty: '唐', fullText: '日照香炉生紫烟，遥看瀑布挂前川。飞流直下三千尺，疑是银河落九天。' },
+  { sourceText: '绝句', meaning: '描绘春天生机勃勃的美丽景色', category: 'poetry', author: '杜甫', dynasty: '唐', fullText: '两个黄鹂鸣翠柳，一行白鹭上青天。窗含西岭千秋雪，门泊东吴万里船。' },
 ]
 
 export const NURSERY_RHYME_LIST: ContentInfo[] = [
-  { sourceText: '小兔子乖乖', meaning: '小兔子乖乖，把门儿开开', category: 'nursery-rhyme' },
-  { sourceText: '两只老虎', meaning: '两只老虎，两只老虎，跑得快', category: 'nursery-rhyme' },
-  { sourceText: '小燕子', meaning: '小燕子，穿花衣，年年春天来这里', category: 'nursery-rhyme' },
-  { sourceText: '数鸭子', meaning: '门前大桥下，游过一群鸭', category: 'nursery-rhyme' },
-  { sourceText: '拔萝卜', meaning: '拔萝卜，拔萝卜，嗨吆嗨吆拔不动', category: 'nursery-rhyme' },
-  { sourceText: '小星星', meaning: '一闪一闪亮晶晶，满天都是小星星', category: 'nursery-rhyme' },
+  { sourceText: '小兔子乖乖', meaning: '教导幼儿辨别陌生人、树立安全意识', category: 'nursery-rhyme', fullText: '小兔子乖乖，把门儿开开，快点儿开开，我要进来。\n不开不开我不开，妈妈没回来，谁来也不开。' },
+  { sourceText: '两只老虎', meaning: '帮助幼儿认识身体部位，传递乐观包容', category: 'nursery-rhyme', fullText: '两只老虎，两只老虎，跑得快，跑得快。\n一只没有眼睛，一只没有尾巴，真奇怪，真奇怪。' },
+  { sourceText: '小燕子', meaning: '描绘小燕子迁徙，培养对春天的喜爱', category: 'nursery-rhyme', fullText: '小燕子，穿花衣，年年春天来这里。\n我问燕子你为啥来？燕子说，这里的春天最美丽。' },
+  { sourceText: '数鸭子', meaning: '学习数数，感受田园生活的乐趣', category: 'nursery-rhyme', fullText: '门前大桥下，游过一群鸭。\n快来快来数一数，二四六七八。\n嘎嘎嘎嘎真呀真多呀，数不清到底多少鸭。\n数不清到底多少鸭。' },
+  { sourceText: '拔萝卜', meaning: '展现团队合作，齐心协力力量大', category: 'nursery-rhyme', fullText: '拔萝卜，拔萝卜，嗨吆嗨吆拔萝卜。\n嗨吆嗨吆拔不动，老太婆，快快来，快来帮我们拔萝卜。' },
+  { sourceText: '小星星', meaning: '描绘夜空星星，培养安静入睡的习惯', category: 'nursery-rhyme', fullText: '一闪一闪亮晶晶，满天都是小星星。\n挂在天边放光明，好像许多小眼睛。\n一闪一闪亮晶晶，满天都是小星星。' },
 ]
 
 export const PROVERB_LIST: ContentInfo[] = [

@@ -2,6 +2,7 @@
 
 import {
   generateImage,
+  generateImageWithRef,
   downloadImageAsBlob,
   createVideoTask,
   getVideoResult,
@@ -13,6 +14,22 @@ export async function generateSceneImage(prompt: string): Promise<string> {
   const imageUrl = result.data?.[0]?.url
   if (!imageUrl) {
     throw new Error('图像生成失败：API 返回空 URL')
+  }
+  return imageUrl
+}
+
+/**
+ * 图生图版本：以 referenceImageUrl 为参考生成当前场景图。
+ * 由 worker 在首图生成后调用，确保绘本风格/角色连贯。
+ */
+export async function generateSceneImageWithRef(
+  prompt: string,
+  referenceImageUrl: string
+): Promise<string> {
+  const result = await generateImageWithRef(prompt, referenceImageUrl)
+  const imageUrl = result.data?.[0]?.url
+  if (!imageUrl) {
+    throw new Error('图像生成失败（img2img）：API 返回空 URL')
   }
   return imageUrl
 }

@@ -6,6 +6,7 @@ import { VideoGenerator } from './VideoGenerator'
 import { generatePDF } from '@/lib/pdf'
 import { useTTS } from '@/hooks/useTTS'
 import { getStrategy } from '@/lib/content-types'
+import { getBookFullText, formatPoetryAttribution } from '@/lib/book-display'
 
 interface BookViewerProps {
   book: PictureBook
@@ -19,6 +20,13 @@ export function BookViewer({ book }: BookViewerProps) {
   const categoryLabel = (() => {
     try { return getStrategy(book.category).label } catch { return '内容' }
   })()
+  const isPoetry = book.category === 'poetry'
+  const isNurseryRhyme = book.category === 'nursery-rhyme'
+  const fullText = getBookFullText(book)
+  const poetryAttribution = isPoetry ? formatPoetryAttribution(book) : undefined
+  const meaningPageTitle = isPoetry ? '诗意解读' : isNurseryRhyme ? '儿歌寓意' : `${categoryLabel}含义`
+  const reviewTitle = isPoetry ? '全诗回顾' : isNurseryRhyme ? '歌词回顾' : '故事回顾'
+  const reviewDoneText = isPoetry ? '🎉 读完啦！' : isNurseryRhyme ? '🎉 唱完啦！' : '🎉 故事讲完啦！'
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [showVideoGenerator, setShowVideoGenerator] = useState(false)
   const totalPages = book.scenes.length + 2 // 封面 + 场景 + 含义页
@@ -52,7 +60,7 @@ export function BookViewer({ book }: BookViewerProps) {
     if (scene.imageUrl) return scene.imageUrl
     if (scene.imageBlob) return sceneBlobUrls.get(scene.id) || ''
     if (book.category && book.sourceText) {
-      return `/generated/${book.category}/${book.sourceText}/${scene.id}.svg`
+      return `/generated/${book.category}/${book.sourceText}/${scene.id}.png`
     }
     return ''
   }, [book.category, book.sourceText, sceneBlobUrls])
@@ -221,8 +229,24 @@ export function BookViewer({ book }: BookViewerProps) {
             <div className="bg-gradient-to-br from-secondary to-primary/20 rounded-card p-8 shadow-lg">
               <div className="text-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                  📚 {book.title}
+                  {isPoetry ? '📜' : isNurseryRhyme ? '🎵' : '📚'} {book.title}
                 </h1>
+                {isPoetry && poetryAttribution && (
+                  <p className="text-amber-800 font-medium mb-3">{poetryAttribution}</p>
+                )}
+                {fullText && (isPoetry || isNurseryRhyme) ? (
+                  <div className={`mx-auto max-w-md rounded-lg p-4 mb-4 ${
+                    isPoetry ? 'bg-amber-50/80' : 'bg-blue-50/80'
+                  }`}>
+                    <p className={`whitespace-pre-line leading-relaxed ${
+                      isPoetry
+                        ? 'text-xl font-serif text-gray-800 tracking-wide'
+                        : 'text-lg italic text-gray-700'
+                    }`}>
+                      {fullText}
+                    </p>
+                  </div>
+                ) : null}
                 <p className="text-gray-600">{book.meaning}</p>
               </div>
 
@@ -244,7 +268,9 @@ export function BookViewer({ book }: BookViewerProps) {
                         />
                       )}
                       <div className="p-2 text-center">
-                        <span className="text-xs text-gray-500">第 {i + 1} 幕</span>
+                        <span className="text-xs text-gray-500">
+                          {isPoetry ? `第 ${i + 1} 句` : isNurseryRhyme ? `第 ${i + 1} 段` : `第 ${i + 1} 幕`}
+                        </span>
                         <p className="text-sm font-medium text-gray-700 truncate">{s.title}</p>
                       </div>
                     </div>
@@ -268,7 +294,7 @@ export function BookViewer({ book }: BookViewerProps) {
               >
                 <div className="text-center mb-4">
                   <span className="text-sm text-gray-500">
-                    第 {sceneIndex + 1} 幕
+                    {isPoetry ? `第 ${sceneIndex + 1} 句` : isNurseryRhyme ? `第 ${sceneIndex + 1} 段` : `第 ${sceneIndex + 1} 幕`}
                   </span>
                   <h3 className="text-xl font-bold text-gray-800">
                     {scene.title}
@@ -289,16 +315,26 @@ export function BookViewer({ book }: BookViewerProps) {
                 style={{ transform: 'rotateY(-2deg)' }}
               >
                 <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-700 mb-2">
-                      📖 场景描述
-                    </h4>
-                    <p className="text-gray-600">{scene.description}</p>
-                  </div>
+                  {!isNurseryRhyme && (
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2">
+                        {isPoetry ? '🎨 意境描绘' : '📖 场景描述'}
+                      </h4>
+                      <p className="text-gray-600">{scene.description}</p>
+                    </div>
+                  )}
+                  {isPoetry && (
+                    <div className="bg-amber-50/80 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-700 mb-2">📜 原诗</h4>
+                      <p className="text-gray-800 text-xl font-serif tracking-wide">{scene.title}</p>
+                    </div>
+                  )}
                   <div className="bg-white/60 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">💬 旁白</h4>
-                    <p className="text-gray-800 italic text-lg">
-                      &ldquo;
+                    <h4 className="font-semibold text-gray-700 mb-2">
+                      {isPoetry ? '💡 白话释义' : isNurseryRhyme ? '🎵 歌词' : '💬 旁白'}
+                    </h4>
+                    <p className={`text-gray-800 text-lg ${isNurseryRhyme ? 'italic' : isPoetry ? '' : 'italic'}`}>
+                      {!isPoetry && !isNurseryRhyme && '「'}
                       {scene.narration.split('').map((char, i) => (
                         <span
                           key={i}
@@ -311,7 +347,7 @@ export function BookViewer({ book }: BookViewerProps) {
                           {char}
                         </span>
                       ))}
-                      &rdquo;
+                      {!isPoetry && !isNurseryRhyme && '」'}
                     </p>
                   </div>
                 </div>
@@ -322,28 +358,61 @@ export function BookViewer({ book }: BookViewerProps) {
           {/* 含义页 */}
           {isMeaningPage && (
             <div className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-card p-8 shadow-lg text-center">
-              <div className="text-6xl mb-6">💡</div>
+              <div className="text-6xl mb-6">{isPoetry ? '📜' : isNurseryRhyme ? '🎵' : '💡'}</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                {categoryLabel}含义
+                {meaningPageTitle}
               </h2>
               <p className="text-xl text-gray-700 mb-8 leading-relaxed">
                 {book.meaning}
               </p>
 
-              <div className="bg-white/60 rounded-lg p-6 max-w-lg mx-auto">
-                <h3 className="font-semibold text-gray-700 mb-3">📖 故事回顾</h3>
-                <div className="space-y-2 text-left">
-                  {book.scenes.map((s, i) => (
-                    <p key={i} className="text-gray-600 text-sm">
-                      <span className="font-medium">第 {i + 1} 幕 {s.title}：</span>
-                      {s.narration}
-                    </p>
-                  ))}
+              {fullText && (isPoetry || isNurseryRhyme) ? (
+                <div className={`rounded-lg p-6 max-w-lg mx-auto mb-6 ${
+                  isPoetry ? 'bg-amber-50/80' : 'bg-blue-50/80'
+                }`}>
+                  <h3 className="font-semibold text-gray-700 mb-3">
+                    {isPoetry ? '📜 全诗' : '🎵 完整歌词'}
+                  </h3>
+                  <p className={`whitespace-pre-line leading-relaxed text-left ${
+                    isPoetry
+                      ? 'text-lg font-serif text-gray-800'
+                      : 'text-base italic text-gray-700'
+                  }`}>
+                    {fullText}
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white/60 rounded-lg p-6 max-w-lg mx-auto">
+                  <h3 className="font-semibold text-gray-700 mb-3">📖 {reviewTitle}</h3>
+                  <div className="space-y-2 text-left">
+                    {book.scenes.map((s, i) => (
+                      <p key={i} className="text-gray-600 text-sm">
+                        <span className="font-medium">第 {i + 1} 幕 {s.title}：</span>
+                        {s.narration}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(isPoetry || isNurseryRhyme) && fullText && (
+                <div className="bg-white/60 rounded-lg p-6 max-w-lg mx-auto">
+                  <h3 className="font-semibold text-gray-700 mb-3">📖 {reviewTitle}</h3>
+                  <div className="space-y-2 text-left">
+                    {book.scenes.map((s, i) => (
+                      <p key={i} className="text-gray-600 text-sm">
+                        <span className="font-medium">
+                          {isPoetry ? `第 ${i + 1} 句` : `第 ${i + 1} 段`} {s.title}：
+                        </span>
+                        {s.narration}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-6 text-sm text-gray-500">
-                🎉 故事讲完啦！
+                {reviewDoneText}
               </div>
             </div>
           )}

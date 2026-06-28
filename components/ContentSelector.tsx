@@ -108,7 +108,7 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
             {refreshing ? '获取中...' : '换一批'}
           </button>
         </div>
-        <div className="grid grid-cols-5 gap-1.5 mb-3 max-h-[220px] overflow-y-auto">
+        <div className="grid grid-cols-4 gap-1.5 mb-3 max-h-[220px] overflow-y-auto">
           {displayItems.map((item) => {
             const isSelected = selectedItem === item.sourceText
             const isGenerated = generatedTexts.includes(item.sourceText)
@@ -116,7 +116,7 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
               <button
                 key={item.sourceText}
                 onClick={() => handleSelect(item.sourceText)}
-                className={`py-1.5 px-1 rounded-lg text-[11px] font-medium transition-all relative leading-tight ${
+                className={`py-2 px-1 rounded-lg text-xs font-medium transition-all relative leading-tight ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
                     : isGenerated
@@ -125,6 +125,9 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
                 }`}
               >
                 {item.sourceText}
+                {[item.dynasty, item.author].filter(Boolean).join(' ') && (
+                  <span className="block text-[10px] opacity-70 mt-0.5">{[item.dynasty, item.author].filter(Boolean).join(' ')}</span>
+                )}
                 {isSelected && (
                   <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
                 )}
@@ -174,7 +177,7 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
             {refreshing ? '获取中...' : '换一批'}
           </button>
         </div>
-        <div className="grid grid-cols-5 gap-2.5 max-h-[280px] overflow-y-auto">
+        <div className="grid grid-cols-4 gap-2.5 max-h-[280px] overflow-y-auto">
           {displayItems.map((item) => {
             const isSelected = selectedItem === item.sourceText
             const isGenerated = generatedTexts.includes(item.sourceText)
@@ -182,7 +185,7 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
               <button
                 key={item.sourceText}
                 onClick={() => handleSelect(item.sourceText)}
-                className={`p-2 rounded-lg text-xs font-medium transition-all relative ${
+                className={`p-2.5 rounded-lg text-sm font-medium transition-all relative ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
                     : isGenerated
@@ -191,6 +194,9 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
                 }`}
               >
                 {item.sourceText}
+                {[item.dynasty, item.author].filter(Boolean).join(' ') && (
+                  <span className="block text-xs opacity-70 mt-0.5">{[item.dynasty, item.author].filter(Boolean).join(' ')}</span>
+                )}
                 {isSelected && (
                   <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
                 )}

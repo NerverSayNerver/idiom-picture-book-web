@@ -5,8 +5,8 @@ export interface ContentTypeStrategy {
   label: string
   icon: string
 
-  /** 构建 decompose 的 LLM prompt */
-  getDecomposePrompt(text: string): string
+  /** 构建 decompose 的 LLM prompt；fullText 为品类完整原文（古诗全诗/儿歌歌词等），可为空 */
+  getDecomposePrompt(text: string, fullText?: string): string
 
   /** 构建 recommend 的 LLM prompt */
   getRecommendPrompt(exclude: string[]): string

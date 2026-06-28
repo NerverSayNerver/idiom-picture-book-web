@@ -9,7 +9,7 @@ config({ path: resolve(__dirname || process.cwd(), '.env.local') })
 
 import { pollPendingJob, markRunning, updateTask, getTask, getChildTasks, addChildTasks, recoverInterruptedTasks, closeDb } from './lib/task-db'
 import { decomposeSource } from './app/actions/decompose'
-import { generateSceneImage } from './app/actions/generate'
+import { generateSceneImage, generateSceneImageWithRef } from './app/actions/generate'
 import { saveBook } from './lib/save-book'
 import type { Task, ChildTaskDef } from './lib/task-types'
 import type { ContentCategory, SceneTemplate } from './lib/types'
@@ -50,8 +50,10 @@ async function executeJob(jobId: string, signal: AbortSignal): Promise<void> {
 
   if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
+  console.log(`\n>>> 开始执行任务: ${job.sourceText} (${job.category}) [${jobId}]`)
+
   // Step 1: Create decompose child task
-  const [decomposeChild] = addChildTasks(jobId, [{ type: 'decompose', sceneTitle: '分析成语含义' }])
+  const [decomposeChild] = addChildTasks(jobId, [{ type: 'decompose', sceneTitle: '分析含义' }])
   const decomposeId = decomposeChild.id
 
   // Step 2: Execute decompose
@@ -71,6 +73,8 @@ async function executeJob(jobId: string, signal: AbortSignal): Promise<void> {
       await executeSave(child.id, jobId, signal)
     }
   }
+
+  console.log(`<<< 任务完成: ${job.sourceText} (${job.category}) [${jobId}]\n`)
 }
 
 async function executeDecompose(
@@ -157,13 +161,27 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
     updateTask(taskId, { status: 'running', startTime: Date.now() })
 
     try {
-      const imageUrl = await generateSceneImage(scene.prompt)
+      // 构造增强版 prompt：注入绘本概要，帮助模型理解全局
+      const enhancedPrompt = buildEnhancedPrompt(decomposeTask, scene, task.sceneId)
+
+      // 查找参考图：优先使用首个已完成的生成场景作为 img2img 参考
+      const referenceImageUrl = await findReferenceImage(job?.id, task.sceneId)
+
+      let imageUrl: string
+      if (referenceImageUrl) {
+        // 图生图：以首图为参考，保持风格和角色一致
+        imageUrl = await generateSceneImageWithRef(enhancedPrompt, referenceImageUrl)
+      } else {
+        // 纯文生图（首个场景）
+        imageUrl = await generateSceneImage(enhancedPrompt)
+      }
+
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
       // 下载图片到本地持久保存（远程链接会过期）
-      const job = getTask(currentTask.parentId!)
-      const category = job?.category || 'idiom'
-      const sourceText = job?.sourceText || ''
+      const jobForPath = getTask(currentTask.parentId!)
+      const category = jobForPath?.category || 'idiom'
+      const sourceText = jobForPath?.sourceText || ''
       const localPath = path.join(process.cwd(), 'public', 'generated', category, sourceText, `${task.sceneId}.png`)
       await downloadImageToFile(imageUrl, localPath, signal)
 
@@ -190,6 +208,81 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
       })
       return
     }
+  }
+}
+
+/**
+ * 构建增强版生图 prompt：注入绘本主题、角色设定、统一画风，确保同绘本图片连贯。
+ */
+function buildEnhancedPrompt(
+  decomposeTask: Task,
+  scene: SceneTemplate,
+  sceneId: number
+): string {
+  const parts: string[] = []
+
+  const meaning = decomposeTask.decomposeMeaning
+  if (meaning) {
+    parts.push(`【绘本主题】${meaning}`)
+  }
+
+  const characterDesc = decomposeTask.decomposeCharacterDescription
+  if (characterDesc) {
+    parts.push(`【角色设定】${characterDesc}`)
+  }
+
+  const styleDesc = decomposeTask.decomposeStyleDescription
+  if (styleDesc) {
+    parts.push(`【统一画风】${styleDesc}`)
+  }
+
+  parts.push(`【当前场景】第${sceneId}幕：${scene.title}`)
+
+  if (scene.description) {
+    parts.push(`【场景描述】${scene.description}`)
+  }
+
+  if (scene.compositionHint) {
+    parts.push(`【构图】${scene.compositionHint}`)
+  }
+
+  // 最后附加原始生图 prompt
+  parts.push(`【生图提示词】${scene.prompt}`)
+
+  return parts.join('\n')
+}
+
+/**
+ * 查找可作为 img2img 参考的图片，读取本地文件并转为 base64 Data URI。
+ * Agnes API 不支持本地文件路径，必须传 Data URI 或远程 URL。
+ */
+async function findReferenceImage(
+  parentJobId: string | undefined | null,
+  currentSceneId: number
+): Promise<string | undefined> {
+  if (!parentJobId) return undefined
+
+  const allChildren = getChildTasks(parentJobId)
+  const firstCompleted = allChildren.find(
+    (c) =>
+      c.type === 'generate' &&
+      c.status === 'completed' &&
+      typeof c.sceneId === 'number' &&
+      c.sceneId < currentSceneId &&
+      c.imageUrl
+  )
+  const imageUrl = firstCompleted?.imageUrl
+  if (!imageUrl) return undefined
+
+  try {
+    const absolutePath = path.join(process.cwd(), 'public', imageUrl)
+    const buffer = await fs.readFile(absolutePath)
+    const base64 = buffer.toString('base64')
+    const ext = path.extname(imageUrl).toLowerCase()
+    const mimeType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
+    return `data:${mimeType};base64,${base64}`
+  } catch {
+    return undefined
   }
 }
 
