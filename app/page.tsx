@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { CategoryTabs } from '@/components/CategoryTabs'
 import { ContentSelector } from '@/components/ContentSelector'
 import { TaskQueue } from '@/components/TaskQueue'
 import { BookCard } from '@/components/BookCard'
 import { useAppStore } from '@/lib/store'
+import { useJobs } from '@/lib/use-jobs'
 import type { ContentCategory } from '@/lib/types'
 
 interface IndexBook {
@@ -41,10 +42,33 @@ export default function Home() {
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [loading, setLoading] = useState(true)
 
-  // 加载超时兜底：5秒后自动停止加载状态
+  // 任务状态（通过 API 轮询）
+  const { jobs } = useJobs()
+
+  // 监听任务完成，刷新书架数据
+  const completedCountRef = useRef(0)
   useEffect(() => {
+    const completedJobs = jobs.filter(t => t.type === 'job' && t.status === 'completed').length
+    if (completedJobs > completedCountRef.current) {
+      // 有新任务完成，刷新书架
+      loadIndex()
+    }
+    completedCountRef.current = completedJobs
+  }, [jobs])
+
+  // 加载书架数据 + 超时兜底 + 页面可见时刷新
+  useEffect(() => {
+    loadIndex()
     const timer = setTimeout(() => setLoading(false), 5000)
-    return () => clearTimeout(timer)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') loadIndex()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadIndex = async () => {
@@ -63,6 +87,13 @@ export default function Home() {
   const totalBooks = indexData
     ? Object.values(indexData.categories).reduce((sum, cat) => sum + cat.count, 0)
     : 0
+
+  const generatedTexts = useMemo(() => {
+    if (!indexData) return []
+    const categoryData = indexData.categories[currentCategory]
+    if (!categoryData) return []
+    return categoryData.items.map(item => item.sourceText).filter((text): text is string => !!text)
+  }, [indexData, currentCategory])
 
   const getFilteredBooks = () => {
     if (!indexData) return []
@@ -93,7 +124,7 @@ export default function Home() {
         />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4 mb-8">
           <div className="lg:col-span-2">
-            <ContentSelector category={currentCategory} compact />
+            <ContentSelector category={currentCategory} compact generatedTexts={generatedTexts} />
           </div>
           <div className="lg:col-span-1 flex flex-col">
             <TaskQueue compact className="flex-1" />

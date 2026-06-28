@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getContentListByCategory } from '@/lib/content-info'
 import { useAppStore } from '@/lib/store'
-import { useRouter } from 'next/navigation'
+import { createJobAPI } from '@/lib/use-jobs'
 import { getRandomItems, saveRecommendedItems } from '@/lib/db'
 import { fetchRecommendations } from '@/app/actions/recommend'
 import { getStrategy } from '@/lib/content-types'
@@ -12,18 +12,18 @@ import type { ContentCategory, ContentInfo } from '@/lib/types'
 interface ContentSelectorProps {
   category: ContentCategory
   compact?: boolean
+  generatedTexts?: string[]
 }
 
 const DISPLAY_COUNT = 40
 
-export function ContentSelector({ category, compact }: ContentSelectorProps) {
+export function ContentSelector({ category, compact, generatedTexts = [] }: ContentSelectorProps) {
   const [customInput, setCustomInput] = useState('')
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
   const [displayItems, setDisplayItems] = useState<ContentInfo[]>([])
   const [refreshing, setRefreshing] = useState(false)
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
   const setCurrentCategory = useAppStore((s) => s.setCurrentCategory)
-  const router = useRouter()
   const strategy = getStrategy(category)
 
   // 加载推荐内容 + 重置刷新旋转状态
@@ -76,7 +76,7 @@ export function ContentSelector({ category, compact }: ContentSelectorProps) {
     setCustomInput('')
   }
 
-  const handleStart = () => {
+  const handleStart = async () => {
     const text = selectedItem || customInput.trim()
     if (!text) return
     if (!strategy.validate(text)) {
@@ -85,7 +85,11 @@ export function ContentSelector({ category, compact }: ContentSelectorProps) {
     }
     setCurrentCategory(category)
     setCurrentIdiom(text)
-    router.push('/generate')
+    // 通过 API 提交任务到服务端队列
+    await createJobAPI(text, category)
+    // 重置选择状态
+    setSelectedItem(null)
+    setCustomInput('')
   }
 
   const activeItem = selectedItem || customInput.trim()
@@ -105,22 +109,31 @@ export function ContentSelector({ category, compact }: ContentSelectorProps) {
           </button>
         </div>
         <div className="grid grid-cols-5 gap-1.5 mb-3 max-h-[220px] overflow-y-auto">
-          {displayItems.map((item) => (
-            <button
-              key={item.sourceText}
-              onClick={() => handleSelect(item.sourceText)}
-              className={`py-1.5 px-1 rounded-lg text-[11px] font-medium transition-all relative leading-tight ${
-                selectedItem === item.sourceText
-                  ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
-                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-              }`}
-            >
-              {item.sourceText}
-              {selectedItem === item.sourceText && (
-                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
-              )}
-            </button>
-          ))}
+          {displayItems.map((item) => {
+            const isSelected = selectedItem === item.sourceText
+            const isGenerated = generatedTexts.includes(item.sourceText)
+            return (
+              <button
+                key={item.sourceText}
+                onClick={() => handleSelect(item.sourceText)}
+                className={`py-1.5 px-1 rounded-lg text-[11px] font-medium transition-all relative leading-tight ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
+                    : isGenerated
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                {item.sourceText}
+                {isSelected && (
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
+                )}
+                {isGenerated && !isSelected && (
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
+                )}
+              </button>
+            )
+          })}
         </div>
         <div className="flex gap-2">
           <input
@@ -162,22 +175,31 @@ export function ContentSelector({ category, compact }: ContentSelectorProps) {
           </button>
         </div>
         <div className="grid grid-cols-5 gap-2.5 max-h-[280px] overflow-y-auto">
-          {displayItems.map((item) => (
-            <button
-              key={item.sourceText}
-              onClick={() => handleSelect(item.sourceText)}
-              className={`p-2 rounded-lg text-xs font-medium transition-all relative ${
-                selectedItem === item.sourceText
-                  ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
-                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-              }`}
-            >
-              {item.sourceText}
-              {selectedItem === item.sourceText && (
-                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
-              )}
-            </button>
-          ))}
+          {displayItems.map((item) => {
+            const isSelected = selectedItem === item.sourceText
+            const isGenerated = generatedTexts.includes(item.sourceText)
+            return (
+              <button
+                key={item.sourceText}
+                onClick={() => handleSelect(item.sourceText)}
+                className={`p-2 rounded-lg text-xs font-medium transition-all relative ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
+                    : isGenerated
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                {item.sourceText}
+                {isSelected && (
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
+                )}
+                {isGenerated && !isSelected && (
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">✓</span>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
