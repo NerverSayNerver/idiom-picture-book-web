@@ -115,96 +115,177 @@ export interface Task {
 }
 ```
 
-### 6. IndexedDB 迁移
+### 6. 存储架构 — 文件系统为主，IndexedDB 为辅助
 
-Dexie schema 从 v4 升级到 v5：
+**核心原则**：
+- ✅ 所有**已完成的绘本** → 存储在 `public/pre-generated/` 文件系统
+- ✅ 页面直接通过 HTTP 引用（`fetch` JSON、`<img>` 引用 PNG）
+- ✅ 每本绘本文件夹包含全部过程数据，可供后续分析
+- ❌ 已完成的绘本不额外存入 IndexedDB
+- 🔄 IndexedDB 仅用于**运行时状态**：任务队列、推荐缓存、当前会话
 
-```
-version 5:
-- pictureBooks: 'id, category, sourceText, createdAt'  // +category, +sourceText 索引
-- scenes: '++id, bookId, sceneId, imageHash, [bookId+sceneId]'
-- tasks: 'id, parentId, type, status, category'
-- recommendedItems: '++id, category, sourceText'  // 取代 recommendedIdioms
-```
-
-**迁移逻辑**：
-1. v4→v5 `upgrade()` 时遍历所有 pictureBooks，补 `category: 'idiom'`, `sourceText: idiom`
-2. 将 `recommendedIdioms` 表数据复制到 `recommendedItems` 表，补 `category: 'idiom'`
-3. 删除 `recommendedIdioms` 表
-
-### 7. 预生成内容 — 走真实流水线
-
-预生成内容不再手写 JSON，而是**模拟真实用户流程**，经过完整的 LLM 分解 + AI 图像生成流水线产生。
-
-#### 现有问题
-
-当前预生成成语存在以下质量问题：
-
-| 问题 | 现状 | 要求 |
-|------|------|------|
-| 场景数不足 | 仅 3 个场景 | 应按 prompt 拆 5-10 个 |
-| 描述过于简略 | `"兔子撞树而死"` | 应有生动的场景描述 |
-| 缺少角色/风格描述 | 无 `characterDescription`/`styleDescription` | decompose prompt 要求包含 |
-| 缺少构图指令 | 无 `compositionHint` | 应有多种镜头角度 |
-| 旁白过于简短 | 一句话 | 应有故事的叙事感 |
-| 数据模型过时 | 无 `category`/`sourceText` | 需符合新模型 |
-
-#### 生成流程
-
-每个预生成内容必须经过以下流水线：
-
-```
-步骤 1: 调用 decompose API（使用品类专属 prompt）→ 得到 scenes
-步骤 2: 对每个 scene，调用 generateSceneImage → 生成图像
-步骤 3: 下载图像并嵌入 Blob/URL
-步骤 4: 组装为完整 PictureBook JSON（含 category、sourceText）
-步骤 5: 验证：场景数 ≥ 品类最低要求、所有字段非空
-```
-
-**不允许**：手写 JSON、跳过图像生成、跳过 prompt 模板。
-
-#### 目录结构
+#### 统一目录结构
 
 ```
 public/pre-generated/
-├── index.json              // 统一索引（含 category 字段，由生成脚本自动维护）
-├── images/                  // 所有品类图像共用
-│   ├── 守株待兔_1.png
-│   ├── 守株待兔_2.png
-│   └── ...
+├── index.json                          # 全局索引（含 category、数量统计）
+│
 ├── idiom/
-│   ├── 守株待兔.json       // 按新流程重新生成
-│   ├── 叶公好龙.json
-│   └── ...                  // 扩充更多成语
+│   └── 守株待兔/                       # 每本绘本一个文件夹
+│       ├── book.json                    # 完整绘本数据（供页面渲染）
+│       ├── decompose-prompt.txt         # 镜头拆分 prompt（发给 LLM 的原文）
+│       ├── decompose-result.json        # 镜头拆分结果（LLM 原始返回）
+│       ├── prompts.json                 # 各场景的图片 prompt（供分析对比）
+│       ├── meta.json                    # 生成元数据（版本、LLM参数、耗时等）
+│       ├── 1.png                        # 场景1 图片
+│       ├── 2.png                        # 场景2 图片
+│       └── ...                          # 场景N 图片
+│
 ├── poetry/
-│   ├── 静夜思.json
-│   └── ...
+│   └── 静夜思/
+│       ├── book.json
+│       ├── decompose-prompt.txt
+│       ├── decompose-result.json
+│       ├── prompts.json
+│       ├── meta.json
+│       ├── 1.png
+│       └── ...
+│
 ├── nursery-rhyme/
-│   ├── 小兔子乖乖.json
-│   └── ...
+│   └── 小兔子乖乖/
+│       └── ...
+│
 ├── proverb/
 │   └── ...
+│
 └── fairy-tale/
     └── ...
 ```
 
+#### 各文件说明
+
+| 文件 | 用途 | 来源 | 页面引用方式 |
+|------|------|------|------------|
+| `book.json` | 完整 `PictureBook` 数据（含 scenes、imageUrl） | 生成流水线组装 | `fetch(/pre-generated/idiom/守株待兔/book.json)` |
+| `decompose-prompt.txt` | 发给 LLM 的完整 prompt（品类专属模板 + 原文） | 从策略类导出 | 分析用，页面不引用 |
+| `decompose-result.json` | LLM 原始返回（含 meaning、scenes 等） | LLM API 响应 | 分析用，页面不引用 |
+| `prompts.json` | 各场景最终使用的 image prompt（含角色/风格/构图拼接后） | 生成流水线记录 | 分析用，页面不引用 |
+| `meta.json` | 生成时间、LLM 模型、耗时、版本号 | 生成流水线记录 | 分析用，页面不引用 |
+| `{n}.png` | 场景图片，按序号命名 | 图像 API → 下载 | `<img src="/pre-generated/idiom/守株待兔/1.png">` |
+
+#### IndexedDB 缩减
+
+```
+Dexie v5 schema（只保留运行时数据）:
+- tasks: 'id, parentId, type, status, category'
+- recommendedItems: '++id, category, sourceText'  // 推荐缓存
+- settings: 'key'                                   // 用户偏好设置
+```
+
+原有的 `pictureBooks` 和 `scenes` 表**不再需要**——已完成绘本走文件系统。
+
+#### 数据加载流程
+
+```
+页面加载绘本列表：
+  1. fetch('/pre-generated/index.json') → 获取所有品类索引
+  2. 按品类/筛选渲染列表
+
+页面加载单个绘本：
+  1. fetch('/pre-generated/{category}/{bookId}/book.json') → 获取完整绘本数据
+  2. book.json 中的 scene.imageUrl = '/pre-generated/{category}/{bookId}/{n}.png'
+  3. 直接渲染，无需 IndexedDB
+
+用户生成新绘本（运行中）：
+  1. 运行时状态在 Zustand store 内存中
+  2. 任务队列持久化到 IndexedDB（防刷新丢失）
+  3. 生成完成后 → 组装为 book.json + 下载图片 → 保存到 public/ 目录
+  4. 更新 index.json
+```
+
+### 7. 预生成内容 — 走真实流水线 + 统一目录
+
+预生成内容不再手写 JSON，采用上一节定义的文件系统结构，**每本绘本一个文件夹，包含所有过程数据**。
+
+#### 生成流水线
+
+```
+输入：品类 + 原文（如 idiom + "守株待兔"）
+  │
+  ├─ 步骤1：构建 decompose prompt（从策略类获取品类专属模板 + 填充原文）
+  │     ↓
+  │   decompose-prompt.txt  ← 保存 prompt 原文（用于分析）
+  │     ↓
+  ├─ 步骤2：调用 LLM → 得到 decompose-result.json
+  │     ↓
+  │   decompose-result.json  ← 保存 LLM 原始返回（用于分析）
+  │     ↓
+  ├─ 步骤3：从 result 构建 prompts.json（每个场景的最终 image prompt）
+  │     ↓  
+  │   prompts.json  ← 保存拼接后的 image prompt（含角色/风格/构图）
+  │     ↓
+  ├─ 步骤4：对每个场景，调用图像 API → 下载 → 保存为 {n}.png
+  │     ↓
+  │   1.png, 2.png, 3.png, ...  ← 场景图片
+  │     ↓
+  ├─ 步骤5：组装 book.json（PictureBook 完整数据，imageUrl 指向同级 PNG）
+  │     ↓
+  │   book.json  ← 页面渲染用
+  │     ↓
+  └─ 步骤6：记录 meta.json（生成时间、LLM 模型、API 耗时等）
+        ↓
+      meta.json  ← 过程分析用
+```
+
+**验证规则**：
+- 场景数 ≥ 品类最低要求（成语 5、古诗 4、儿歌 5、谚语 4、童话 8）
+- book.json 中所有字段非空
+- 每张图片文件存在且非空
+- 有 `characterDescription` 和 `styleDescription`
+
+#### index.json 格式
+
+```json
+{
+  "version": 2,
+  "generatedAt": "2026-06-28T12:00:00.000Z",
+  "categories": {
+    "idiom": {
+      "label": "成语",
+      "icon": "🎭",
+      "count": 20,
+      "items": [
+        { "id": "守株待兔", "title": "守株待兔", "meaning": "…", "sceneCount": 7 }
+      ]
+    },
+    "poetry": {
+      "label": "古诗",
+      "icon": "📜",
+      "count": 10,
+      "items": [
+        { "id": "静夜思", "title": "静夜思", "meaning": "…", "author": "李白", "dynasty": "唐", "sceneCount": 6 }
+      ]
+    }
+  }
+}
+```
+
 #### 批量生成脚本
 
-`scripts/batch-generate.js` 需要升级：
+`scripts/batch-generate.js` 负责执行整个流水线：
 
 ```
 功能：
-  1. 读取品类策略配置 → 获取品类专属 prompt
-  2. 对每个条目执行 decompose（类名实际调用 LLM）
-  3. 对每个场景执行 generate（实际调用图像 API）
-  4. 下载图像保存到 public/pre-generated/images/
-  5. 组装 JSON 写入对应品类目录
-  6. 自动更新 index.json
+  1. 读取品类策略 → 获取品类专属 decompose prompt 模板
+  2. 对每条内容执行步骤 1-6（完整流水线）
+  3. 输出到 public/pre-generated/{category}/{bookId}/
+  4. 自动维护 index.json
 
 用法：
-  node scripts/batch-generate.js --category=idiom     # 只生成成语
-  node scripts/batch-generate.js --category=all        # 生成所有品类
+  node scripts/batch-generate.js --category=idiom                # 生成所有推荐成语
+  node scripts/batch-generate.js --category=all                  # 生成所有品类
   node scripts/batch-generate.js --category=poetry --items=静夜思,春晓  # 指定条目
+  node scripts/batch-generate.js --category=idiom --regenerate    # 重新生成
 ```
 	```
 
@@ -567,7 +648,13 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 3. 谚语 — 抽象→具象生活场景，不需原文逐字对应
 4. 童话 — 最长场景数（8-12），故事弧线拆分需精细控制
 
-**成语重制**：现有 6 个预生成成语按新流水线重新生成，扩充到至少 15-20 个常见成语。
+**成语重制**：现有预生成成语质量不达标（仅 3 场景、无角色/风格描述等），需按新流水线和目录结构重制：
+
+1. 删除旧版 `public/pre-generated/images/`（所有平铺 PNG）
+2. 删除旧版 `public/pre-generated/*.json`（idiom 平铺 JSON）
+3. 用 `IdiomStrategy.getDecomposePrompt()` 重新分解
+4. 按统一目录结构输出：`public/pre-generated/idiom/守株待兔/book.json + 1.png...`
+5. 扩充至 15-20 个常见成语
 
 
 ### 阶段四：现有预生成成语重制
@@ -595,14 +682,17 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 ### 修改文件
 - `lib/types.ts` — 泛化 PictureBook + 新增 ContentCategory
 - `lib/idioms.ts` → `lib/content-info.ts` — 泛化 ContentInfo
-- `lib/db.ts` — v5 schema + 迁移逻辑
-- `lib/store.ts` — 支持 category 状态
+- `lib/db.ts` — 缩减为仅保留 tasks / recommendedItems / settings 表，移除 pictureBooks + scenes
+- `lib/store.ts` — 支持 category 状态，移除 pictureBooks（改走文件系统）
 - `lib/task-store.ts` — Task 添加 category
-- `lib/task-executor.ts` — 按 category 分发 decompose
-- `app/page.tsx` — 首页 Tab 改造
+- `lib/task-executor.ts` — 按 category 分发 decompose，保存逻辑改为输出文件系统格式
+- `app/page.tsx` — 首页 Tab 改造 + 书架加载改为 fetch index.json
+- `app/read/[id]/page.tsx` — 读取改为 fetch book.json
 - `app/actions/decompose.ts` → `app/actions/decompose.ts` 策略化
 - `app/actions/recommend.ts` → `app/actions/recommend.ts` 策略化
 - `components/IdiomSelector.tsx` → 通用 ContentSelector
 - `components/Header.tsx` — 标题更新
 - `components/BookCard.tsx` — 品类徽标 + 时间格式 `YYYY-MM-DD HH:mm:ss`
+- `components/BookViewer.tsx` — 图片加载路径适配新目录
+- `scripts/batch-generate.js` — 完整流水线改写
 - `app/layout.tsx` — SEO metadata 更新
