@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-06-28T02:23:08.096Z",
+  "generatedAt": "2026-06-28T02:28:39.913Z",
   "categories": {
     "idiom": {
       "label": "成语",
@@ -9,39 +9,51 @@
       "items": [
         {
           "id": "亡羊补牢",
+          "sourceText": "亡羊补牢",
           "title": "亡羊补牢",
           "meaning": "亡羊补牢的意思是丢了羊之后修补羊圈。比喻出了问题以后想办法补救，可以防止继续受损失。",
-          "sceneCount": 7
+          "sceneCount": 7,
+          "createdAt": "2026-06-28T02:12:54.412Z"
         },
         {
           "id": "叶公好龙",
+          "sourceText": "叶公好龙",
           "title": "叶公好龙",
           "meaning": "比喻表面上爱好某事物，实际上并不真爱好，甚至害怕它。",
-          "sceneCount": 5
+          "sceneCount": 5,
+          "createdAt": "2026-06-28T01:39:09.355Z"
         },
         {
           "id": "守株待兔",
+          "sourceText": "守株待兔",
           "title": "守株待兔",
           "meaning": "比喻死守狭隘经验，不知变通，或妄想不劳而获。",
-          "sceneCount": 7
+          "sceneCount": 7,
+          "createdAt": "2026-06-28T01:36:51.810Z"
         },
         {
           "id": "愚公移山",
+          "sourceText": "愚公移山",
           "title": "愚公移山",
           "meaning": "比喻做事有毅力，不怕困难，坚持到底就能成功。",
-          "sceneCount": 9
+          "sceneCount": 9,
+          "createdAt": "2026-06-28T01:57:05.571Z"
         },
         {
           "id": "拔苗助长",
+          "sourceText": "拔苗助长",
           "title": "拔苗助长",
           "meaning": "比喻违反事物发展的客观规律，急于求成，反而把事情弄糟。",
-          "sceneCount": 6
+          "sceneCount": 6,
+          "createdAt": "2026-06-28T02:01:24.002Z"
         },
         {
           "id": "狐假虎威",
+          "sourceText": "狐假虎威",
           "title": "狐假虎威",
           "meaning": "比喻依仗别人的势力欺压人。",
-          "sceneCount": 6
+          "sceneCount": 6,
+          "createdAt": "2026-06-28T01:43:06.133Z"
         }
       ]
     }

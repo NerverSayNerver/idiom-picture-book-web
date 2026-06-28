@@ -10,9 +10,11 @@ import type { ContentCategory } from '@/lib/types'
 
 interface IndexBook {
   id: string
+  sourceText?: string
   title: string
   meaning: string
   sceneCount: number
+  createdAt?: string
   author?: string
   category?: string
 }
