@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "worker": "npx tsx worker.ts"
+    "worker": "npx tsx worker.ts",
+    "dev:all": "npx concurrently -n next,worker -c cyan,yellow \"next dev\" \"npx tsx worker.ts\""
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
@@ -15,6 +16,7 @@
     "clsx": "^2.0.0",
     "dexie": "^3.2.0",
     "dexie-react-hooks": "^1.1.0",
+    "dotenv": "^17.4.2",
     "html2canvas": "^1.4.0",
     "jspdf": "^2.5.0",
     "lucide-react": "^0.300.0",
@@ -34,6 +36,7 @@
     "@types/react": "^18.0.0",
     "@types/uuid": "^9.0.0",
     "autoprefixer": "^10.4.0",
+    "concurrently": "^10.0.3",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "postcss": "^8.4.0",

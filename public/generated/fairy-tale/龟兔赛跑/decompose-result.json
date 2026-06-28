@@ -1,100 +1,88 @@
 {
-  "id": "龟兔赛跑",
-  "category": "fairy-tale",
-  "sourceText": "龟兔赛跑",
-  "title": "龟兔赛跑",
+  "idiom": "龟兔赛跑",
   "meaning": "虚心使人进步，骄傲使人落后；坚持到底才能取得胜利。",
-  "createdAt": "2026-06-28T06:31:36.684Z",
+  "characterDescription": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced.",
+  "styleDescription": "Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
   "scenes": [
     {
       "id": 1,
       "title": "森林里的新朋友",
       "description": "阳光明媚的清晨，森林里生机勃勃。小白兔穿着运动服在草地上伸懒腰，小乌龟背着壳慢慢爬过来打招呼。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., A sunny morning in a lush forest, a white rabbit in a blue athletic vest stretching on the grass, a green turtle with a brown shell crawling slowly towards the rabbit, soft watercolor style, warm pastel colors, whimsical atmosphere., Wide shot showing the forest environment, characters positioned on opposite sides of the frame to establish their relationship., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Wide shot showing the forest environment, characters positioned on opposite sides of the frame to establish their relationship.",
       "narration": "在美丽的大森林里，住着一只活泼的小白兔和一只沉稳的小乌龟。他们虽然是邻居，性格却截然不同。",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/1.png"
+      "compositionHint": "Wide shot showing the forest environment, characters positioned on opposite sides of the frame to establish their relationship."
     },
     {
       "id": 2,
       "title": "挑战书",
       "description": "小白兔指着远处的山坡，得意洋洋地对小乌龟说话。小乌龟抬起头，眼神坚定地看着前方。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., Close-up of the white rabbit pointing confidently towards a distant hill, looking arrogant, while the green turtle looks up with a determined expression, soft lighting, detailed fur and shell textures, classic storybook illustration style., Focus on facial expressions and body language to show the contrast between confidence and determination., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Focus on facial expressions and body language to show the contrast between confidence and determination.",
       "narration": "一天，小白兔骄傲地说：‘我跑得这么快，你敢和我赛跑吗？’小乌龟想了想，点点头说：‘好啊，我们比一比！’",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/2.png"
+      "compositionHint": "Focus on facial expressions and body language to show the contrast between confidence and determination."
     },
     {
       "id": 3,
       "title": "起跑线",
       "description": "森林动物们聚集在起跑线旁，松鼠拿着发令枪，兔子和小乌龟站在起点，准备开始比赛。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., A group of forest animals watching from the sidelines, a squirrel holding a flag at the starting line, the rabbit and turtle standing side by side ready to race, bright daylight, cheerful crowd, watercolor texture., Eye-level view from behind the racers, focusing on the tension before the start, crowd in the blurred background., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Eye-level view from behind the racers, focusing on the tension before the start, crowd in the blurred background.",
       "narration": "比赛开始了！小动物们都来加油。随着发令枪响，小白兔像箭一样冲了出去，而小乌龟则一步一步稳稳地向前爬。",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/3.png"
+      "compositionHint": "Eye-level view from behind the racers, focusing on the tension before the start, crowd in the blurred background."
     },
     {
       "id": 4,
       "title": "遥遥领先",
       "description": "小白兔回头看了一眼，发现小乌龟还在很远的地方。他露出轻蔑的笑容，决定先休息一下。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., The white rabbit looking back over its shoulder with a smirk, seeing the tiny turtle far behind in the distance, dynamic pose suggesting speed, vibrant green grass, soft shadows., Depth of field emphasizing the distance between the two characters, rabbit large in foreground, turtle small in background., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Depth of field emphasizing the distance between the two characters, rabbit large in foreground, turtle small in background.",
       "narration": "小白兔跑得飞快，回头一看，小乌龟还在后面慢吞吞地爬着呢。他想：‘我肯定赢定了，不如先睡一觉吧。’",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/4.png"
+      "compositionHint": "Depth of field emphasizing the distance between the two characters, rabbit large in foreground, turtle small in background."
     },
     {
       "id": 5,
       "title": "树下的美梦",
       "description": "小白兔靠在一棵大树下睡着了，阳光透过树叶洒在他身上。远处，小乌龟依然在努力爬行。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., The white rabbit sleeping peacefully under a large tree, sunlight filtering through leaves creating dappled light patterns, the turtle continuing to crawl in the background path, serene and calm atmosphere, soft watercolor hues., Split composition or diagonal line separating the sleeping rabbit in the foreground from the moving turtle in the mid-ground., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Split composition or diagonal line separating the sleeping rabbit in the foreground from the moving turtle in the mid-ground.",
       "narration": "小白兔靠着大树，不一会儿就进入了梦乡。呼噜声打得震天响。可是，小乌龟没有停下，他一步一步，坚持不懈地向前爬。",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/5.png"
+      "compositionHint": "Split composition or diagonal line separating the sleeping rabbit in the foreground from the moving turtle in the mid-ground."
     },
     {
       "id": 6,
       "title": "坚持不懈",
       "description": "特写镜头展示小乌龟汗水浸湿的额头和坚定的眼神，他跨过石头，绕过草丛，从未放弃。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., Close-up of the green turtle's face, beads of sweat on his forehead, focused and determined eyes, crawling over a small rock, detailed shell texture, warm afternoon light, inspiring mood., Low angle shot to make the turtle look heroic and determined, focusing on the effort and persistence., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Low angle shot to make the turtle look heroic and determined, focusing on the effort and persistence.",
       "narration": "太阳慢慢西斜，天气变热了。小乌龟虽然很累，但他没有停下来休息。他心里只有一个念头：‘我要坚持到终点！’",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/6.png"
+      "compositionHint": "Low angle shot to make the turtle look heroic and determined, focusing on the effort and persistence."
     },
     {
       "id": 7,
       "title": "惊醒与冲刺",
       "description": "小白兔突然惊醒，发现太阳快落山了。他惊恐地看向远方，看到小乌龟已经接近终点线。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., The white rabbit waking up suddenly with a shocked expression, eyes wide, looking towards the finish line where the turtle is just about to cross, golden hour lighting, sense of urgency and panic., Over-the-shoulder shot from the rabbit's perspective, focusing on the turtle near the finish line in the distance., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Over-the-shoulder shot from the rabbit's perspective, focusing on the turtle near the finish line in the distance.",
       "narration": "突然，小白兔醒了！他一看时间，哎呀，太阳都要下山了！他拼命向终点跑去，可是……",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/7.png"
+      "compositionHint": "Over-the-shoulder shot from the rabbit's perspective, focusing on the turtle near the finish line in the distance."
     },
     {
       "id": 8,
       "title": "胜利时刻",
       "description": "小乌龟刚刚跨过终点线，周围的小动物们欢呼雀跃。小白兔气喘吁吁地赶到了，满脸羞愧。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., The green turtle crossing the finish line first, animals cheering around him, confetti falling, the white rabbit arriving late looking tired and ashamed, joyful and celebratory atmosphere, bright colors., Central focus on the turtle at the finish line, with the celebrating crowd surrounding him, rabbit entering from the side edge., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Central focus on the turtle at the finish line, with the celebrating crowd surrounding him, rabbit entering from the side edge.",
       "narration": "小乌龟第一个冲过了终点！森林里响起了热烈的掌声。小白兔跑得满头大汗，惭愧地低下了头。",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/8.png"
+      "compositionHint": "Central focus on the turtle at the finish line, with the celebrating crowd surrounding him, rabbit entering from the side edge."
     },
     {
       "id": 9,
       "title": "谦虚的友谊",
       "description": "小白兔真诚地向小乌龟道歉并握手，两人相视一笑，其他小动物也在旁边祝福他们。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., The white rabbit shaking hands with the green turtle, both smiling genuinely, other forest animals watching happily in the background, soft sunset glow, heartwarming scene, classic storybook style., Medium shot focusing on the interaction between the two main characters, conveying reconciliation and friendship., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Medium shot focusing on the interaction between the two main characters, conveying reconciliation and friendship.",
       "narration": "小白兔对小乌龟说：‘对不起，我不该骄傲。’小乌龟笑着说：‘没关系，只要你下次努力，我们永远是好朋友。’",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/9.png"
+      "compositionHint": "Medium shot focusing on the interaction between the two main characters, conveying reconciliation and friendship."
     },
     {
       "id": 10,
       "title": "故事的启示",
       "description": "画面中央是寓意文字，背景是小白兔和小乌龟一起散步的温馨剪影，象征合作与成长。",
       "prompt": "Rabbit: A white rabbit with long ears, wearing a blue athletic vest and red shorts, energetic but arrogant. Turtle: A small green turtle with a textured brown shell, wearing a yellow cap, calm, determined, and slow-paced., Illustrative page with text space for moral, background silhouette of rabbit and turtle walking together into the sunset, soft dreamy colors, educational book ending style, clean and simple design., Text-heavy layout with illustrative background, ensuring readability for children, centered composition., Classic storybook illustration style, soft watercolor textures, warm pastel tones, whimsical and gentle atmosphere, detailed background elements like flowers and trees, suitable for children aged 3-8.",
-      "compositionHint": "Text-heavy layout with illustrative background, ensuring readability for children, centered composition.",
       "narration": "这个故事告诉我们：虚心使人进步，骄傲使人落后。只有坚持不懈，才能取得最后的胜利！",
-      "imageUrl": "/generated/fairy-tale/龟兔赛跑/10.png"
+      "compositionHint": "Text-heavy layout with illustrative background, ensuring readability for children, centered composition."
     }
   ]
 }

@@ -2,6 +2,11 @@
 // 独立 Worker 进程：轮询 SQLite 任务队列，执行绘本生成管道
 // 启动方式: npm run worker (npx tsx worker.ts)
 
+import { config } from 'dotenv'
+import { resolve } from 'path'
+// 在首次 import 时加载 .env.local（dotenv 同步执行，比后续模块调用先完成）
+config({ path: resolve(__dirname || process.cwd(), '.env.local') })
+
 import { pollPendingJob, markRunning, updateTask, getTask, getChildTasks, addChildTasks, recoverInterruptedTasks, closeDb } from './lib/task-db'
 import { decomposeSource } from './app/actions/decompose'
 import { generateSceneImage } from './app/actions/generate'

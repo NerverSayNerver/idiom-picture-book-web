@@ -6,10 +6,14 @@ import type {
 } from './types'
 
 const API_BASE = 'https://apihub.agnes-ai.com/v1'
-const API_KEY = process.env.AGNES_API_KEY
 
-if (!API_KEY) {
-  console.warn('AGNES_API_KEY is not set')
+function getApiKey(): string {
+  const key = process.env.AGNES_API_KEY
+  if (!key) {
+    console.warn('AGNES_API_KEY is not set')
+    return ''
+  }
+  return key
 }
 
 // LLM 对话（场景拆分）
@@ -19,7 +23,7 @@ export async function chatCompletion(
   const response = await fetch(`${API_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${getApiKey()}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -58,7 +62,7 @@ export async function generateImage(
   const response = await fetch(`${API_BASE}/images/generations`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${getApiKey()}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -85,7 +89,7 @@ export async function createVideoTask(
   const response = await fetch('https://apihub.agnes-ai.com/v1/videos', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${getApiKey()}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -115,7 +119,7 @@ export async function getVideoResult(
     `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`,
     {
       headers: {
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${getApiKey()}`,
       },
     }
   )
