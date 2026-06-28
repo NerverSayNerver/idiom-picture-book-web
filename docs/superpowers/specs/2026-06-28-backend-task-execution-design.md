@@ -70,7 +70,7 @@
 │  │    executeJob(job)  // decompose → generate → save      │    │
 │  │  }                                                      │    │
 │  └─────────────────────────────────────────────────────────┘    │
-│  imports: decompose.ts, generate.ts, agnes-api.ts              │
+  │  imports: decompose.ts, generate.ts, agnes-api.ts, save-book.ts│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -147,7 +147,7 @@ worker.ts 启动
             │       └── 更新 SQLite image_url
             └── executeSave(saveTaskId)
                 ├── 从 SQLite 读取完整绘本数据
-                └── POST /api/save-book ← 现有 API Route
+                └── saveBook() ← 直接调用保存逻辑（从 API route 中提取为独立函数）
 ```
 
 ### 信号处理
@@ -221,6 +221,7 @@ GET    /api/tasks/[id]        → 单个任务状态
 |------|------|
 | `lib/task-db.ts` | SQLite CRUD（服务端，better-sqlite3） |
 | `lib/use-jobs.ts` | 前端 hook：轮询 `/api/jobs` 获取任务状态 |
+| `lib/save-book.ts` | 从 `app/api/save-book/route.ts` 提取保存逻辑为独立函数 |
 | `app/api/jobs/route.ts` | 创建任务 + 列出任务 |
 | `app/api/jobs/[id]/pause/route.ts` | 暂停任务 |
 | `app/api/jobs/[id]/resume/route.ts` | 恢复任务 |
@@ -259,25 +260,26 @@ export function useJobs(options?: { status?: string }) {
 ### Phase 1: 基础设施（无功能变更）
 
 1. 安装 `better-sqlite3` + `@types/better-sqlite3`
-2. 创建 `lib/task-db.ts`（SQLite CRUD）
-3. 创建 `app/api/jobs/` 路由（CRUD + 控制）
-4. 创建 `worker.ts`（从 `task-executor.ts` 重构）
+2. 提取 `lib/save-book.ts`（从 API route 中分离保存逻辑）
+3. 创建 `lib/task-db.ts`（SQLite CRUD）
+4. 创建 `app/api/jobs/` 路由（CRUD + 控制）
+5. 创建 `worker.ts`（从 `task-executor.ts` 重构）
 
 ### Phase 2: 前端迁移
 
-5. 创建 `lib/use-jobs.ts`（轮询 hook）
-6. 改造 `TaskQueue.tsx`（Zustand → API）
-7. 改造 `TaskCard.tsx`（Zustand → API）
-8. 改造 `ContentSelector.tsx`（createJob → API）
-9. 改造 `app/page.tsx`（去掉 TaskExecutor）
-10. 改造 `app/generate/page.tsx`（去掉 TaskExecutor）
+6. 创建 `lib/use-jobs.ts`（轮询 hook）
+7. 改造 `TaskQueue.tsx`（Zustand → API）
+8. 改造 `TaskCard.tsx`（Zustand → API）
+9. 改造 `ContentSelector.tsx`（createJob → API）
+10. 改造 `app/page.tsx`（去掉 TaskExecutor）
+11. 改造 `app/generate/page.tsx`（去掉 TaskExecutor）
 
 ### Phase 3: 清理
 
-11. 删除 `lib/task-store.ts`
-12. 删除 `lib/task-executor.ts`
-13. 清理 `lib/db.ts` 中的 task 相关代码
-14. 更新 `package.json` scripts
+12. 删除 `lib/task-store.ts`
+13. 删除 `lib/task-executor.ts`
+14. 清理 `lib/db.ts` 中的 task 相关代码
+15. 更新 `package.json` scripts
 
 ## 风险与缓解
 
