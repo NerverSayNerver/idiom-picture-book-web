@@ -1,16 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import type { Task, TaskStatus, TaskType } from '@/lib/task-store'
-import { useTaskStore } from '@/lib/task-store'
+import type { Task, TaskStatus, TaskType } from '@/lib/task-types'
 import type { SceneTemplate } from '@/lib/types'
 import Link from 'next/link'
+import { getStrategy } from '@/lib/content-types'
+import { retryJobAPI, pauseJobAPI, resumeJobAPI, cancelJobAPI } from '@/lib/use-jobs'
 
 interface TaskCardProps {
   task: Task
   expanded?: boolean
   onToggle?: () => void
   showActions?: boolean
+  /** 子任务列表（由父组件通过 API 数据提供） */
+  childTasks?: Task[]
+  /** job 进度（由父组件计算） */
+  jobProgress?: { completed: number; total: number; percent: number }
 }
 
 function formatDuration(ms: number): string {
@@ -58,14 +63,13 @@ const indicatorIcon: Record<TaskStatus, string> = {
 // ── Child Task Row ──────────────────────────────────────────
 
 function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean }) {
-  const { retryTask, getTaskById } = useTaskStore()
   const [showDetail, setShowDetail] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [showDecomposeModal, setShowDecomposeModal] = useState(false)
   const elapsed = task.startTime ? formatDuration((task.endTime || Date.now()) - task.startTime) : null
   const progressPercent = task.total > 0 ? Math.round((task.progress / task.total) * 100) : 0
 
-  // 获取分解结果 — 优先从 task 自身读取（防止批量生成时被后续 job 覆盖）
+  // 获取分解结果 — 优先从 task 自身读取
   const decomposeMeaning = task.decomposeMeaning ?? undefined
   const decomposeCharacterDescription = task.decomposeCharacterDescription ?? undefined
   const decomposeStyleDescription = task.decomposeStyleDescription ?? undefined
@@ -73,13 +77,15 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
     try { return JSON.parse(task.decomposeScenesJson) as SceneTemplate[] } catch { return null }
   })() : null
 
-  // 获取父 job 信息
-  const parentJob = task.parentId ? getTaskById(task.parentId) : null
-  const decomposeIdiom = parentJob?.idiom
+  // 获取父 job 信息 — 从 props 无法直接获取，使用 task 上的冗余字段
+  const decomposeIdiom = task.idiom
+  const categoryLabel = (() => {
+    try { return getStrategy((task.category || 'idiom') as any).label } catch { return '内容' }
+  })()
 
   // 类型对应的默认标题
   const typeDefaultTitles: Partial<Record<TaskType, string>> = {
-    decompose: '分析成语含义',
+    decompose: `分析${categoryLabel}含义`,
     generate: '生成场景图片',
     save: '保存绘本',
   }
@@ -138,7 +144,7 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
         {elapsed && <span className="text-xs text-gray-400 flex-shrink-0">⏱️ {elapsed}</span>}
         {showActions && task.status === 'failed' && task.retryCount < (task.maxRetries ?? 3) && (
           <button
-            onClick={(e) => { e.stopPropagation(); retryTask(task.id) }}
+            onClick={(e) => { e.stopPropagation(); retryJobAPI(task.id) }}
             className="flex-shrink-0 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
           >
             🔄 重试
@@ -197,7 +203,7 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
           >
             {/* 头部 */}
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-800">🔍 成语分析结果</h3>
+              <h3 className="text-lg font-bold text-gray-800">🔍 {categoryLabel}分析结果</h3>
               <button
                 onClick={() => setShowDecomposeModal(false)}
                 className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full text-lg transition-colors"
@@ -208,9 +214,9 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
 
             {/* 内容区 */}
             <div className="px-6 py-4 space-y-4 overflow-y-auto max-h-[calc(85vh-64px)]">
-              {/* 成语 */}
+              {/* 标题 */}
               <div>
-                <span className="text-xs text-gray-400 uppercase tracking-wide">成语</span>
+                <span className="text-xs text-gray-400 uppercase tracking-wide">{categoryLabel}</span>
                 <p className="text-2xl font-bold text-primary">{decomposeIdiom}</p>
               </div>
 
@@ -263,14 +269,12 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
 
 // ── Main Component ──────────────────────────────────────────
 
-export function TaskCard({ task, expanded = false, onToggle, showActions = true }: TaskCardProps) {
-  const { pauseTask, resumeTask, cancelTask, getChildTasks, getJobProgress } = useTaskStore()
+export function TaskCard({ task, expanded = false, onToggle, showActions = true, childTasks = [], jobProgress }: TaskCardProps) {
   const status = statusConfig[task.status]
   const elapsed = task.startTime ? formatDuration((task.endTime || Date.now()) - task.startTime) : null
 
   if (task.type === 'job') {
-    const progress = getJobProgress(task.id)
-    const childTasks = getChildTasks(task.id)
+    const progress = jobProgress ?? { completed: 0, total: 0, percent: 0 }
 
     return (
       <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
@@ -282,7 +286,7 @@ export function TaskCard({ task, expanded = false, onToggle, showActions = true 
           <div className="flex items-center space-x-2">
             <span className="text-xs text-gray-400 w-4">{expanded ? '▼' : '▶'}</span>
             <span className="text-lg">📚</span>
-            <span className="font-medium text-gray-800">{task.idiom ?? '未知成语'}</span>
+            <span className="font-medium text-gray-800">{task.idiom ?? task.sourceText ?? '未知内容'}</span>
           </div>
           <div className="flex items-center space-x-3">
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
@@ -315,7 +319,7 @@ export function TaskCard({ task, expanded = false, onToggle, showActions = true 
           <div className="flex items-center justify-end space-x-2 px-4 pb-3">
             {task.status === 'running' && (
               <button
-                onClick={() => pauseTask(task.id)}
+                onClick={() => pauseJobAPI(task.id)}
                 className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors"
               >
                 ⏸️ 暂停
@@ -323,7 +327,7 @@ export function TaskCard({ task, expanded = false, onToggle, showActions = true 
             )}
             {task.status === 'paused' && (
               <button
-                onClick={() => resumeTask(task.id)}
+                onClick={() => resumeJobAPI(task.id)}
                 className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
               >
                 ▶️ 继续
@@ -331,15 +335,15 @@ export function TaskCard({ task, expanded = false, onToggle, showActions = true 
             )}
             {['pending', 'running', 'paused'].includes(task.status) && (
               <button
-                onClick={() => cancelTask(task.id)}
+                onClick={() => cancelJobAPI(task.id)}
                 className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
               >
                 ❌ 取消
               </button>
             )}
-            {task.status === 'completed' && task.idiom && (
+            {task.status === 'completed' && (task.idiom || task.sourceText) && (
               <Link
-                href={`/read/${encodeURIComponent(task.idiom)}`}
+                href={`/read/${task.category || 'idiom'}:${encodeURIComponent(task.idiom || task.sourceText || '')}`}
                 className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
               >
                 📖 查看绘本

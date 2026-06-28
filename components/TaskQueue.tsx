@@ -202,9 +202,23 @@ export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
                   {group.label} ({group.jobs.length})
                   <span className="ml-1 text-xs text-gray-400">{collapsedGroups.has(group.label) ? '▶' : '▼'}</span>
                 </h3>
-                {!collapsedGroups.has(group.label) && group.jobs.map(job => (
-                  <TaskCard key={job.id} task={job} expanded={expandedJobs.has(job.id)} onToggle={() => toggleExpand(job.id)} />
-                ))}
+                {!collapsedGroups.has(group.label) && group.jobs.map(job => {
+                  // 从全局 jobs 列表中查找子任务
+                  const childTasks = jobs.filter(j => j.parentId === job.id)
+                  const completedCount = childTasks.filter(c => c.status === 'completed').length
+                  const total = childTasks.length
+                  const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0
+                  return (
+                    <TaskCard
+                      key={job.id}
+                      task={job}
+                      expanded={expandedJobs.has(job.id)}
+                      onToggle={() => toggleExpand(job.id)}
+                      childTasks={childTasks}
+                      jobProgress={{ completed: completedCount, total, percent }}
+                    />
+                  )
+                })}
               </div>
             ) : null
           )
