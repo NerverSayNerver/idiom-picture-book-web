@@ -286,10 +286,10 @@ export class TaskExecutor {
       // 保存当前绘本到 appStore（内存），传 existingId 防止 retry 重复
       const task = useTaskStore.getState().getTaskById(taskId)
       const parentJob = task?.parentId ? useTaskStore.getState().getTaskById(task.parentId) : null
-      const existingBook = parentJob
-        ? useAppStore.getState().pictureBooks.find(b => b.idiom === parentJob.idiom)
-        : undefined
-      const book = useAppStore.getState().saveCurrentBook(existingBook?.id)
+	      const existingBook = parentJob
+	        ? undefined
+	        : undefined
+	      const book = useAppStore.getState().saveCurrentBook(undefined)
 
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
