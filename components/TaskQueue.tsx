@@ -163,8 +163,8 @@ export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
         </div>
       )}
 
-      {/* Job list (flex-1 撑满剩余高度，内部滚动) */}
-      <div className="p-3 space-y-3 flex-1 overflow-y-auto min-h-0">
+      {/* Job list */}
+      <div className="p-3 space-y-3 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0">
         {jobs.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <div className="text-3xl mb-2">📭</div><p>暂无任务</p>

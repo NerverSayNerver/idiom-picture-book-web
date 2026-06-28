@@ -103,7 +103,7 @@ export default function Home() {
         {/* 书架 */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">📚 我的绘本书架</h2>
+            <h2 className="text-2xl font-bold text-gray-800">📚 绘本成品</h2>
             <span className="text-gray-500">{totalBooks} 本</span>
           </div>
 

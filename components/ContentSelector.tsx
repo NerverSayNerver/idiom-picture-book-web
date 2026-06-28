@@ -26,8 +26,9 @@ export function ContentSelector({ category, compact }: ContentSelectorProps) {
   const router = useRouter()
   const strategy = getStrategy(category)
 
-  // 加载推荐内容
+  // 加载推荐内容 + 重置刷新旋转状态
   useEffect(() => {
+    setRefreshing(false)
     loadRecommended()
     setSelectedItem(null)
     setCustomInput('')
