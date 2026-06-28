@@ -203,6 +203,46 @@ public/pre-generated/
 - `BookCard.tsx` — 增加品类徽标 + 时间格式升级
 - `app/page.tsx` — 书架区域增加筛选 Tab 状态和过滤逻辑
 
+### 9. 「换一批」推荐机制泛化
+
+当前成语的「换一批」（刷新）功能需要推广到所有品类。整体流程不变，但数据按品类隔离。
+
+**通用刷新流程**：
+
+```
+用户点击「换一批」
+  → 获取当前品类已显示的条目列表作为排除
+  → 调用 recommend API: fetchRecommendations(category, exclude)
+  → LLM 根据品类专属 prompt 推荐 10 个新条目
+  → DB 持久化: saveRecommendedItems(items, category)
+  → 从 DB 按品类随机取 N 条: getRandomItems(category, N)
+  → 更新 UI 显示
+```
+
+**IndexedDB API 改造**：
+
+```typescript
+// 原有成语专属 → 泛化版本
+saveRecommendedItems(items: ContentInfo[], category: ContentCategory): Promise<void>
+getAllRecommendedItems(category: ContentCategory): Promise<ContentInfo[]>
+getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
+```
+
+**品类隔离**：
+- 每条推荐数据存储时携带 `category` 字段
+- 读取时按 category 过滤，不同品类的推荐互不干扰
+- 内置推荐列表（当前 `IDIOM_LIST`）也需要按品类组织
+
+**各品类推荐 prompt 方向**：
+
+| 品类 | 推荐 prompt 特色 |
+|------|-----------------|
+| 成语 | 推荐适合 3-8 岁儿童的经典成语故事，涵盖寓言/历史/励志 |
+| 古诗 | 推荐适合儿童背诵的经典古诗，五言/七言，描写自然/亲情/四季 |
+| 儿歌 | 推荐经典童谣和现代儿歌，旋律简单，适合 0-6 岁 |
+| 谚语 | 推荐生活智慧类谚语，通俗易懂，有教育意义 |
+| 童话 | 推荐经典童话和寓言故事，情节完整，寓意正面 |
+
 ### 首个扩展品类：古诗
 
 **产品逻辑**：
