@@ -8,7 +8,7 @@ import {
 } from '@/lib/agnes-api'
 
 export async function generateSceneImage(prompt: string): Promise<string> {
-  // 不内置重试，由 task-executor 层统一管理重试逻辑
+  // 不内置重试，由 worker 层统一管理重试逻辑
   const result = await generateImage(prompt)
   const imageUrl = result.data?.[0]?.url
   if (!imageUrl) {
