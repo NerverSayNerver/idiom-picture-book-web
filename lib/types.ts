@@ -1,3 +1,15 @@
+// 品类枚举
+export type ContentCategory = 'idiom' | 'poetry' | 'proverb' | 'nursery-rhyme' | 'fairy-tale'
+
+// 泛化内容条目（取代 IdiomInfo）
+export interface ContentInfo {
+  sourceText: string
+  meaning: string
+  category: ContentCategory
+  author?: string
+  dynasty?: string
+}
+
 // 成语分解结果
 export interface IdiomDecomposition {
   idiom: string
@@ -27,9 +39,13 @@ export interface Scene extends SceneTemplate {
 // 绘本
 export interface PictureBook {
   id: string
+  category: ContentCategory
+  sourceText: string
   title: string
   idiom: string
   meaning: string
+  author?: string
+  dynasty?: string
   createdAt: string
   scenes: Scene[]
   videoBlob?: Blob

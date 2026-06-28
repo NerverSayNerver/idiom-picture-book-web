@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import type { PictureBook, Scene, SceneTemplate } from './types'
+import type { PictureBook, Scene, SceneTemplate, ContentCategory } from './types'
 
 interface AppState {
   // 当前生成中的绘本
@@ -81,14 +81,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       ? state.pictureBooks.find(b => b.id === existingId)
       : state.pictureBooks.find(b => b.idiom === state.currentIdiom)
 
-    const book: PictureBook = {
-      id: existingBook?.id ?? uuidv4(),
-      title: state.currentIdiom,
-      idiom: state.currentIdiom,
-      meaning: state.currentMeaning,
-      createdAt: existingBook?.createdAt ?? new Date().toISOString(),
-      scenes: state.currentScenes,
-    }
+	    const book: PictureBook = {
+	      id: existingBook?.id ?? uuidv4(),
+	      category: 'idiom' as ContentCategory,
+	      sourceText: state.currentIdiom,
+	      title: state.currentIdiom,
+	      idiom: state.currentIdiom,
+	      meaning: state.currentMeaning,
+	      createdAt: existingBook?.createdAt ?? new Date().toISOString(),
+	      scenes: state.currentScenes,
+	    }
     set((state) => ({
       pictureBooks: existingBook
         ? state.pictureBooks.map(b => b.id === existingBook.id ? book : b)
