@@ -48,6 +48,8 @@ export interface Task {
   type: TaskType
   parentId: string | null
   status: TaskStatus
+  category?: string        // 品类标识
+  sourceText?: string      // 取代 idiom
   idiom?: string
   sceneId?: number
   sceneTitle?: string

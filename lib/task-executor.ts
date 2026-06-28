@@ -1,9 +1,8 @@
 import { useTaskStore } from './task-store'
 import type { ChildTaskDef } from './task-store'
 import { useAppStore } from './store'
-import { decomposeIdiom } from '@/app/actions/decompose'
+import { decomposeSource } from '@/app/actions/decompose'
 import { generateSceneImage, downloadImageAsBase64 } from '@/app/actions/generate'
-import { savePictureBook, saveSceneImage } from '@/lib/db'
 
 // ── 辅助函数 ─────────────────────────────────────────────
 
@@ -153,12 +152,14 @@ export class TaskExecutor {
     idiom: string,
     signal: AbortSignal,
   ): Promise<void> {
+    const job = useTaskStore.getState().getTaskById(jobId)
+    const category = (job?.category || 'idiom') as any
     useTaskStore.getState().updateTask(taskId, { status: 'running' })
     useAppStore.getState().setCurrentIdiom(idiom)
     useAppStore.getState().setDecomposing(true)
 
     try {
-      const result = await decomposeIdiom(idiom)
+      const result = await decomposeSource(idiom, category)
 
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
@@ -283,25 +284,21 @@ export class TaskExecutor {
     useTaskStore.getState().updateTask(taskId, { status: 'running' })
 
     try {
-      // 保存当前绘本到 appStore（内存），传 existingId 防止 retry 重复
       const task = useTaskStore.getState().getTaskById(taskId)
       const parentJob = task?.parentId ? useTaskStore.getState().getTaskById(task.parentId) : null
-	      const existingBook = parentJob
-	        ? undefined
-	        : undefined
-	      const book = useAppStore.getState().saveCurrentBook(undefined)
+      const book = useAppStore.getState().saveCurrentBook(undefined)
 
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
-      // 持久化到 IndexedDB
-      await savePictureBook(book)
-
-      // 保存每个场景的图像到 IndexedDB
-      for (const scene of book.scenes) {
-        if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
-        if (scene.imageBlob) {
-          await saveSceneImage(book.id, scene.id, scene.imageBlob)
-        }
+      // 通过 API 路由保存到文件系统
+      const res = await fetch('/api/save-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(book),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || '保存绘本失败')
       }
 
       useTaskStore.getState().updateTask(taskId, {
