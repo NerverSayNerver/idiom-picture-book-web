@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
 import { saveTasks, loadTasks } from './db'
+import { type Task, type TaskStatus, type TaskType, type ChildTaskDef, deriveJobStatus } from './task-types'
+
+// Re-export types for backward compatibility
+export type { Task, TaskStatus, TaskType, ChildTaskDef } from './task-types'
+export { deriveJobStatus } from './task-types'
 
 // ── 持久化防抖 ──────────────────────────────────────────
 
@@ -29,86 +34,6 @@ function persistDebounced(tasks: Task[]): void {
     debounceTimer = null
     saveTasks(tasks).catch(console.error)
   }, DEBOUNCE_MS)
-}
-
-// ── 类型定义 ──────────────────────────────────────────────
-
-export type TaskStatus =
-  | 'pending'    // 等待执行
-  | 'running'    // 正在执行
-  | 'paused'     // 已暂停
-  | 'completed'  // 已完成
-  | 'failed'     // 失败
-  | 'cancelled'  // 已取消
-
-export type TaskType = 'job' | 'decompose' | 'generate' | 'save'
-
-export interface Task {
-  id: string
-  type: TaskType
-  parentId: string | null
-  status: TaskStatus
-  category?: string        // 品类标识
-  sourceText?: string      // 取代 idiom
-  idiom?: string
-  sceneId?: number
-  sceneTitle?: string
-  imageUrl?: string        // 生成任务完成后的图片 URL（跨 job 持久）
-  progress: number
-  total: number
-  error?: string
-  startTime?: number
-  endTime?: number
-  retryCount: number
-  maxRetries: number
-  childTaskIds: string[]
-  /** 分解任务的结果：含义（跨 job 持久，避免批量生成时被覆盖） */
-  decomposeMeaning?: string
-  /** 分解任务的结果：角色描述 */
-  decomposeCharacterDescription?: string
-  /** 分解任务的结果：画风描述 */
-  decomposeStyleDescription?: string
-  /** 分解任务的结果：场景列表（JSON 序列化） */
-  decomposeScenesJson?: string
-}
-
-// ── 子任务定义（用于 addChildTasks） ─────────────────────
-
-export interface ChildTaskDef {
-  type: TaskType
-  sceneId?: number
-  sceneTitle?: string
-  total?: number
-  maxRetries?: number
-}
-
-// ── 辅助函数 ─────────────────────────────────────────────
-
-/**
- * 根据子任务状态推导 job 状态
- */
-export function deriveJobStatus(childTasks: Task[]): TaskStatus {
-  if (childTasks.length === 0) return 'pending'
-
-  const statuses = new Set(childTasks.map(t => t.status))
-
-  // 所有完成 → completed
-  if (childTasks.every(t => t.status === 'completed')) return 'completed'
-
-  // 有任何 running → running
-  if (statuses.has('running')) return 'running'
-
-  // 有任何 failed 且无 running → failed
-  if (statuses.has('failed')) return 'failed'
-
-  // 有任何 paused 且无 running → paused
-  if (statuses.has('paused')) return 'paused'
-
-  // 有任何 cancelled → cancelled
-  if (statuses.has('cancelled')) return 'cancelled'
-
-  // 其余情况（全部 pending）→ pending
-  return 'pending'
 }
 
 // ── Store 接口 ───────────────────────────────────────────
