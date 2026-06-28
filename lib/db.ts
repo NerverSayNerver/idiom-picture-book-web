@@ -1,103 +1,23 @@
 import Dexie, { type Table } from 'dexie'
-import type { PictureBook, Scene } from './types'
 import type { Task } from './task-store'
 import type { ContentInfo } from './types'
 
-export class IdiomPictureBookDB extends Dexie {
-  pictureBooks!: Table<PictureBook>
-  scenes!: Table<{ id?: number } & Omit<Scene, 'id'> & { bookId: string; sceneId: number }>
+export class PictureBookDB extends Dexie {
   tasks!: Table<Task>
-  recommendedIdioms!: Table<ContentInfo & { id?: number }>
+  recommendedItems!: Table<ContentInfo & { id?: number }>
 
   constructor() {
-    super('idiom-picture-book-db')
-    // 当前模式：scenes 使用自增主键，避免不同书的场景 id 冲突
-    this.version(4).stores({
-      pictureBooks: 'id, idiom, createdAt',
-      scenes: '++id, bookId, sceneId, imageHash, [bookId+sceneId]',
-      tasks: 'id, parentId, type, status, idiom',
-      recommendedIdioms: '++id, idiom',
+    super('picture-book-db')
+    this.version(5).stores({
+      tasks: 'id, parentId, type, status, category',
+      recommendedItems: '++id, category, sourceText',
     })
   }
 }
 
-export const db = new IdiomPictureBookDB()
+export const db = new PictureBookDB()
 
-// 自动恢复：旧版本数据库主键变更导致 UpgradeError 时删除并重建
-db.open().catch(async () => {
-  console.warn('数据库升级失败（主键不兼容），删除旧库后刷新页面...')
-  await db.delete()
-  window.location.reload()
-})
-
-// 保存绘本
-export async function savePictureBook(book: PictureBook): Promise<void> {
-  await db.pictureBooks.put(book)
-}
-
-// 获取绘本
-export async function getPictureBook(id: string): Promise<PictureBook | undefined> {
-  return db.pictureBooks.get(id)
-}
-
-// 获取所有绘本
-export async function getAllPictureBooks(): Promise<PictureBook[]> {
-  return db.pictureBooks.orderBy('createdAt').reverse().toArray()
-}
-
-// 删除绘本
-export async function deletePictureBook(id: string): Promise<void> {
-  await db.transaction('rw', [db.pictureBooks, db.scenes], async () => {
-    await db.pictureBooks.delete(id)
-    await db.scenes.where('bookId').equals(id).delete()
-  })
-}
-
-// 保存场景图像
-export async function saveSceneImage(
-  bookId: string,
-  sceneId: number,
-  imageBlob: Blob
-): Promise<void> {
-  const hash = await computeBlobHash(imageBlob)
-  // 先查找是否已有该 (bookId, sceneId) 的行，有则更新（避免重复）
-  const existing = await db.scenes.where('[bookId+sceneId]').equals([bookId, sceneId]).first()
-  const record = {
-    bookId,
-    sceneId,
-    imageBlob,
-    imageHash: hash,
-    title: '',
-    description: '',
-    prompt: '',
-    narration: '',
-  }
-  if (existing) {
-    // existing 有 Dexie 自增主键 id
-    await db.scenes.put(record, (existing as any).id)
-  } else {
-    await db.scenes.add(record)
-  }
-}
-
-// 获取场景图像
-export async function getSceneImage(
-  bookId: string,
-  sceneId: number
-): Promise<Blob | undefined> {
-  const scene = await db.scenes.where('[bookId+sceneId]').equals([bookId, sceneId]).first()
-  return scene?.imageBlob
-}
-
-// 计算 Blob 哈希（用于去重）
-async function computeBlobHash(blob: Blob): Promise<string> {
-  const buffer = await blob.arrayBuffer()
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-// ── 任务持久化 ────────────────────────────────────────────
+// ── 任务持久化 ──
 
 export async function saveTasks(tasks: Task[]): Promise<void> {
   await db.transaction('rw', db.tasks, async () => {
@@ -116,30 +36,31 @@ export async function clearTasks(): Promise<void> {
   await db.tasks.clear()
 }
 
-// ── 推荐成语 ────────────────────────────────────────────
+// ── 推荐缓存 ──
 
-/** 批量保存推荐成语（去重） */
-export async function saveRecommendedIdioms(idioms: ContentInfo[]): Promise<void> {
-  await db.transaction('rw', db.recommendedIdioms, async () => {
-    const existing = await db.recommendedIdioms.toArray()
-    const existingSet = new Set(existing.map(e => e.sourceText))
-    const newIdioms = idioms.filter(i => !existingSet.has(i.sourceText))
-    if (newIdioms.length > 0) {
-      await db.recommendedIdioms.bulkAdd(newIdioms)
+/** 批量保存推荐条目（按品类覆盖） */
+export async function saveRecommendedItems(
+  items: ContentInfo[],
+  category: string
+): Promise<void> {
+  await db.transaction('rw', db.recommendedItems, async () => {
+    await db.recommendedItems.where('category').equals(category).delete()
+    const tagged = items.map(i => ({ ...i, category }))
+    if (tagged.length > 0) {
+      await db.recommendedItems.bulkAdd(tagged as any)
     }
   })
 }
 
-/** 获取所有推荐成语 */
-export async function getAllRecommendedIdioms(): Promise<ContentInfo[]> {
-  return db.recommendedIdioms.toArray()
+/** 获取某品类所有推荐条目 */
+export async function getAllRecommendedItems(category: string): Promise<ContentInfo[]> {
+  return db.recommendedItems.where('category').equals(category).toArray()
 }
 
-/** 随机获取 n 个推荐成语 */
-export async function getRandomIdioms(n: number): Promise<ContentInfo[]> {
-  const all = await db.recommendedIdioms.toArray()
+/** 从某品类随机获取 n 个推荐条目 */
+export async function getRandomItems(category: string, n: number): Promise<ContentInfo[]> {
+  const all = await getAllRecommendedItems(category)
   if (all.length <= n) return all
-  // Fisher-Yates shuffle
   const shuffled = [...all]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -147,3 +68,23 @@ export async function getRandomIdioms(n: number): Promise<ContentInfo[]> {
   }
   return shuffled.slice(0, n)
 }
+
+// ── 向后兼容 ──
+
+/** @deprecated 使用 saveRecommendedItems */
+export const saveRecommendedIdioms = (idioms: ContentInfo[]) =>
+  saveRecommendedItems(idioms, 'idiom')
+
+/** @deprecated 使用 getAllRecommendedItems */
+export const getAllRecommendedIdioms = () => getAllRecommendedItems('idiom')
+
+/** @deprecated 使用 getRandomItems */
+export const getRandomIdioms = (n: number) => getRandomItems('idiom', n)
+
+/** @deprecated 不再使用 pictureBooks 表 */
+export async function getAllPictureBooks(): Promise<any[]> { return [] }
+export async function getPictureBook(_id: string): Promise<any> { return undefined }
+export async function savePictureBook(_book: any): Promise<void> {}
+export async function deletePictureBook(_id: string): Promise<void> {}
+export async function saveSceneImage(_bookId: string, _sceneId: number, _blob: Blob): Promise<void> {}
+export async function getSceneImage(_bookId: string, _sceneId: number): Promise<Blob | undefined> { return undefined }
