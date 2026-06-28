@@ -11,22 +11,7 @@ export class IdiomPictureBookDB extends Dexie {
 
   constructor() {
     super('idiom-picture-book-db')
-    this.version(1).stores({
-      pictureBooks: 'id, idiom, createdAt',
-      scenes: 'id, bookId, imageHash',
-    })
-    this.version(2).stores({
-      pictureBooks: 'id, idiom, createdAt',
-      scenes: 'id, bookId, imageHash',
-      tasks: 'id, parentId, type, status, idiom',
-    })
-    this.version(3).stores({
-      pictureBooks: 'id, idiom, createdAt',
-      scenes: 'id, bookId, imageHash',
-      tasks: 'id, parentId, type, status, idiom',
-      recommendedIdioms: '++id, idiom',
-    })
-    // v4: scenes 改用自增主键 + sceneId 普通索引，避免不同书的场景 id 冲突
+    // 当前模式：scenes 使用自增主键，避免不同书的场景 id 冲突
     this.version(4).stores({
       pictureBooks: 'id, idiom, createdAt',
       scenes: '++id, bookId, sceneId, imageHash, [bookId+sceneId]',
@@ -37,6 +22,13 @@ export class IdiomPictureBookDB extends Dexie {
 }
 
 export const db = new IdiomPictureBookDB()
+
+// 自动恢复：旧版本数据库主键变更导致 UpgradeError 时删除并重建
+db.open().catch(async () => {
+  console.warn('数据库升级失败（主键不兼容），删除旧库后刷新页面...')
+  await db.delete()
+  window.location.reload()
+})
 
 // 保存绘本
 export async function savePictureBook(book: PictureBook): Promise<void> {
