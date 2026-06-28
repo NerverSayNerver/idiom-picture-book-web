@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { CategoryTabs } from '@/components/CategoryTabs'
 import { ContentSelector } from '@/components/ContentSelector'
 import { TaskQueue } from '@/components/TaskQueue'
 import { BookCard } from '@/components/BookCard'
-import { useTaskStore } from '@/lib/task-store'
-import { TaskExecutor } from '@/lib/task-executor'
 import { useAppStore } from '@/lib/store'
 import type { ContentCategory } from '@/lib/types'
 
@@ -35,42 +33,11 @@ interface IndexData {
 export default function Home() {
   const currentCategory = useAppStore((s) => s.currentCategory)
   const setCurrentCategory = useAppStore((s) => s.setCurrentCategory)
-  const { createJobs, tasks } = useTaskStore()
-  const executorRef = useRef<TaskExecutor | null>(null)
 
   // 书架数据
   const [indexData, setIndexData] = useState<IndexData | null>(null)
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [loading, setLoading] = useState(true)
-  const [isGenerating, setIsGenerating] = useState(false)
-
-  // 监听任务状态
-  useEffect(() => {
-    if (!isGenerating) return
-    const jobs = tasks.filter(t => t.type === 'job')
-    if (jobs.length === 0) return
-    const allDone = jobs.every(j => j.status === 'completed' || j.status === 'failed' || j.status === 'cancelled')
-    if (allDone) {
-      const timer = setTimeout(() => setIsGenerating(false), 500)
-      return () => clearTimeout(timer)
-    }
-  }, [tasks, isGenerating])
-
-  // 加载书架 + 恢复任务
-  useEffect(() => {
-    const init = async () => {
-      await useTaskStore.getState().loadPersistedTasks()
-      await loadIndex()
-      const tasks = useTaskStore.getState().tasks
-      const hasPendingJobs = tasks.some(t => t.type === 'job' && t.status === 'pending')
-      if (hasPendingJobs && !executorRef.current) {
-        executorRef.current = new TaskExecutor()
-        executorRef.current.start()
-      }
-    }
-    init()
-    return () => { executorRef.current?.stop() }
-  }, [])
 
   const loadIndex = async () => {
     setLoading(true)
@@ -90,7 +57,7 @@ export default function Home() {
     ? Object.values(indexData.categories).reduce((sum, cat) => sum + cat.count, 0)
     : 0
 
-  const getFilteredBooks = useCallback(() => {
+  const getFilteredBooks = () => {
     if (!indexData) return []
     if (filterCategory === 'all') {
       return Object.entries(indexData.categories).flatMap(([cat, data]) =>
@@ -101,21 +68,11 @@ export default function Home() {
       ...item,
       category: filterCategory,
     }))
-  }, [indexData, filterCategory])
+  }
 
-  const handleDelete = useCallback((id: string) => {
+  const handleDelete = (id: string) => {
     // 文件系统删除后续实现
-  }, [])
-
-  const handleBatchGenerate = useCallback((idioms: string[]) => {
-    if (isGenerating) return
-    setIsGenerating(true)
-    createJobs(idioms)
-    if (!executorRef.current) {
-      executorRef.current = new TaskExecutor()
-    }
-    executorRef.current.start()
-  }, [createJobs, isGenerating])
+  }
 
   const filteredBooks = getFilteredBooks()
 

@@ -123,7 +123,7 @@ interface TaskQueueState {
   currentTaskId: string | null
 
   // ── Job 相关 actions ──────────────────────────────────
-  createJob: (idiom: string) => string
+  createJob: (idiom: string, category?: string) => string
   addChildTasks: (jobId: string, childDefs: ChildTaskDef[]) => string[]
   createJobs: (idioms: string[]) => string[]
 
@@ -186,7 +186,7 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
   currentTaskId: null,
 
   // ── createJob ─────────────────────────────────────────
-  createJob: (idiom: string) => {
+  createJob: (idiom: string, category?: string) => {
     const id = uuidv4()
     const job: Task = {
       id,
@@ -194,6 +194,8 @@ export const useTaskStore = create<TaskQueueState>((set, get) => ({
       parentId: null,
       status: 'pending',
       idiom,
+      category: category || 'idiom',
+      sourceText: idiom,
       progress: 0,
       total: 0,
       retryCount: 0,

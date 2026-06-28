@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getContentListByCategory } from '@/lib/content-info'
 import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
@@ -48,11 +48,17 @@ export function ContentSelector({ category, compact }: ContentSelectorProps) {
     }
   }
 
+  const refreshExcludeRef = useRef<string[]>([])
+
+  // 每次 displayItems 更新时同步到 ref
+  useEffect(() => {
+    refreshExcludeRef.current = displayItems.map(i => i.sourceText)
+  }, [displayItems])
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     try {
-      const currentItems = displayItems.map(i => i.sourceText)
-      const newItems = await fetchRecommendations(category, currentItems)
+      const newItems = await fetchRecommendations(category, refreshExcludeRef.current)
       await saveRecommendedItems(newItems, category)
       const random = await getRandomItems(category, DISPLAY_COUNT)
       if (random.length > 0) setDisplayItems(random)
@@ -62,7 +68,7 @@ export function ContentSelector({ category, compact }: ContentSelectorProps) {
     } finally {
       setRefreshing(false)
     }
-  }, [category, displayItems, strategy.label])
+  }, [category, strategy.label])
 
   const handleSelect = (text: string) => {
     setSelectedItem(text)

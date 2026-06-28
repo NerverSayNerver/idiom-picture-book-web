@@ -1,0 +1,64 @@
+{
+  "id": "拔苗助长",
+  "category": "idiom",
+  "sourceText": "拔苗助长",
+  "title": "拔苗助长",
+  "meaning": "比喻违反事物发展的客观规律，急于求成，反而把事情弄糟。",
+  "createdAt": "2026-06-28T02:01:24.002Z",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "焦急的农夫",
+      "description": "农夫站在田埂上，看着矮小的禾苗，眉头紧锁，表情焦急，背景是绿色的稻田。",
+      "prompt": "A cute Chinese farmer boy, wearing traditional simple linen clothes in earth tones, barefoot, with a straw hat, expressive big eyes, round face, soft skin texture, childlike proportions., Soft watercolor illustration style, warm pastel color palette. A cute Chinese farmer boy in traditional linen clothes stands on the edge of a green rice paddy field, looking down at short young rice plants with a worried frown and anxious expression. Straw hat on head. Clean white background, gentle lighting, high quality, whimsical atmosphere., Medium shot, eye-level perspective focusing on the character's expression., Soft watercolor illustration style, warm pastel color palette, gentle lighting, clean white background, high quality, detailed brush strokes, suitable for children's book, whimsical and heartwarming atmosphere.",
+      "compositionHint": "Medium shot, eye-level perspective focusing on the character's expression.",
+      "narration": "有个农夫真着急，\n看着禾苗不生气。\n为什么呀？\n因为禾苗长得慢，\n他想让它们快长高！",
+      "imageUrl": "/generated/idiom/拔苗助长/1.png"
+    },
+    {
+      "id": 2,
+      "title": "突发奇想",
+      "description": "农夫蹲在田里，眼神灵动，似乎想到了一个好主意，手里拿着一株小禾苗比划。",
+      "prompt": "A cute Chinese farmer boy, wearing traditional simple linen clothes in earth tones, barefoot, with a straw hat, expressive big eyes, round face, soft skin texture, childlike proportions., Soft watercolor illustration style, warm pastel color palette. The cute Chinese farmer boy squats down among the short rice plants. His eyes light up with an idea. He holds a tiny green rice plant in his hand, comparing its height. He looks clever and determined. Clean white background, soft sunlight filtering through, high quality, detailed texture., Close-up shot, focusing on the boy's face and the plant in his hands., Soft watercolor illustration style, warm pastel color palette, gentle lighting, clean white background, high quality, detailed brush strokes, suitable for children's book, whimsical and heartwarming atmosphere.",
+      "compositionHint": "Close-up shot, focusing on the boy's face and the plant in his hands.",
+      "narration": "他蹲下来，想了想，\n眼睛一亮有办法！\n‘只要把苗往上提，\n就能长高不费力！’",
+      "imageUrl": "/generated/idiom/拔苗助长/2.png"
+    },
+    {
+      "id": 3,
+      "title": "动手拔苗",
+      "description": "农夫弯着腰，双手用力向上拔起一株禾苗，禾苗被拉得长长的，表情认真又吃力。",
+      "prompt": "A cute Chinese farmer boy, wearing traditional simple linen clothes in earth tones, barefoot, with a straw hat, expressive big eyes, round face, soft skin texture, childlike proportions., Soft watercolor illustration style, warm pastel color palette. The cute Chinese farmer boy bends over, pulling a rice plant upwards with both hands. The plant is stretched tall and thin. The boy's face shows effort and concentration, cheeks slightly red. Other plants around look normal. Clean white background, dynamic pose, high quality, whimsical illustration., Side view, capturing the action of pulling the plant., Soft watercolor illustration style, warm pastel color palette, gentle lighting, clean white background, high quality, detailed brush strokes, suitable for children's book, whimsical and heartwarming atmosphere.",
+      "compositionHint": "Side view, capturing the action of pulling the plant.",
+      "narration": "一株，两株，三株，\n他用力往上拔一拔。\n禾苗好像变高了，\n农夫心里乐开花。",
+      "imageUrl": "/generated/idiom/拔苗助长/3.png"
+    },
+    {
+      "id": 4,
+      "title": "大功告成",
+      "description": "农夫直起身子，擦擦额头的汗，看着整片田地变得‘整齐划一’地高大，脸上露出自豪和满意的笑容。",
+      "prompt": "A cute Chinese farmer boy, wearing traditional simple linen clothes in earth tones, barefoot, with a straw hat, expressive big eyes, round face, soft skin texture, childlike proportions., Soft watercolor illustration style, warm pastel color palette. The farmer boy stands upright, wiping sweat from his forehead with his arm. He looks proudly at the field where all rice plants are now uniformly taller and stretched out. He has a satisfied, happy smile. The plants look unnatural but tall. Clean white background, bright cheerful lighting, high quality, emotional expression., Wide angle shot showing the boy and the modified field., Soft watercolor illustration style, warm pastel color palette, gentle lighting, clean white background, high quality, detailed brush strokes, suitable for children's book, whimsical and heartwarming atmosphere.",
+      "compositionHint": "Wide angle shot showing the boy and the modified field.",
+      "narration": "太阳下山回家去，\n脚步轻快哼小曲。\n‘今天真是好运气，\n禾苗全都长高一尺！’",
+      "imageUrl": "/generated/idiom/拔苗助长/4.png"
+    },
+    {
+      "id": 5,
+      "title": "次日担忧",
+      "description": "第二天清晨，农夫匆匆跑到田边，表情从期待转为惊恐，看到禾苗开始枯萎。",
+      "prompt": "A cute Chinese farmer boy, wearing traditional simple linen clothes in earth tones, barefoot, with a straw hat, expressive big eyes, round face, soft skin texture, childlike proportions., Soft watercolor illustration style, warm pastel color palette. Early morning light. The cute Chinese farmer boy runs to the field, looking eager. Suddenly, his expression turns to shock and fear. The rice plants that were pulled up are now drooping, yellowing, and wilting. Leaves hang limp. Clean white background, dramatic change in mood, high quality, expressive character., Over-the-shoulder shot from behind the boy, looking at the dying plants., Soft watercolor illustration style, warm pastel color palette, gentle lighting, clean white background, high quality, detailed brush strokes, suitable for children's book, whimsical and heartwarming atmosphere.",
+      "compositionHint": "Over-the-shoulder shot from behind the boy, looking at the dying plants.",
+      "narration": "第二天清早天刚亮，\n农夫跑去田里望。\n哎呀呀，不得了！\n禾苗全都变黄了。",
+      "imageUrl": "/generated/idiom/拔苗助长/5.png"
+    },
+    {
+      "id": 6,
+      "title": "后悔莫及",
+      "description": "农夫坐在田埂上，双手抱头，一脸沮丧和后悔，周围的禾苗都倒伏枯萎，画面色调稍显暗淡但保持柔和。",
+      "prompt": "A cute Chinese farmer boy, wearing traditional simple linen clothes in earth tones, barefoot, with a straw hat, expressive big eyes, round face, soft skin texture, childlike proportions., Soft watercolor illustration style, warm pastel color palette, slightly muted tones to reflect sadness. The cute Chinese farmer boy sits on the field edge, holding his head in his hands, looking very sad and regretful. Around him, the pulled rice plants are completely wilted and dry. Clean white background, emotional storytelling, high quality, soft shadows., Close-up on the boy's distressed face, with blurred wilting plants in the foreground., Soft watercolor illustration style, warm pastel color palette, gentle lighting, clean white background, high quality, detailed brush strokes, suitable for children's book, whimsical and heartwarming atmosphere.",
+      "compositionHint": "Close-up on the boy's distressed face, with blurred wilting plants in the foreground.",
+      "narration": "原来拔苗害了苗，\n违背规律不可靠。\n欲速则不达道理，\n小朋友要记得牢。",
+      "imageUrl": "/generated/idiom/拔苗助长/6.png"
+    }
+  ]
+}

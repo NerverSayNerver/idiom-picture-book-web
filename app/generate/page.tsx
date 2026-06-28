@@ -10,6 +10,7 @@ import { TaskQueue } from '@/components/TaskQueue'
 export default function GeneratePage() {
   const router = useRouter()
   const currentIdiom = useAppStore((s) => s.currentIdiom)
+  const currentCategory = useAppStore((s) => s.currentCategory)
   const { createJob, tasks } = useTaskStore()
   const executorRef = useRef<TaskExecutor | null>(null)
   const jobCreatedRef = useRef(false)
@@ -37,7 +38,7 @@ export default function GeneratePage() {
 
     const executor = new TaskExecutor()
     executorRef.current = executor
-    createJob(currentIdiom)
+    createJob(currentIdiom, currentCategory)
     executor.start()
 
     return () => {
