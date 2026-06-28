@@ -118,7 +118,7 @@ export interface Task {
 ### 6. 存储架构 — 文件系统为主，IndexedDB 为辅助
 
 **核心原则**：
-- ✅ 所有**已完成的绘本** → 存储在 `public/pre-generated/` 文件系统
+- ✅ 所有**已完成的绘本** → 存储在 `public/generated/` 文件系统
 - ✅ 页面直接通过 HTTP 引用（`fetch` JSON、`<img>` 引用 PNG）
 - ✅ 每本绘本文件夹包含全部过程数据，可供后续分析
 - ❌ 已完成的绘本不额外存入 IndexedDB
@@ -127,7 +127,7 @@ export interface Task {
 #### 统一目录结构
 
 ```
-public/pre-generated/
+public/generated/
 ├── index.json                          # 全局索引（含 category、数量统计）
 │
 ├── idiom/
@@ -166,12 +166,12 @@ public/pre-generated/
 
 | 文件 | 用途 | 来源 | 页面引用方式 |
 |------|------|------|------------|
-| `book.json` | 完整 `PictureBook` 数据（含 scenes、imageUrl） | 生成流水线组装 | `fetch(/pre-generated/idiom/守株待兔/book.json)` |
+| `book.json` | 完整 `PictureBook` 数据（含 scenes、imageUrl） | 生成流水线组装 | `fetch(/generated/idiom/守株待兔/book.json)` |
 | `decompose-prompt.txt` | 发给 LLM 的完整 prompt（品类专属模板 + 原文） | 从策略类导出 | 分析用，页面不引用 |
 | `decompose-result.json` | LLM 原始返回（含 meaning、scenes 等） | LLM API 响应 | 分析用，页面不引用 |
 | `prompts.json` | 各场景最终使用的 image prompt（含角色/风格/构图拼接后） | 生成流水线记录 | 分析用，页面不引用 |
 | `meta.json` | 生成时间、LLM 模型、耗时、版本号 | 生成流水线记录 | 分析用，页面不引用 |
-| `{n}.png` | 场景图片，按序号命名 | 图像 API → 下载 | `<img src="/pre-generated/idiom/守株待兔/1.png">` |
+| `{n}.png` | 场景图片，按序号命名 | 图像 API → 下载 | `<img src="/generated/idiom/守株待兔/1.png">` |
 
 #### IndexedDB 缩减
 
@@ -188,12 +188,12 @@ Dexie v5 schema（只保留运行时数据）:
 
 ```
 页面加载绘本列表：
-  1. fetch('/pre-generated/index.json') → 获取所有品类索引
+  1. fetch('/generated/index.json') → 获取所有品类索引
   2. 按品类/筛选渲染列表
 
 页面加载单个绘本：
-  1. fetch('/pre-generated/{category}/{bookId}/book.json') → 获取完整绘本数据
-  2. book.json 中的 scene.imageUrl = '/pre-generated/{category}/{bookId}/{n}.png'
+  1. fetch('/generated/{category}/{bookId}/book.json') → 获取完整绘本数据
+  2. book.json 中的 scene.imageUrl = '/generated/{category}/{bookId}/{n}.png'
   3. 直接渲染，无需 IndexedDB
 
 用户生成新绘本（运行中）：
@@ -278,7 +278,7 @@ Dexie v5 schema（只保留运行时数据）:
 功能：
   1. 读取品类策略 → 获取品类专属 decompose prompt 模板
   2. 对每条内容执行步骤 1-6（完整流水线）
-  3. 输出到 public/pre-generated/{category}/{bookId}/
+  3. 输出到 public/generated/{category}/{bookId}/
   4. 自动维护 index.json
 
 用法：
@@ -650,10 +650,10 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 
 **成语重制**：现有预生成成语质量不达标（仅 3 场景、无角色/风格描述等），需按新流水线和目录结构重制：
 
-1. 删除旧版 `public/pre-generated/images/`（所有平铺 PNG）
-2. 删除旧版 `public/pre-generated/*.json`（idiom 平铺 JSON）
+1. 删除旧版 `public/generated/images/`（所有平铺 PNG）
+2. 删除旧版 `public/generated/*.json`（idiom 平铺 JSON）
 3. 用 `IdiomStrategy.getDecomposePrompt()` 重新分解
-4. 按统一目录结构输出：`public/pre-generated/idiom/守株待兔/book.json + 1.png...`
+4. 按统一目录结构输出：`public/generated/idiom/守株待兔/book.json + 1.png...`
 5. 扩充至 15-20 个常见成语
 
 
@@ -665,7 +665,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 2. 按实际流水线生成所有场景的图像
 3. 验证：场景数 ≥ 5、有 `characterDescription`、有 `compositionHint`
 4. 扩充成语库至 15-20 个常见成语
-5. 删除旧版预生成 JSON（`public/pre-generated/` 下的旧格式文件）
+5. 删除旧版预生成 JSON（`public/generated/` 下的旧格式文件）
 
 ## 涉及文件清单
 
