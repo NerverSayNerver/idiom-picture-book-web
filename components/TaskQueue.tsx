@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useTaskStore, type TaskStatus } from '@/lib/task-store'
-import type { Task } from '@/lib/task-store'
+import { useState, useEffect, useCallback } from 'react'
+import { useJobs, pauseJobAPI, resumeJobAPI, cancelJobAPI } from '@/lib/use-jobs'
+import type { Task, TaskStatus } from '@/lib/task-types'
 import { TaskCard } from './TaskCard'
 
 interface TaskQueueProps {
@@ -13,9 +13,7 @@ interface TaskQueueProps {
 type FilterMode = 'all' | 'pending' | 'running' | 'paused' | 'completed' | 'failed'
 
 export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
-  const { tasks, pauseAll, resumeAll, cancelAll, clearCompleted } = useTaskStore()
-  // 使用 useMemo 稳定 jobs 引用，避免每次渲染创建新数组
-  const jobs = useMemo(() => tasks.filter(t => t.type === 'job'), [tasks])
+  const { jobs } = useJobs()
   const [filter, setFilter] = useState<FilterMode>('all')
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
   const [notify, setNotify] = useState<string | null>(null)
@@ -87,6 +85,25 @@ export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
     setFilter(prev => prev === mode ? 'all' : mode)
   }, [])
 
+  // ── 全局控制 ──────────────────────────────────────────
+  const handlePauseAll = useCallback(async () => {
+    for (const j of jobs.filter(j => j.status === 'running')) {
+      await pauseJobAPI(j.id)
+    }
+  }, [jobs])
+
+  const handleResumeAll = useCallback(async () => {
+    for (const j of jobs.filter(j => j.status === 'paused')) {
+      await resumeJobAPI(j.id)
+    }
+  }, [jobs])
+
+  const handleCancelAll = useCallback(async () => {
+    for (const j of jobs.filter(j => ['pending', 'running', 'paused'].includes(j.status))) {
+      await cancelJobAPI(j.id)
+    }
+  }, [jobs])
+
   // ── 分组 ──────────────────────────────────────────────
   const orderedGroups: { label: string; color: string; jobs: Task[] }[] = [
     { label: '执行中', color: 'bg-blue-500 animate-pulse', jobs: runningJobs },
@@ -135,12 +152,12 @@ export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
         {hasActive && (
           <div className="flex gap-2">
             {stats.running > 0 && (
-              <button onClick={pauseAll} className="px-2 py-1 text-xs bg-white/20 text-white rounded hover:bg-white/30">⏸ 全部暂停</button>
+              <button onClick={handlePauseAll} className="px-2 py-1 text-xs bg-white/20 text-white rounded hover:bg-white/30">⏸ 全部暂停</button>
             )}
             {stats.paused > 0 && (
-              <button onClick={resumeAll} className="px-2 py-1 text-xs bg-white/20 text-white rounded hover:bg-white/30">▶ 全部继续</button>
+              <button onClick={handleResumeAll} className="px-2 py-1 text-xs bg-white/20 text-white rounded hover:bg-white/30">▶ 全部继续</button>
             )}
-            <button onClick={cancelAll} className="px-2 py-1 text-xs bg-red-500/80 text-white rounded hover:bg-red-500">✕ 取消全部</button>
+            <button onClick={handleCancelAll} className="px-2 py-1 text-xs bg-red-500/80 text-white rounded hover:bg-red-500">✕ 取消全部</button>
           </div>
         )}
       </div>
@@ -197,7 +214,7 @@ export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
       {/* Footer */}
       {hasCompleted && (
         <div className="px-3 py-2 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-          <button onClick={clearCompleted} className="text-xs text-gray-500 hover:text-gray-700">🧹 清除已完成/已取消</button>
+          <span className="text-xs text-gray-500">任务状态自动刷新</span>
           {stats.failed > 0 && (
             <span className="text-xs text-orange-500">失败任务可点击展开后重试</span>
           )}
