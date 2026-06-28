@@ -132,30 +132,80 @@ version 5:
 2. 将 `recommendedIdioms` 表数据复制到 `recommendedItems` 表，补 `category: 'idiom'`
 3. 删除 `recommendedIdioms` 表
 
-### 7. 预生成内容结构
+### 7. 预生成内容 — 走真实流水线
+
+预生成内容不再手写 JSON，而是**模拟真实用户流程**，经过完整的 LLM 分解 + AI 图像生成流水线产生。
+
+#### 现有问题
+
+当前预生成成语存在以下质量问题：
+
+| 问题 | 现状 | 要求 |
+|------|------|------|
+| 场景数不足 | 仅 3 个场景 | 应按 prompt 拆 5-10 个 |
+| 描述过于简略 | `"兔子撞树而死"` | 应有生动的场景描述 |
+| 缺少角色/风格描述 | 无 `characterDescription`/`styleDescription` | decompose prompt 要求包含 |
+| 缺少构图指令 | 无 `compositionHint` | 应有多种镜头角度 |
+| 旁白过于简短 | 一句话 | 应有故事的叙事感 |
+| 数据模型过时 | 无 `category`/`sourceText` | 需符合新模型 |
+
+#### 生成流程
+
+每个预生成内容必须经过以下流水线：
+
+```
+步骤 1: 调用 decompose API（使用品类专属 prompt）→ 得到 scenes
+步骤 2: 对每个 scene，调用 generateSceneImage → 生成图像
+步骤 3: 下载图像并嵌入 Blob/URL
+步骤 4: 组装为完整 PictureBook JSON（含 category、sourceText）
+步骤 5: 验证：场景数 ≥ 品类最低要求、所有字段非空
+```
+
+**不允许**：手写 JSON、跳过图像生成、跳过 prompt 模板。
+
+#### 目录结构
 
 ```
 public/pre-generated/
-├── index.json                // 统一索引（含 category 字段）
-├── idiom/
-│   ├── 守株待兔.json
-│   ├── 叶公好龙.json
+├── index.json              // 统一索引（含 category 字段，由生成脚本自动维护）
+├── images/                  // 所有品类图像共用
+│   ├── 守株待兔_1.png
+│   ├── 守株待兔_2.png
 │   └── ...
+├── idiom/
+│   ├── 守株待兔.json       // 按新流程重新生成
+│   ├── 叶公好龙.json
+│   └── ...                  // 扩充更多成语
 ├── poetry/
 │   ├── 静夜思.json
-│   ├── 春晓.json
 │   └── ...
 ├── nursery-rhyme/
 │   ├── 小兔子乖乖.json
-│   ├── 两只老虎.json
 │   └── ...
 ├── proverb/
-│   ├── 三个臭皮匠.json
 │   └── ...
 └── fairy-tale/
-    ├── 三只小猪.json
-    ├── 小红帽.json
     └── ...
+```
+
+#### 批量生成脚本
+
+`scripts/batch-generate.js` 需要升级：
+
+```
+功能：
+  1. 读取品类策略配置 → 获取品类专属 prompt
+  2. 对每个条目执行 decompose（类名实际调用 LLM）
+  3. 对每个场景执行 generate（实际调用图像 API）
+  4. 下载图像保存到 public/pre-generated/images/
+  5. 组装 JSON 写入对应品类目录
+  6. 自动更新 index.json
+
+用法：
+  node scripts/batch-generate.js --category=idiom     # 只生成成语
+  node scripts/batch-generate.js --category=all        # 生成所有品类
+  node scripts/batch-generate.js --category=poetry --items=静夜思,春晓  # 指定条目
+```
 	```
 
 ### 8. 绘本列表页改造 — 分类筛选与展示
@@ -508,7 +558,7 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 1. 实现策略类（`PoetryStrategy` / `NurseryRhymeStrategy` / `ProverbStrategy` / `FairyTaleStrategy`）
 2. 品类专属 decompose prompt 调优
 3. 品类专属 recommend prompt 调优
-4. 预生成目录结构扩展 + 可选预生成内容
+4. 预生成内容 — **走真实流水线**（见第 7 节）
 5. 端到端验证
 
 **品类落地优先级**：
@@ -516,6 +566,19 @@ getRandomItems(category: ContentCategory, n: number): Promise<ContentInfo[]>
 2. 儿歌 — 歌词→画面，副歌重复逻辑需调优
 3. 谚语 — 抽象→具象生活场景，不需原文逐字对应
 4. 童话 — 最长场景数（8-12），故事弧线拆分需精细控制
+
+**成语重制**：现有 6 个预生成成语按新流水线重新生成，扩充到至少 15-20 个常见成语。
+
+
+### 阶段四：现有预生成成语重制
+
+成语是 P0 品类，必须保证质量：
+
+1. 使用 `IdiomStrategy.getDecomposePrompt()` 重新分解现有 6 个成语
+2. 按实际流水线生成所有场景的图像
+3. 验证：场景数 ≥ 5、有 `characterDescription`、有 `compositionHint`
+4. 扩充成语库至 15-20 个常见成语
+5. 删除旧版预生成 JSON（`public/pre-generated/` 下的旧格式文件）
 
 ## 涉及文件清单
 
