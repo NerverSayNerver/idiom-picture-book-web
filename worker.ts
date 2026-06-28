@@ -155,18 +155,20 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
       const imageUrl = await generateSceneImage(scene.prompt)
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
-      // 下载图片到本地持久保存
+      // 下载图片到本地持久保存（远程链接会过期）
       const job = getTask(currentTask.parentId!)
       const category = job?.category || 'idiom'
       const sourceText = job?.sourceText || ''
       const localPath = path.join(process.cwd(), 'public', 'generated', category, sourceText, `${task.sceneId}.png`)
       await downloadImageToFile(imageUrl, localPath, signal)
 
+      const localImageUrl = `/generated/${category}/${sourceText}/${task.sceneId}.png`
+
       updateTask(taskId, {
         status: 'completed',
         progress: 1,
         total: 1,
-        imageUrl, // 保留远程 URL，也用于 book.json
+        imageUrl: localImageUrl, // 用本地路径，远程链接会过期
         endTime: Date.now(),
       })
       return
@@ -192,7 +194,6 @@ async function executeSave(taskId: string, jobId: string, signal: AbortSignal): 
   try {
     const job = getTask(jobId)
     const decomposeTask = getChildTasks(jobId).find(c => c.type === 'decompose')
-    const generateTasks = getChildTasks(jobId).filter(c => c.type === 'generate')
 
     if (!job || !decomposeTask) {
       throw new Error('缺少任务数据')
@@ -212,12 +213,11 @@ async function executeSave(taskId: string, jobId: string, signal: AbortSignal): 
       meaning: decomposeTask.decomposeMeaning || '',
       createdAt: new Date().toISOString(),
       scenes: scenes.map((s, i) => {
-        const genTask = generateTasks.find(g => g.sceneId === i + 1)
         const localImageUrl = `/generated/${job.category || 'idiom'}/${job.sourceText || ''}/${i + 1}.png`
         return {
           ...s,
           id: i + 1,
-          imageUrl: genTask?.imageUrl || localImageUrl, // 优先远程，降级本地
+          imageUrl: localImageUrl, // 只用本地路径，远程链接会过期
         }
       }) as any[],
     }
