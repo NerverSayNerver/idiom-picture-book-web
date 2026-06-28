@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "worker": "npx tsx worker.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
