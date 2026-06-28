@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { getPictureBook, getAllPictureBooks } from '@/lib/db'
 import { BookViewer } from '@/components/BookViewer'
-import type { PictureBook, PreGeneratedIndexItem } from '@/lib/types'
+import type { PictureBook } from '@/lib/types'
 
 export default function ReadPage() {
   const params = useParams()
@@ -16,63 +15,34 @@ export default function ReadPage() {
     const { signal } = abortController
 
     const loadBook = async () => {
-      // useParams 在某些场景下返回的还是 URL 编码值，需要解码
       const rawId = params.id as string
       const id = decodeURIComponent(rawId)
+      // 兼容旧格式：直接是名称 → 走 idiom 品类
+      // 新格式：category/sourceText
+      const parts = id.split('/')
+      const category = parts.length > 1 ? parts[0] : 'idiom'
+      const sourceText = parts.length > 1 ? parts[1] : parts[0]
 
-      // 先从 IndexedDB 加载（用 id 匹配，可能是 UUID 或成语名）
-      let loadedBook = await getPictureBook(id)
-
-      // 如果 IndexedDB 没找到，尝试通过成语名匹配用户生成的绘本
-      if (!loadedBook && !signal.aborted) {
-        const allBooks = await getAllPictureBooks()
-        loadedBook = allBooks.find(b => b.idiom === id || b.title === id || b.id === id)
-      }
-
-      // 如果还是没找到，尝试从预生成文件加载
-      if (!loadedBook && !signal.aborted) {
-        try {
-          const response = await fetch('/pre-generated/index.json', { signal })
-          if (response.ok) {
-            const index = await response.json()
-            const match = index.find((item: PreGeneratedIndexItem) => item.idiom === id || item.id === id)
-            if (match && !signal.aborted) {
-              const bookResponse = await fetch(`/pre-generated/${match.idiom}.json`, { signal })
-              if (bookResponse.ok) {
-                loadedBook = await bookResponse.json()
-              }
-            }
-
-            // 如果还是没找到，尝试遍历所有文件
-            if (!loadedBook && !signal.aborted) {
-              for (const item of index) {
-                if (signal.aborted) break
-                const bookResponse = await fetch(`/pre-generated/${item.idiom}.json`, { signal })
-                if (bookResponse.ok) {
-                  const book = await bookResponse.json()
-                  if (book.title === id || book.idiom === id) {
-                    loadedBook = book
-                    break
-                  }
-                }
-              }
-            }
-          }
-        } catch (err) {
-          if (err instanceof DOMException && err.name === 'AbortError') return
+      try {
+        const response = await fetch(
+          `/generated/${category}/${encodeURIComponent(sourceText)}/book.json`,
+          { signal }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setBook(data)
+        } else {
+          setBook(null)
         }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        setBook(null)
       }
-
-      if (!signal.aborted) {
-        setBook(loadedBook || null)
-        setLoading(false)
-      }
+      if (!signal.aborted) setLoading(false)
     }
     loadBook()
 
-    return () => {
-      abortController.abort()
-    }
+    return () => abortController.abort()
   }, [params.id])
 
   if (loading) {
@@ -87,12 +57,8 @@ export default function ReadPage() {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">
-            绘本未找到
-          </h1>
-          <a href="/" className="button-primary">
-            返回首页
-          </a>
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">绘本未找到</h1>
+          <a href="/" className="button-primary">返回首页</a>
         </div>
       </main>
     )
