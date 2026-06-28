@@ -75,7 +75,7 @@ export function BookCard({ book, onDelete, onRegenerate }: BookCardProps) {
         {/* 操作按钮 */}
         <div className="flex gap-2">
           <Link
-            href={`/read/${book.category}/${encodeURIComponent(book.sourceText || book.idiom)}`}
+            href={`/read/${book.category}:${encodeURIComponent(book.sourceText || book.idiom)}`}
             className="flex-1 text-center py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             📖 阅读

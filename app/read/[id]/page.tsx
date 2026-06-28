@@ -17,11 +17,11 @@ export default function ReadPage() {
     const loadBook = async () => {
       const rawId = params.id as string
       const id = decodeURIComponent(rawId)
+      // 格式：category:sourceText（如 idiom:守株待兔）
       // 兼容旧格式：直接是名称 → 走 idiom 品类
-      // 新格式：category/sourceText
-      const parts = id.split('/')
-      const category = parts.length > 1 ? parts[0] : 'idiom'
-      const sourceText = parts.length > 1 ? parts[1] : parts[0]
+      const separatorIndex = id.indexOf(':')
+      const category = separatorIndex > 0 ? id.substring(0, separatorIndex) : 'idiom'
+      const sourceText = separatorIndex > 0 ? id.substring(separatorIndex + 1) : id
 
       try {
         const response = await fetch(
