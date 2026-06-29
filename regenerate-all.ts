@@ -12,10 +12,11 @@ import { v4 as uuidv4 } from 'uuid'
 import { decomposeSource } from './app/actions/decompose'
 import { generateSceneImage, generateSceneImageWithRef } from './app/actions/generate'
 import { saveBook } from './lib/save-book'
+import { buildEnhancedPrompt } from './lib/prompts'
 import {
   IDIOM_LIST,
 } from './lib/content-info'
-import type { ContentCategory, SceneTemplate } from './lib/types'
+import type { ContentCategory } from './lib/types'
 
 // ── 清理 ──────────────────────────────────────────────────────
 
@@ -83,43 +84,6 @@ async function findReferenceImage(
   return undefined
 }
 
-/**
- * 构建增强版生图 prompt（与 worker.ts buildEnhancedPrompt 一致）：
- * 注入绘本主题、角色设定、统一画风，确保同绘本图片连贯。
- */
-function buildEnhancedPrompt(
-  meaning: string | undefined,
-  characterDescription: string | undefined,
-  styleDescription: string | undefined,
-  scene: SceneTemplate,
-  sceneId: number
-): string {
-  const parts: string[] = []
-
-  if (meaning) {
-    parts.push(`【绘本主题】${meaning}`)
-  }
-  if (characterDescription) {
-    parts.push(`【角色设定】${characterDescription}`)
-  }
-  if (styleDescription) {
-    parts.push(`【统一画风】${styleDescription}`)
-  }
-
-  parts.push(`【当前场景】第${sceneId}幕：${scene.title}`)
-
-  if (scene.description) {
-    parts.push(`【场景描述】${scene.description}`)
-  }
-  if (scene.compositionHint) {
-    parts.push(`【构图】${scene.compositionHint}`)
-  }
-
-  parts.push(`【生图提示词】${scene.prompt}`)
-
-  return parts.join('\n')
-}
-
 // ── 单本书的完整生成流程（串行）────────────────────────────────
 
 async function generateOneBook(
@@ -149,13 +113,16 @@ async function generateOneBook(
     console.log(`  [2/${decomposition.scenes.length}] 场景 ${sceneNum}/${decomposition.scenes.length}: ${scene.title}...`)
 
     // 构建增强版 prompt（与 worker 一致）
-    const enhancedPrompt = buildEnhancedPrompt(
-      decomposition.meaning,
-      decomposition.characterDescription,
-      decomposition.styleDescription,
-      scene,
-      sceneNum
-    )
+    const enhancedPrompt = buildEnhancedPrompt({
+      meaning: decomposition.meaning,
+      characterDescription: decomposition.characterDescription,
+      styleDescription: decomposition.styleDescription,
+      sceneId: sceneNum,
+      sceneTitle: scene.title,
+      sceneDescription: scene.description,
+      compositionHint: scene.compositionHint,
+      scenePrompt: scene.prompt,
+    })
 
     // 找参考图
     const refBase64 = await findReferenceImage(category, sourceText, sceneNum)

@@ -1,0 +1,16 @@
+{
+  "fallback": "卡通绘本风格，可爱的儿童绘本场景",
+  "sceneFallback": "卡通绘本风格，",
+  "styleSuffix": ", cartoon style",
+  "styleKeyword": "cartoon",
+  "maxLength": 300,
+  "enhancedTemplate": {
+    "theme": "【绘本主题】{{meaning}}",
+    "character": "【角色设定】{{characterDescription}}",
+    "style": "【统一画风】{{styleDescription}}",
+    "scene": "【当前场景】第{{sceneId}}幕：{{sceneTitle}}",
+    "description": "【场景描述】{{sceneDescription}}",
+    "composition": "【构图】{{compositionHint}}",
+    "prompt": "【生图提示词】{{scenePrompt}}"
+  }
+}

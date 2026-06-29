@@ -2,6 +2,7 @@
 
 import { chatCompletion } from '@/lib/agnes-api'
 import { getStrategy, getContentInfo } from '@/lib/content-types'
+import { getSystemPrompt, buildUserPrompt, getImageConfig } from '@/lib/prompts'
 import type { IdiomDecomposition, SceneTemplateRaw, DecompositionRaw, ContentCategory } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -159,11 +160,15 @@ export async function decomposeSource(
     ? getContentInfo(sourceText, category)
     : undefined
   const fullText = info?.fullText
-  const prompt = strategy.getDecomposePrompt(sourceText, fullText)
+
+  // 从配置获取 system message（品类专属）和 user message（模板变量替换）
+  const systemMessage = getSystemPrompt('decompose', category)
+  const templateVars = strategy.getDecomposeVars(sourceText, fullText)
+  const userMessage = buildUserPrompt('decompose', category, templateVars)
 
   const result = await chatCompletion([
-    { role: 'system', content: '你是一位专业的儿童绘本策划师。请始终以 JSON 格式返回结果。' },
-    { role: 'user', content: prompt },
+    { role: 'system', content: systemMessage },
+    { role: 'user', content: userMessage },
   ])
 
   const content = result.choices[0]?.message?.content
@@ -225,7 +230,7 @@ export async function decomposeSource(
     characterDescription,
     styleDescription,
     scenes: normalizedScenes.map((s: SceneTemplateRaw, i: number) => {
-      let prompt = s.prompt || `卡通绘本风格，${sourceText}`
+      let prompt = s.prompt || `${getImageConfig().sceneFallback}${sourceText}`
       if (characterDescription) prompt = `${characterDescription}, ${prompt}`
       if (s.compositionHint) prompt = `${prompt}, ${s.compositionHint}`
       if (styleDescription) prompt = `${prompt}, ${styleDescription}`

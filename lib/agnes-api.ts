@@ -4,6 +4,7 @@ import type {
   AgnesVideoTaskResponse,
   AgnesVideoResultResponse,
 } from './types'
+import { getImageConfig, getVideoConfig } from './prompts'
 
 // S1: 仅在开发环境且 DEBUG_LLM=1 时输出详细日志
 const DEBUG = process.env.NODE_ENV === 'development' && process.env.DEBUG_LLM === '1'
@@ -115,16 +116,18 @@ export async function generateImage(
   prompt: string,
   size = '512x512'
 ): Promise<AgnesImageResponse> {
+  const imgCfg = getImageConfig()
+
   // 确保 prompt 存在且为字符串
   if (!prompt || typeof prompt !== 'string') {
-    prompt = '卡通绘本风格，可爱的儿童绘本场景'
+    prompt = imgCfg.fallback
   }
 
   // 截断过长的 prompt 并简化
-  let truncatedPrompt = prompt.length > 300 ? prompt.substring(0, 300) : prompt
-  // 确保 prompt 以 "cartoon style" 结尾
-  if (!truncatedPrompt.toLowerCase().includes('cartoon')) {
-    truncatedPrompt += ', cartoon style'
+  let truncatedPrompt = prompt.length > imgCfg.maxLength ? prompt.substring(0, imgCfg.maxLength) : prompt
+  // 确保 prompt 包含风格关键词
+  if (!truncatedPrompt.toLowerCase().includes(imgCfg.styleKeyword)) {
+    truncatedPrompt += imgCfg.styleSuffix
   }
   if (DEBUG) console.log('生成图像，prompt:', truncatedPrompt.substring(0, 50) + '...')
 
@@ -143,17 +146,19 @@ export async function generateImageWithRef(
   referenceImageUrl: string,
   size = '512x512'
 ): Promise<AgnesImageResponse> {
+  const imgCfg = getImageConfig()
+
   if (!prompt || typeof prompt !== 'string') {
-    prompt = '卡通绘本风格，可爱的儿童绘本场景'
+    prompt = imgCfg.fallback
   }
   if (!referenceImageUrl || typeof referenceImageUrl !== 'string') {
     // 回退到纯文生图
     return generateImage(prompt, size)
   }
 
-  let truncatedPrompt = prompt.length > 300 ? prompt.substring(0, 300) : prompt
-  if (!truncatedPrompt.toLowerCase().includes('cartoon')) {
-    truncatedPrompt += ', cartoon style'
+  let truncatedPrompt = prompt.length > imgCfg.maxLength ? prompt.substring(0, imgCfg.maxLength) : prompt
+  if (!truncatedPrompt.toLowerCase().includes(imgCfg.styleKeyword)) {
+    truncatedPrompt += imgCfg.styleSuffix
   }
   if (DEBUG) console.log('图生图，参考图:', referenceImageUrl, 'prompt:', truncatedPrompt.substring(0, 50) + '...')
 
@@ -237,7 +242,7 @@ export async function createVideoTask(
     },
     body: JSON.stringify({
       model: 'agnes-video-v2.0',
-      prompt: prompt || '生成流畅的绘本故事动画，场景之间自然过渡，卡通漫画风格',
+      prompt: prompt || getVideoConfig().fallback,
       extra_body: {
         image: imageUrls,
         mode: 'keyframes',

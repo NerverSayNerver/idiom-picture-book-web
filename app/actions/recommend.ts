@@ -2,6 +2,7 @@
 
 import { chatCompletion } from '@/lib/agnes-api'
 import { getStrategy } from '@/lib/content-types'
+import { getSystemPrompt, buildUserPrompt } from '@/lib/prompts'
 import type { ContentInfo, ContentCategory } from '@/lib/types'
 
 export async function fetchRecommendations(
@@ -11,11 +12,15 @@ export async function fetchRecommendations(
   const strategy = getStrategy(category)
 
   if (exclude.length > 50) exclude = exclude.slice(0, 50)
-  const prompt = strategy.getRecommendPrompt(exclude)
+
+  // 从配置获取 system message（品类专属）和 user message（模板变量替换）
+  const systemMessage = getSystemPrompt('recommend', category)
+  const templateVars = strategy.getRecommendVars(exclude)
+  const userMessage = buildUserPrompt('recommend', category, templateVars)
 
   const result = await chatCompletion([
-    { role: 'system', content: '你是一位儿童教育专家。请始终以 JSON 格式返回结果。' },
-    { role: 'user', content: prompt },
+    { role: 'system', content: systemMessage },
+    { role: 'user', content: userMessage },
   ])
 
   const content = result.choices[0]?.message?.content

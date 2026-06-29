@@ -11,6 +11,7 @@ import { pollPendingJob, updateTask, getTask, getChildTasks, addChildTasks, reco
 import { decomposeSource } from './app/actions/decompose'
 import { generateSceneImage, generateSceneImageWithRef } from './app/actions/generate'
 import { saveBook } from './lib/save-book'
+import { buildEnhancedPrompt } from './lib/prompts'
 import type { Task, ChildTaskDef } from './lib/task-types'
 import type { ContentCategory, SceneTemplate } from './lib/types'
 import { promises as fs } from 'fs'
@@ -189,7 +190,16 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
 
     try {
       // 构造增强版 prompt：注入绘本概要，帮助模型理解全局
-      const enhancedPrompt = buildEnhancedPrompt(decomposeTask, scene, task.sceneId)
+      const enhancedPrompt = buildEnhancedPrompt({
+        meaning: decomposeTask.decomposeMeaning,
+        characterDescription: decomposeTask.decomposeCharacterDescription,
+        styleDescription: decomposeTask.decomposeStyleDescription,
+        sceneId: task.sceneId,
+        sceneTitle: scene.title,
+        sceneDescription: scene.description,
+        compositionHint: scene.compositionHint,
+        scenePrompt: scene.prompt,
+      })
 
       // 查找参考图：优先使用首个已完成的生成场景作为 img2img 参考
       const referenceImageUrl = await findReferenceImage(job?.id, task.sceneId)
@@ -236,47 +246,6 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
       return
     }
   }
-}
-
-/**
- * 构建增强版生图 prompt：注入绘本主题、角色设定、统一画风，确保同绘本图片连贯。
- */
-function buildEnhancedPrompt(
-  decomposeTask: Task,
-  scene: SceneTemplate,
-  sceneId: number
-): string {
-  const parts: string[] = []
-
-  const meaning = decomposeTask.decomposeMeaning
-  if (meaning) {
-    parts.push(`【绘本主题】${meaning}`)
-  }
-
-  const characterDesc = decomposeTask.decomposeCharacterDescription
-  if (characterDesc) {
-    parts.push(`【角色设定】${characterDesc}`)
-  }
-
-  const styleDesc = decomposeTask.decomposeStyleDescription
-  if (styleDesc) {
-    parts.push(`【统一画风】${styleDesc}`)
-  }
-
-  parts.push(`【当前场景】第${sceneId}幕：${scene.title}`)
-
-  if (scene.description) {
-    parts.push(`【场景描述】${scene.description}`)
-  }
-
-  if (scene.compositionHint) {
-    parts.push(`【构图】${scene.compositionHint}`)
-  }
-
-  // 最后附加原始生图 prompt
-  parts.push(`【生图提示词】${scene.prompt}`)
-
-  return parts.join('\n')
 }
 
 /**

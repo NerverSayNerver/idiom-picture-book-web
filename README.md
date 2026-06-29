@@ -1,17 +1,18 @@
-# 🎨 成语绘本工坊
+# 🎨 绘本工坊
 
-> 一个面向亲子用户的互动式成语绘本生成平台。选择成语，AI 自动生成漫画风格插图，在线翻页阅读，导出 PDF 打印成实体书。
+> 面向亲子用户的互动式多品类绘本生成平台。选择内容（成语、诗歌、儿歌、谚语、童话），AI 自动生成分镜与漫画风格插图，在线翻页阅读，导出 PDF 打印成实体书。
 
 ## ✨ 功能特性
 
-- 🎭 **成语选择** — 内置 10 个经典成语 + 自定义输入，支持多选批量生成
-- 🤖 **AI 场景拆分** — LLM 将成语故事拆分为 6 个关键场景
-- 🎨 **实时图像生成** — 为每个场景生成漫画风格插图，支持构图指令优化
+- 📂 **多品类内容** — 支持成语、诗歌、儿歌、谚语、童话五大品类，每品类内置精选内容
+- 🤖 **AI 分镜生成** — LLM 将内容拆分为多个关键场景
+- 🎨 **实时图像生成** — 为每个场景生成漫画风格插图
 - 📖 **翻页阅读** — 真实翻页动画，沉浸式阅读体验
 - 🎬 **视频生成** — 将绘本场景转化为动态视频（关键帧动画）
 - 📄 **PDF 导出** — 一键导出可打印的 PDF 绘本
-- 📋 **任务队列** — 主/子任务模型，手风琴展开，串行执行
-- 💾 **本地持久化** — IndexedDB 存储图像和任务，刷新不丢失
+- ⚡ **后端任务引擎** — 独立 Worker 进程串行执行生成任务，支持暂停/继续/取消/重试
+- 🗄️ **SQLite 持久化** — 任务状态和绘本数据持久化存储
+- 💾 **本地图像存储** — 所有图像持久化到本地文件系统
 
 ## 🚀 快速开始
 
@@ -34,7 +35,10 @@ npm install
 # 创建 .env.local 文件，填入 Agnes API Key
 echo "AGNES_API_KEY=your_api_key_here" > .env.local
 
-# 启动开发服务器
+# 启动开发服务器 + Worker（推荐）
+npm run dev:all
+
+# 或仅启动前端
 npm run dev
 ```
 
@@ -56,33 +60,59 @@ npm run start
 idiom-picture-book-web/
 ├── app/
 │   ├── layout.tsx                # 根布局
-│   ├── page.tsx                  # 首页 - 成语选择 + 任务队列
+│   ├── page.tsx                  # 首页 — 品类选择 + 内容选择 + 任务队列
 │   ├── generate/page.tsx         # 生成进度页
 │   ├── read/[id]/page.tsx        # 绘本阅读页
-│   └── actions/
-│       ├── decompose.ts          # LLM 场景拆分 (Server Action)
-│       └── generate.ts           # 图像/视频生成 (Server Action)
+│   ├── actions/
+│   │   ├── decompose.ts          # LLM 分镜拆分 (Server Action)
+│   │   ├── generate.ts           # 图像/视频生成 (Server Action)
+│   │   └── recommend.ts          # AI 内容推荐 (Server Action)
+│   └── api/
+│       ├── books/[id]/route.ts   # 绘本详情 API
+│       ├── books/route.ts        # 绘本列表 API
+│       ├── decompose/route.ts    # 分镜拆分 API
+│       ├── generate-image/route.ts # 图像生成 API
+│       ├── jobs/route.ts         # 任务列表 API
+│       ├── jobs/[id]/route.ts    # 任务详情 API
+│       ├── jobs/[id]/pause/route.ts   # 暂停任务
+│       ├── jobs/[id]/resume/route.ts  # 恢复任务
+│       ├── jobs/[id]/cancel/route.ts  # 取消任务
+│       ├── jobs/[id]/retry/route.ts   # 重试任务
+│       └── save-book/route.ts    # 保存绘本 API
 ├── components/
-│   ├── IdiomSelector.tsx         # 成语选择器（支持多选）
+│   ├── CategoryTabs.tsx          # 品类标签切换
+│   ├── ContentSelector.tsx       # 内容选择器（按品类展示推荐列表）
+│   ├── BookCard.tsx              # 绘本卡片
+│   ├── BookViewer.tsx            # 翻页阅读器
 │   ├── TaskQueue.tsx             # 任务队列面板
 │   ├── TaskCard.tsx              # 任务卡片（主/子任务）
-│   ├── TaskManager.tsx           # 任务管理器
-│   ├── BookViewer.tsx            # 翻页阅读器
-│   ├── SceneCard.tsx             # 场景卡片
 │   ├── VideoGenerator.tsx        # 视频生成器
 │   ├── Header.tsx                # 页头导航
-│   └── DuplicateCheckDialog.tsx  # 重复检查对话框
+│   └── SceneCard.tsx             # 场景卡片
 ├── lib/
 │   ├── agnes-api.ts              # Agnes API 统一封装
-│   ├── db.ts                     # IndexedDB (Dexie.js)
-│   ├── task-store.ts             # Zustand 任务状态管理
-│   ├── task-executor.ts          # 任务执行器
-│   ├── store.ts                  # Zustand 应用状态
+│   ├── content-info.ts           # 各品类内置内容列表
+│   ├── content-types/            # 各品类分镜策略
+│   ├── task-db.ts                # SQLite 任务数据库
+│   ├── task-types.ts             # 任务类型定义
+│   ├── path-security.ts          # 路径安全校验
+│   ├── pdf.ts                    # PDF 生成
+│   ├── save-book.ts              # 绘本保存逻辑
+│   ├── store.ts                  # 应用状态管理
 │   ├── types.ts                  # TypeScript 类型定义
-│   ├── idioms.ts                 # 成语数据
-│   └── pdf.ts                    # PDF 生成
+│   ├── use-jobs.ts               # 任务状态 Hook（SWR 轮询）
+│   └── book-display.ts           # 绘本展示逻辑
+├── middleware.ts                 # Next.js 中间件（路径安全）
+├── worker.ts                     # 任务执行 Worker 进程
 ├── docs/                         # 设计文档与实施计划
 └── public/                       # 静态资源
+    └── generated/                # 已生成的绘本
+        ├── index.json            # 绘本索引
+        ├── idiom/                # 成语绘本
+        ├── poetry/               # 诗歌绘本
+        ├── nursery-rhyme/        # 儿歌绘本
+        ├── proverb/              # 谚语绘本
+        └── fairy-tale/           # 童话绘本
 ```
 
 ## 🛠 技术栈
@@ -92,43 +122,60 @@ idiom-picture-book-web/
 | 框架 | Next.js 14 (App Router) | React 全栈框架 |
 | UI | Tailwind CSS | 原子化 CSS 框架 |
 | 状态管理 | Zustand | 轻量级状态管理 |
-| 本地存储 | IndexedDB (Dexie.js) | 存储图像 blob 和任务数据 |
-| API 调用 | Next.js Server Actions | 保护 API Key 安全 |
-| LLM 对话 | Agnes-2.0-Flash | 场景拆分与故事生成 |
+| 本地存储 | SQLite (better-sqlite3) | 任务状态持久化 |
+| 图像存储 | 本地文件系统 | 绘本图像持久化 |
+| API 调用 | Next.js Server Actions / API Routes | 保护 API Key 安全 |
+| LLM 对话 | Agnes-2.0-Flash | 分镜拆分与故事生成 |
 | 图像生成 | Agnes Image 2.1 Flash | 漫画风格插图生成 |
 | 视频生成 | Agnes Video V2.0 | 关键帧动画视频 |
 | PDF 生成 | jsPDF | 客户端 PDF 导出 |
 | 翻页效果 | react-pageflip | 真实翻页动画 |
+| 任务轮询 | SWR | 前端实时获取任务状态 |
+| Worker | tsx | 独立任务执行进程 |
 
 ## 📖 使用说明
 
 ### 基本流程
 
-1. **选择成语** — 从内置列表中选择成语，或输入自定义成语
-2. **批量生成** — 支持多选成语，点击「批量生成」开始
-3. **等待生成** — AI 自动拆分场景并逐个生成插图，可在任务队列查看进度
-4. **阅读绘本** — 生成完成后，点击「查看绘本」进入翻页阅读
+1. **选择品类** — 切换品类标签（成语 / 诗歌 / 儿歌 / 谚语 / 童话）
+2. **选择内容** — 从内置推荐列表中选择，或输入自定义内容
+3. **开始生成** — AI 自动拆分分镜并逐个生成插图，可在任务队列查看进度
+4. **阅读绘本** — 生成完成后，进入翻页阅读
 5. **导出分享** — 导出 PDF 打印成实体书，或生成视频分享
 
-### 内置成语
+### 内置内容
 
-画蛇添足、守株待兔、亡羊补牢、井底之蛙、狐假虎威、掩耳盗铃、刻舟求剑、愚公移山、拔苗助长、叶公好龙
+**成语** — 画蛇添足、守株待兔、亡羊补牢、井底之蛙、狐假虎威、掩耳盗铃、刻舟求剑、愚公移山、拔苗助长、叶公好龙
 
-### 任务队列
+**诗歌** — 静夜思、春晓、咏鹅、悯农、登鹳雀楼、江雪、望庐山瀑布、绝句
 
-- 支持多成语批量排队
+**儿歌** — 小兔子乖乖、两只老虎、小燕子、数鸭子、拔萝卜、小星星
+
+**谚语** — 三个臭皮匠顶个诸葛亮、路遥知马力日久见人心、近朱者赤近墨者黑 等
+
+**童话** — 小红帽、龟兔赛跑 等
+
+### 任务管理
+
+- 多内容批量排队生成
 - 主/子任务手风琴展开
-- 串行执行，自动重试（最多 3 次）
-- 暂停/继续/取消控制
-- IndexedDB 持久化，刷新页面可恢复
+- 串行执行，自动重试失败任务
+- 支持暂停/继续/取消控制
+- SQLite 持久化，Worker 进程异步执行
 
 ## 🔧 开发指南
 
 ### 开发命令
 
 ```bash
-# 启动开发服务器（热更新）
+# 启动前端 + Worker（推荐）
+npm run dev:all
+
+# 仅启动前端
 npm run dev
+
+# 仅启动 Worker
+npm run worker
 
 # 构建生产版本
 npm run build
@@ -138,9 +185,6 @@ npm run start
 
 # 代码检查
 npm run lint
-
-# TypeScript 类型检查
-npx tsc --noEmit
 ```
 
 ### 环境变量
@@ -149,30 +193,26 @@ npx tsc --noEmit
 AGNES_API_KEY=your_agnes_api_key_here
 ```
 
-> Agnes API Key 同时用于 LLM 对话（场景拆分）、图像生成和视频生成，无需额外配置。
-
-### 数据流
+### 架构说明
 
 ```
-用户选择成语
-  → Server Action 调用 LLM → 拆分为 6 个场景
-  → 逐个调用 Agnes Image API → 生成场景插图
-  → 客户端下载图像 → 存入 IndexedDB → 更新 UI
-  → [可选] 调用 Agnes Video API → 生成绘本视频
+用户选择内容
+  → Next.js API Route 创建 Job → SQLite 持久化
+  → Worker 进程轮询 Job → 执行分镜拆分 → 逐个生成图像
+  → 前端 SWR 轮询任务状态 → 实时更新 UI
+  → 生成完成 → 翻页阅读 / PDF 导出 / 视频生成
 ```
 
-### 状态管理
+### 数据存储
 
-- **Zustand Store (store.ts)** — 应用状态：当前绘本、场景数据
-- **Task Store (task-store.ts)** — 任务队列：主/子任务、执行状态
-- **IndexedDB (db.ts)** — 持久化：绘本数据、图像 blob、任务记录
+- **任务状态** — SQLite (`picture-book-tasks.db`)
+- **绘本图像** — 本地文件系统 (`public/generated/{category}/{title}/`)
+- **绘本索引** — `public/generated/index.json`
 
 ## 📚 相关文档
 
-- [项目设计文档](docs/superpowers/specs/2026-06-27-idiom-picture-book-web-design.md)
-- [任务队列设计](docs/superpowers/specs/2026-06-27-task-queue-redesign.md)
-- [实施计划](docs/superpowers/plans/2026-06-27-idiom-picture-book-web.md)
-- [任务队列实施计划](docs/superpowers/plans/2026-06-27-task-queue-redesign.md)
+- [后端任务执行架构设计](docs/plans/2026-06-28-backend-task-execution.md)
+- [后端任务执行设计文档](docs/plans/2026-06-28-backend-task-execution-design.md)
 
 ## 📄 许可证
 
