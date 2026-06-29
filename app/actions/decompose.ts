@@ -190,14 +190,12 @@ export async function decomposeSource(
       try {
         data = JSON.parse(repaired)
       } catch {
-        throw new Error(
-          `LLM 返回的 JSON 解析失败：${parseError instanceof Error ? parseError.message : String(parseError)}\n原始内容：${jsonStr.substring(0, 500)}`
-        )
+        console.error('JSON 解析失败，原始内容:', jsonStr.substring(0, 500))
+        throw new Error('LLM 返回的内容解析失败，请重试')
       }
     } else {
-      throw new Error(
-        `LLM 返回的 JSON 解析失败：${parseError instanceof Error ? parseError.message : String(parseError)}\n原始内容：${jsonStr.substring(0, 500)}`
-      )
+      console.error('JSON 解析失败，原始内容:', jsonStr.substring(0, 500))
+      throw new Error('LLM 返回的内容解析失败，请重试')
     }
   }
 
@@ -243,6 +241,3 @@ export async function decomposeSource(
     }),
   }
 }
-
-/** @deprecated 使用 decomposeSource(text, 'idiom') */
-export const decomposeIdiom = (idiom: string) => decomposeSource(idiom, 'idiom')

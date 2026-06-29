@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     const result = await decomposeSource(sourceText, (category || 'idiom') as ContentCategory)
     return NextResponse.json(result)
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    console.error('分解内容失败:', error)
+    return NextResponse.json({ error: '内容分解失败，请稍后重试' }, { status: 500 })
   }
 }

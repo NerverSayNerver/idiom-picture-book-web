@@ -25,6 +25,10 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# logs
+*.log
+*.log.*
+
 # vercel
 .vercel
 
@@ -38,3 +42,8 @@ picture-book-tasks.db
 *.db-shm
 *.db-wal
 regen-failed.mts
+
+# data directory (database files)
+data/*.db
+data/*.db-shm
+data/*.db-wal

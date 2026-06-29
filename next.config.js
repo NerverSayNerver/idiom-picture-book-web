@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['apihub.agnes-ai.com'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'apihub.agnes-ai.com' },
+    ],
   },
 }
 

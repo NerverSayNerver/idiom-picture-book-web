@@ -5,6 +5,27 @@ import type {
   AgnesVideoResultResponse,
 } from './types'
 
+// S1: 仅在开发环境且 DEBUG_LLM=1 时输出详细日志
+const DEBUG = process.env.NODE_ENV === 'development' && process.env.DEBUG_LLM === '1'
+
+// S6: 带超时的 fetch 封装
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = 60000
+): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  if (init.signal) {
+    init.signal.addEventListener('abort', () => controller.abort())
+  }
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 // ── LLM 对话配置 ────────────────────────────────────────────
 // 通过环境变量配置，支持任何 OpenAI 兼容的 API 端点。
 // 默认值保持与原有 Agnes AI 配置一致，向后兼容。
@@ -45,15 +66,17 @@ export async function chatCompletion(
   const model = options?.model || LLM_MODEL
   const temperature = options?.temperature ?? 0.7
   const maxTokens = options?.maxTokens ?? 8192
-  console.log('\n========== [LLM 请求] ==========')
-  console.log(`Base URL: ${LLM_API_BASE}`)
-  console.log(`Model: ${model}`)
-  console.log('Messages:')
-  for (const msg of messages) {
-    console.log(`  [${msg.role}] ${msg.content}`)
+  if (DEBUG) {
+    console.log('\n========== [LLM 请求] ==========')
+    console.log(`Base URL: ${LLM_API_BASE}`)
+    console.log(`Model: ${model}`)
+    console.log('Messages:')
+    for (const msg of messages) {
+      console.log(`  [${msg.role}] ${msg.content}`)
+    }
   }
 
-  const response = await fetch(`${LLM_API_BASE}/chat/completions`, {
+  const response = await fetchWithTimeout(`${LLM_API_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getLlmApiKey()}`,
@@ -75,12 +98,14 @@ export async function chatCompletion(
 
   const result = await response.json()
   const replyContent = result.choices?.[0]?.message?.content
-  console.log('\n========== [LLM 响应] ==========')
-  console.log('Status:', response.status)
-  console.log('Content:')
-  console.log(replyContent)
-  console.log('Usage:', JSON.stringify(result.usage, null, 2))
-  console.log('=================================\n')
+  if (DEBUG) {
+    console.log('\n========== [LLM 响应] ==========')
+    console.log('Status:', response.status)
+    console.log('Content:')
+    console.log(replyContent)
+    console.log('Usage:', JSON.stringify(result.usage, null, 2))
+    console.log('=================================\n')
+  }
 
   return result as ChatCompletionResponse
 }
@@ -101,7 +126,7 @@ export async function generateImage(
   if (!truncatedPrompt.toLowerCase().includes('cartoon')) {
     truncatedPrompt += ', cartoon style'
   }
-  console.log('生成图像，prompt:', truncatedPrompt.substring(0, 50) + '...')
+  if (DEBUG) console.log('生成图像，prompt:', truncatedPrompt.substring(0, 50) + '...')
 
   return fetchImageApi({
     prompt: truncatedPrompt,
@@ -130,7 +155,7 @@ export async function generateImageWithRef(
   if (!truncatedPrompt.toLowerCase().includes('cartoon')) {
     truncatedPrompt += ', cartoon style'
   }
-  console.log('图生图，参考图:', referenceImageUrl, 'prompt:', truncatedPrompt.substring(0, 50) + '...')
+  if (DEBUG) console.log('图生图，参考图:', referenceImageUrl, 'prompt:', truncatedPrompt.substring(0, 50) + '...')
 
   return fetchImageApi({
     prompt: truncatedPrompt,
@@ -157,19 +182,21 @@ async function fetchImageApi(params: {
     body.extra_body = params.extraBody
   }
 
-  console.log('\n========== [图像生成请求] ==========')
-  console.log('Model: agnes-image-2.1-flash')
-  console.log('Mode:', isImg2img ? '图生图 (img2img)' : '文生图')
-  console.log('Size:', params.size || '512x512')
-  if (isImg2img) {
-    const refImages = Array.isArray(params.extraBody?.image)
-      ? params.extraBody.image.map((img: string) => img.length > 80 ? img.substring(0, 80) + '...[truncated]' : img)
-      : [params.extraBody?.image]
-    console.log('参考图 (image):', refImages)
+  if (DEBUG) {
+    console.log('\n========== [图像生成请求] ==========')
+    console.log('Model: agnes-image-2.1-flash')
+    console.log('Mode:', isImg2img ? '图生图 (img2img)' : '文生图')
+    console.log('Size:', params.size || '512x512')
+    if (isImg2img) {
+      const refImages = Array.isArray(params.extraBody?.image)
+        ? params.extraBody.image.map((img: string) => img.length > 80 ? img.substring(0, 80) + '...[truncated]' : img)
+        : [params.extraBody?.image]
+      console.log('参考图 (image):', refImages)
+    }
+    console.log('Prompt:', params.prompt)
   }
-  console.log('Prompt:', params.prompt)
 
-  const response = await fetch(`${API_BASE}/images/generations`, {
+  const response = await fetchWithTimeout(`${API_BASE}/images/generations`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getApiKey()}`,
@@ -186,11 +213,13 @@ async function fetchImageApi(params: {
 
   const result = await response.json()
   const imageUrl = result.data?.[0]?.url
-  console.log('\n========== [图像生成响应] ==========')
-  console.log('Status:', response.status)
-  console.log('Image URL:', imageUrl ? imageUrl.substring(0, 100) + (imageUrl.length > 100 ? '...' : '') : 'null')
-  console.log('Revised prompt:', result.data?.[0]?.revised_prompt || 'N/A')
-  console.log('====================================\n')
+  if (DEBUG) {
+    console.log('\n========== [图像生成响应] ==========')
+    console.log('Status:', response.status)
+    console.log('Image URL:', imageUrl ? imageUrl.substring(0, 100) + (imageUrl.length > 100 ? '...' : '') : 'null')
+    console.log('Revised prompt:', result.data?.[0]?.revised_prompt || 'N/A')
+    console.log('====================================\n')
+  }
 
   return result
 }
@@ -200,7 +229,7 @@ export async function createVideoTask(
   imageUrls: string[],
   prompt?: string
 ): Promise<AgnesVideoTaskResponse> {
-  const response = await fetch('https://apihub.agnes-ai.com/v1/videos', {
+  const response = await fetchWithTimeout('https://apihub.agnes-ai.com/v1/videos', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getApiKey()}`,
@@ -229,7 +258,7 @@ export async function createVideoTask(
 export async function getVideoResult(
   videoId: string
 ): Promise<AgnesVideoResultResponse> {
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`,
     {
       headers: {
@@ -247,7 +276,7 @@ export async function getVideoResult(
 
 // 下载图像为 Blob
 export async function downloadImageAsBlob(url: string): Promise<Blob> {
-  const response = await fetch(url)
+  const response = await fetchWithTimeout(url, {}, 30000)
   if (!response.ok) {
     throw new Error(`Download error: ${response.status}`)
   }

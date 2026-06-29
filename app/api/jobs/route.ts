@@ -13,6 +13,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'sourceText is required' }, { status: 400 })
     }
 
+    if (sourceText.length > 200) {
+      return NextResponse.json({ error: 'sourceText 长度不能超过 200 个字符' }, { status: 400 })
+    }
+
     // 去重检查
     const existing = listJobs()
     const duplicate = existing.find(
@@ -32,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, jobId: job.id })
   } catch (error) {
     console.error('创建任务失败:', error)
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    return NextResponse.json({ error: '创建任务失败，请稍后重试' }, { status: 500 })
   }
 }
 
@@ -45,6 +49,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ jobs, allTasks })
   } catch (error) {
     console.error('查询任务失败:', error)
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    return NextResponse.json({ error: '查询任务失败，请稍后重试' }, { status: 500 })
   }
 }

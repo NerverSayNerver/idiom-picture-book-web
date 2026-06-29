@@ -11,17 +11,23 @@ export async function POST(
     const task = getTask(id)
     if (!task) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
 
-    if (task.status === 'failed' && task.retryCount < task.maxRetries) {
-      updateTask(id, {
-        status: 'pending',
-        retryCount: task.retryCount + 1,
-        error: undefined,
-        progress: 0,
-      })
+    if (task.status !== 'failed') {
+      return NextResponse.json({ error: '只有失败任务可重试' }, { status: 400 })
     }
+    if (task.retryCount >= task.maxRetries) {
+      return NextResponse.json({ error: '已达最大重试次数' }, { status: 400 })
+    }
+
+    updateTask(id, {
+      status: 'pending',
+      retryCount: task.retryCount + 1,
+      error: undefined,
+      progress: 0,
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    console.error('重试任务失败:', error)
+    return NextResponse.json({ error: '重试失败，请稍后重试' }, { status: 500 })
   }
 }

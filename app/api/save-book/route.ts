@@ -9,6 +9,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, path: result.path })
   } catch (error) {
     console.error('保存绘本失败:', error)
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
+    return NextResponse.json({ success: false, error: '保存失败，请稍后重试' }, { status: 500 })
   }
 }

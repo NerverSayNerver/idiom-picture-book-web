@@ -7,7 +7,7 @@ import { resolve } from 'path'
 // 在首次 import 时加载 .env.local（dotenv 同步执行，比后续模块调用先完成）
 config({ path: resolve(__dirname || process.cwd(), '.env.local') })
 
-import { pollPendingJob, markRunning, updateTask, getTask, getChildTasks, addChildTasks, recoverInterruptedTasks, closeDb } from './lib/task-db'
+import { pollPendingJob, updateTask, getTask, getChildTasks, addChildTasks, recoverInterruptedTasks, closeDb } from './lib/task-db'
 import { decomposeSource } from './app/actions/decompose'
 import { generateSceneImage, generateSceneImageWithRef } from './app/actions/generate'
 import { saveBook } from './lib/save-book'
@@ -15,8 +15,20 @@ import type { Task, ChildTaskDef } from './lib/task-types'
 import type { ContentCategory, SceneTemplate } from './lib/types'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { sanitizeFilename, validateCategory } from './lib/path-security'
 
 // ── Helpers ─────────────────────────────────────────────────
+
+/**
+ * S7: 检查任务是否被取消（通过 DB 状态），若已取消则 abort signal
+ * 在 executeJob 关键步骤前调用，确保 cancel API 能及时中断执行
+ */
+function checkCancellation(jobId: string, signal: AbortController): void {
+  const task = getTask(jobId)
+  if (task && task.status === 'cancelled') {
+    signal.abort()
+  }
+}
 
 const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
   new Promise((resolve, reject) => {
@@ -35,16 +47,25 @@ const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
 
 /** 下载远程图片到本地文件系统 */
 async function downloadImageToFile(url: string, filePath: string, signal: AbortSignal): Promise<void> {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`下载图片失败: ${response.status}`)
-  const buffer = Buffer.from(await response.arrayBuffer())
-  await fs.mkdir(path.dirname(filePath), { recursive: true })
-  await fs.writeFile(filePath, buffer)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+  // 外部 signal 也触发中止
+  signal.addEventListener('abort', () => controller.abort())
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    if (!response.ok) throw new Error(`下载图片失败: ${response.status}`)
+    const buffer = Buffer.from(await response.arrayBuffer())
+    await fs.mkdir(path.dirname(filePath), { recursive: true })
+    await fs.writeFile(filePath, buffer)
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 // ── Execution Pipeline ──────────────────────────────────────
 
-async function executeJob(jobId: string, signal: AbortSignal): Promise<void> {
+async function executeJob(jobId: string, abortController: AbortController): Promise<void> {
+  const signal = abortController.signal
   const job = getTask(jobId)
   if (!job || !job.sourceText) return
 
@@ -61,11 +82,17 @@ async function executeJob(jobId: string, signal: AbortSignal): Promise<void> {
 
   if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
+  // S7: 检查 API 是否已请求取消
+  checkCancellation(jobId, abortController)
+
   // Step 3: Execute generate + save children sequentially
   const children = getChildTasks(jobId)
   for (const child of children) {
     if (signal.aborted) break
     if (child.status === 'completed') continue
+
+    // 每个子任务前也检查取消状态
+    checkCancellation(jobId, abortController)
 
     if (child.type === 'generate') {
       await executeGenerate(child.id, signal)
@@ -180,8 +207,8 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
 
       // 下载图片到本地持久保存（远程链接会过期）
       const jobForPath = getTask(currentTask.parentId!)
-      const category = jobForPath?.category || 'idiom'
-      const sourceText = jobForPath?.sourceText || ''
+      const category = validateCategory(jobForPath?.category || 'idiom')
+      const sourceText = sanitizeFilename(jobForPath?.sourceText || 'unknown')
       const localPath = path.join(process.cwd(), 'public', 'generated', category, sourceText, `${task.sceneId}.png`)
       await downloadImageToFile(imageUrl, localPath, signal)
 
@@ -298,20 +325,22 @@ async function executeSave(taskId: string, jobId: string, signal: AbortSignal): 
     }
 
     // Build PictureBook from task data
+    const safeCategory = validateCategory(job.category || 'idiom')
+    const safeSourceText = sanitizeFilename(job.sourceText || 'unknown')
     const scenes: SceneTemplate[] = decomposeTask.decomposeScenesJson
       ? JSON.parse(decomposeTask.decomposeScenesJson)
       : []
 
     const book = {
       id: jobId,
-      category: (job.category || 'idiom') as ContentCategory,
+      category: safeCategory as ContentCategory,
       sourceText: job.sourceText || '',
       title: job.sourceText || '',
       idiom: job.sourceText || '',
       meaning: decomposeTask.decomposeMeaning || '',
       createdAt: new Date().toISOString(),
       scenes: scenes.map((s, i) => {
-        const localImageUrl = `/generated/${job.category || 'idiom'}/${job.sourceText || ''}/${i + 1}.png`
+        const localImageUrl = `/generated/${safeCategory}/${safeSourceText}/${i + 1}.png`
         return {
           ...s,
           id: i + 1,
@@ -373,10 +402,9 @@ async function main() {
     }
 
     console.log(`📋 开始执行: ${job.sourceText} (${job.category})`)
-    markRunning(job.id)
 
     try {
-      await executeJob(job.id, signal)
+      await executeJob(job.id, abortController)
       console.log(`✅ 完成: ${job.sourceText}`)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {

@@ -28,7 +28,14 @@ export async function fetchRecommendations(
   const jsonEnd = jsonStr.lastIndexOf(']')
   if (jsonStart !== -1 && jsonEnd !== -1) jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1)
 
-  const data = JSON.parse(jsonStr)
+  const data = (() => {
+    try {
+      return JSON.parse(jsonStr)
+    } catch (parseError) {
+      console.error('推荐 JSON 解析失败:', parseError)
+      throw new Error('LLM 返回的推荐数据格式不正确')
+    }
+  })()
   if (!Array.isArray(data) || data.length === 0) throw new Error('LLM 返回格式不正确')
 
   return data
@@ -39,7 +46,3 @@ export async function fetchRecommendations(
       category: item.category,
     }))
 }
-
-/** @deprecated 使用 fetchRecommendations('idiom', exclude) */
-export const fetchRecommendedIdioms = (exclude: string[] = []) =>
-  fetchRecommendations('idiom', exclude)

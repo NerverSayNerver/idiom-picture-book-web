@@ -108,8 +108,26 @@ export default function Home() {
     }))
   }
 
-  const handleDelete = (id: string) => {
-    // 文件系统删除后续实现
+  const handleDelete = async (id: string) => {
+    if (!indexData) return
+    // 在所有分类中查找该书的 category
+    for (const [category, catData] of Object.entries(indexData.categories)) {
+      const book = catData.items.find(item => item.id === id)
+      if (book) {
+        try {
+          const res = await fetch(`/api/books/${encodeURIComponent(category)}:${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+            headers: { 'X-Internal-Key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '' },
+          })
+          if (res.ok) {
+            loadIndex()
+          }
+        } catch (err) {
+          console.error('删除失败:', err)
+        }
+        return
+      }
+    }
   }
 
   const filteredBooks = getFilteredBooks()

@@ -3,16 +3,24 @@
 
 import Database from 'better-sqlite3'
 import path from 'path'
+import { existsSync, mkdirSync } from 'fs'
 import { v4 as uuidv4 } from 'uuid'
 import type { Task, TaskStatus, TaskType, ChildTaskDef } from './task-types'
 import { deriveJobStatus } from './task-types'
 
-const DB_PATH = path.join(process.cwd(), 'picture-book-tasks.db')
+const DATA_DIR = path.join(process.cwd(), 'data')
+const DB_PATH = path.join(DATA_DIR, 'picture-book-tasks.db')
 
 let _db: Database.Database | null = null
 
+/** 当前时间戳（秒），统一全表时间单位 */
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000)
+}
+
 function getDb(): Database.Database {
   if (!_db) {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true })
     _db = new Database(DB_PATH)
     _db.pragma('journal_mode = WAL')
     _db.pragma('foreign_keys = ON')
@@ -127,7 +135,7 @@ export function createTask(data: {
 }): Task {
   const db = getDb()
   const id = uuidv4()
-  const now = Math.floor(Date.now() / 1000)
+  const now = nowSeconds()
 
   db.prepare(`
     INSERT INTO tasks (id, type, parent_id, status, category, source_text, idiom, scene_id, scene_title, progress, total, retry_count, max_retries, created_at, updated_at)
@@ -173,7 +181,7 @@ export function getChildTasks(parentId: string): Task[] {
 
 export function updateTask(id: string, updates: Partial<Task>): void {
   const db = getDb()
-  const now = Math.floor(Date.now() / 1000)
+  const now = nowSeconds()
 
   const setClauses: string[] = ['updated_at = ?']
   const values: any[] = [now]
@@ -243,7 +251,7 @@ function deriveParentStatus(parentId: string): void {
   const derived = deriveJobStatus(children)
   const completedCount = children.filter(c => c.status === 'completed').length
 
-  const now = Math.floor(Date.now() / 1000)
+  const now = nowSeconds()
   const updates: string[] = ['status = ?', 'progress = ?', 'updated_at = ?']
   const values: any[] = [derived, completedCount, now]
 
@@ -276,18 +284,15 @@ export function addChildTasks(parentId: string, defs: ChildTaskDef[]): Task[] {
 
 export function pollPendingJob(): Task | null {
   const db = getDb()
+  const now = nowSeconds()
+  // 原子认领：UPDATE + RETURNING 在单条语句内完成认领和返回，防止多 worker 重复执行
   const row = db.prepare(
-    "SELECT * FROM tasks WHERE type = 'job' AND status = 'pending' ORDER BY created_at LIMIT 1"
-  ).get() as TaskRow | undefined
+    "UPDATE tasks SET status = 'running', start_time = ?, updated_at = ? " +
+    "WHERE id = (SELECT id FROM tasks WHERE type = 'job' AND status = 'pending' ORDER BY created_at LIMIT 1) " +
+    "RETURNING *"
+  ).get(now, now) as TaskRow | undefined
   if (!row) return null
   return rowToTask(row)
-}
-
-export function markRunning(id: string): void {
-  const now = Date.now() // 毫秒，和前端 formatDuration 一致
-  getDb().prepare(
-    "UPDATE tasks SET status = 'running', start_time = ?, updated_at = ? WHERE id = ?"
-  ).run(now, now, id)
 }
 
 // ── Query ───────────────────────────────────────────────────
@@ -329,7 +334,7 @@ export function getJobWithChildren(id: string): { job: Task; children: Task[] } 
 
 export function recoverInterruptedTasks(): number {
   const db = getDb()
-  const now = Math.floor(Date.now() / 1000)
+  const now = nowSeconds()
   const result = db.prepare(
     "UPDATE tasks SET status = 'failed', error = '页面刷新，执行中断', end_time = ?, updated_at = ? WHERE status IN ('running', 'paused')"
   ).run(now, now)

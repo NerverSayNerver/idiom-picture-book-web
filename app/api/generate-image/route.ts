@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     const url = await generateSceneImage(prompt)
     return NextResponse.json({ url })
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    console.error('生成图片失败:', error)
+    return NextResponse.json({ error: '图片生成失败，请稍后重试' }, { status: 500 })
   }
 }

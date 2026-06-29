@@ -335,18 +335,17 @@ export function BookViewer({ book }: BookViewerProps) {
                     </h4>
                     <p className={`text-gray-800 text-lg ${isNurseryRhyme ? 'italic' : isPoetry ? '' : 'italic'}`}>
                       {!isPoetry && !isNurseryRhyme && '「'}
-                      {scene.narration.split('').map((char, i) => (
-                        <span
-                          key={i}
-                          className={
-                            isPlaying && i === currentCharIndex
-                              ? 'bg-yellow-200 rounded px-0.5'
-                              : ''
-                          }
-                        >
-                          {char}
-                        </span>
-                      ))}
+                      {isPlaying && currentCharIndex >= 0 && currentCharIndex < scene.narration.length ? (
+                        <>
+                          {scene.narration.slice(0, currentCharIndex)}
+                          <span className="bg-yellow-200 rounded px-0.5">
+                            {scene.narration[currentCharIndex]}
+                          </span>
+                          {scene.narration.slice(currentCharIndex + 1)}
+                        </>
+                      ) : (
+                        scene.narration
+                      )}
                       {!isPoetry && !isNurseryRhyme && '」'}
                     </p>
                   </div>

@@ -25,6 +25,7 @@ export async function POST(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    console.error('取消任务失败:', error)
+    return NextResponse.json({ error: '取消任务失败，请稍后重试' }, { status: 500 })
   }
 }
