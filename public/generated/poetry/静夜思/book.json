@@ -1,55 +1,47 @@
 {
-  "id": "静夜思",
+  "id": "96bb0ee3-d137-4303-b5c0-1f3efb0f5e06",
   "category": "poetry",
   "sourceText": "静夜思",
   "title": "静夜思",
-  "meaning": "这首诗描写了诗人在安静的夜晚，看到床前的月光，以为是地上的霜。他抬起头看着天上的明月，低下头想起了远方的家乡。",
-  "createdAt": "2026-06-28T04:08:06.894Z",
+  "idiom": "静夜思",
+  "meaning": "明亮的月光洒在窗户前，我忍不住想起远方的家乡。",
+  "createdAt": "2026-06-28T13:21:43.413Z",
   "scenes": [
     {
       "id": 1,
-      "title": "宁静的夜晚",
-      "description": "画面展示一个古朴的小院，夜空深邃宁静，一轮明月高悬，几颗星星眨着眼睛。院子里有竹子和简单的石凳，营造出安静祥和的氛围。",
-      "prompt": "A quiet ancient Chinese courtyard at night, deep blue sky with twinkling stars and a bright full moon, bamboo shadows on the ground, simple stone bench, classical Chinese ink wash style, soft colors, peaceful atmosphere, child-friendly illustration, Wide shot, establishing the setting with a focus on the moon and tranquility., Classical Chinese ink wash painting style, soft watercolor tones, gentle lighting, cute and whimsical childlike elements, minimalist composition, high quality, 8k resolution",
-      "compositionHint": "Wide shot, establishing the setting with a focus on the moon and tranquility.",
-      "narration": "夜深了，月亮挂在天上。在一个安静的夜晚，诗人李白睡不着觉，走到了院子里。",
+      "title": "床前明月光",
+      "description": "静谧的卧室内，一轮圆月高悬，清澈的月光如水般倾泻在床前的地面上，形成一片明亮的光斑。窗外竹影婆娑，屋内安静祥和。",
+      "prompt": "中国古典水墨工笔画风，柔和色彩，童趣感。夜晚卧室内部视角，一张古朴的小木床，床前地面有一大块明亮的圆形月光投影，周围阴影柔和，窗外可见几竿修竹，画面宁静温馨，低饱和度青蓝背景，暖黄色月光高光。, 俯视或平视角度，突出地面的月光光斑，营造清冷而温柔的氛围。, 中国古典水墨与工笔结合，淡雅柔和的青蓝色调为主，点缀暖黄月光，线条细腻，充满童真与宁静氛围。",
+      "narration": "床前明月光。明亮的月亮照在窗前，洒下一片银白色的光辉。",
+      "compositionHint": "俯视或平视角度，突出地面的月光光斑，营造清冷而温柔的氛围。",
       "imageUrl": "/generated/poetry/静夜思/1.png"
     },
     {
       "id": 2,
-      "title": "床前明月光",
-      "description": "镜头拉近到窗边或床边，明亮的月光像流水一样洒在地板上，形成一片银白色的光斑。光影柔和，带有梦幻感。",
-      "prompt": "Close up of a wooden floor inside a room, bright moonlight streaming through the window creating silver patterns on the floor, soft glowing light, classical Chinese ink style, serene mood, detailed texture of wood and light, Medium close-up, focusing on the interplay of light and shadow on the floor., Classical Chinese ink wash painting style, soft watercolor tones, gentle lighting, cute and whimsical childlike elements, minimalist composition, high quality, 8k resolution",
-      "compositionHint": "Medium close-up, focusing on the interplay of light and shadow on the floor.",
-      "narration": "明亮的月光洒在窗前，就像地上铺了一层白白的霜，亮晶晶的，真漂亮。",
+      "title": "疑是地上霜",
+      "description": "小诗人揉着惺忪的睡眼，低头看向地面，那洁白的月光看起来凉丝丝的，就像秋天清晨结了一层薄薄的白霜一样，让他产生了一丝错觉。",
+      "prompt": "中国古典水墨工笔画风，柔和色彩，童趣感。特写镜头，一个小男孩穿着睡衣，蹲在地上，眼神好奇地看向前方地面，地面呈现出洁白如霜的质感，边缘有淡淡的雾气感，背景虚化，突出孩子天真疑惑的表情，色调清冷洁白。, 近距离特写孩子的面部表情和地面细节，强调“霜”的视觉质感与孩子的心理活动。, 中国古典水墨与工笔结合，淡雅柔和的青蓝色调为主，点缀暖黄月光，线条细腻，充满童真与宁静氛围。",
+      "narration": "疑是地上霜。那月光白白的，凉凉的，我以为是地上结了一层秋霜呢。",
+      "compositionHint": "近距离特写孩子的面部表情和地面细节，强调“霜”的视觉质感与孩子的心理活动。",
       "imageUrl": "/generated/poetry/静夜思/2.png"
     },
     {
       "id": 3,
-      "title": "疑是地上霜",
-      "description": "李白穿着宽松的睡衣，揉着惺忪的睡眼，低头看着地上的月光，表情疑惑又好奇。月光看起来确实像寒冷的霜一样洁白。",
-      "prompt": "Li Bai, a cute ancient Chinese boy/young man in loose pajamas, rubbing his sleepy eyes, looking down curiously at the moonlight on the floor, expression of confusion and wonder, soft moonlight glow, classical ink wash style, gentle and innocent, Over-the-shoulder shot or side profile, capturing Li Bai's reaction to the 'frost'., Classical Chinese ink wash painting style, soft watercolor tones, gentle lighting, cute and whimsical childlike elements, minimalist composition, high quality, 8k resolution",
-      "compositionHint": "Over-the-shoulder shot or side profile, capturing Li Bai's reaction to the 'frost'.",
-      "narration": "李白揉了揉眼睛，心想：‘咦？这地上怎么会有白白的霜呢？’原来那是美丽的月光呀。",
+      "title": "举头望明月",
+      "description": "小男孩站起身来，抬起头仰望夜空。天空中悬挂着一轮又大又圆的明月，周围点缀着几颗稀疏的星星，月光照亮了他仰起的小脸。",
+      "prompt": "中国古典水墨工笔画风，柔和色彩，童趣感。侧面视角，小男孩站在窗前或庭院中，双手背在身后或自然下垂，抬头仰望天空，脸上映着柔和的月光，背景是深邃的夜空和一轮巨大的、发着柔光的明月，几颗小星星闪烁，画面开阔明亮。, 仰视构图，强调孩子对月亮的注视和月亮的巨大与明亮，形成人与自然的和谐互动。, 中国古典水墨与工笔结合，淡雅柔和的青蓝色调为主，点缀暖黄月光，线条细腻，充满童真与宁静氛围。",
+      "narration": "举头望明月。我抬起头，看着天上那盏圆圆的、明亮的‘大灯笼’。",
+      "compositionHint": "仰视构图，强调孩子对月亮的注视和月亮的巨大与明亮，形成人与自然的和谐互动。",
       "imageUrl": "/generated/poetry/静夜思/3.png"
     },
     {
       "id": 4,
-      "title": "举头望明月",
-      "description": "李白抬起头，仰望着天空中那轮圆圆的、金黄的明月。他的眼神充满向往和思念。背景可以是淡淡的云彩衬托着明月。",
-      "prompt": "Li Bai looking up at the large, bright, golden full moon in the dark blue sky, soft clouds around the moon, nostalgic and longing expression, classical Chinese ink brush style, elegant and poetic, soft lighting, Low angle shot looking up at Li Bai and the moon, emphasizing the connection between the person and the sky., Classical Chinese ink wash painting style, soft watercolor tones, gentle lighting, cute and whimsical childlike elements, minimalist composition, high quality, 8k resolution",
-      "compositionHint": "Low angle shot looking up at Li Bai and the moon, emphasizing the connection between the person and the sky.",
-      "narration": "李白抬起头，看着天上圆圆的月亮。月亮好圆好亮啊，照亮了整个夜空。",
-      "imageUrl": "/generated/poetry/静夜思/4.png"
-    },
-    {
-      "id": 5,
       "title": "低头思故乡",
-      "description": "李白低下头，双手抱胸或扶着栏杆，神情变得温柔而略带忧伤。画面中隐约浮现出家乡的山山水水或亲人的剪影（虚化处理），表达深深的思念之情。",
-      "prompt": "Li Bai bowing his head gently, hands clasped, looking sad and thoughtful, soft background blur showing hints of hometown mountains and family silhouettes, emotional and warm tone, classical Chinese ink style, sentimental atmosphere, Close-up on Li Bai's face and upper body, focusing on his emotional state and the feeling of missing home., Classical Chinese ink wash painting style, soft watercolor tones, gentle lighting, cute and whimsical childlike elements, minimalist composition, high quality, 8k resolution",
-      "compositionHint": "Close-up on Li Bai's face and upper body, focusing on his emotional state and the feeling of missing home.",
-      "narration": "看着月亮，李白低下头，想起了远方的家乡和爸爸妈妈。月亮这么圆，但他却回不去家，心里有点想念家乡的味道。",
-      "imageUrl": "/generated/poetry/静夜思/5.png"
+      "description": "看着天上的明月，小男孩想起了远在千里之外的家乡和亲人。他低下头，眼神变得温柔而略带忧伤，仿佛看到了家乡熟悉的风景和亲爱的家人。",
+      "prompt": "中国古典水墨工笔画风，柔和色彩，童趣感。小男孩低着头，神情专注而温柔，似乎在沉思。画面采用双关手法，在他低头的视线方向或背景中隐约浮现家乡的山峦、房屋或亲人的剪影，色调转为温暖的怀旧色，与之前的清冷形成对比，情感细腻。, 聚焦于孩子的神态，通过光影和背景意象暗示内心的思念，营造含蓄深情的意境。, 中国古典水墨与工笔结合，淡雅柔和的青蓝色调为主，点缀暖黄月光，线条细腻，充满童真与宁静氛围。",
+      "narration": "低头思故乡。看着月亮，我想起了远方的家乡和爸爸妈妈，心里有点想念他们。",
+      "compositionHint": "聚焦于孩子的神态，通过光影和背景意象暗示内心的思念，营造含蓄深情的意境。",
+      "imageUrl": "/generated/poetry/静夜思/4.png"
     }
   ]
 }

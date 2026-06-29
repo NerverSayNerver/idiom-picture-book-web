@@ -1,54 +1,65 @@
 {
-  "id": "路遥知马力，日久见人心",
+  "id": "13f53db5-7a89-4be5-a7b0-c7a97e5caa5a",
   "category": "proverb",
   "sourceText": "路遥知马力，日久见人心",
   "title": "路遥知马力，日久见人心",
-  "meaning": "真正的朋友和好的品质，需要长时间的相处和困难时刻的考验才能看出来。",
-  "createdAt": "2026-06-28T05:01:40.937Z",
+  "idiom": "路遥知马力，日久见人心",
+  "meaning": "经过长时间的相处和考验，才能真正看清一个人的真心和品格。就像长途旅行才能检验马的体力一样，日常生活中的点滴细节最能体现一个人的真诚。",
+  "createdAt": "2026-06-28T13:57:17.891Z",
   "scenes": [
     {
       "id": 1,
-      "title": "快乐的新朋友",
-      "description": "刺猬辉辉在幼儿园里遇到了新同学小松鼠。他们一起搭积木，笑得非常开心。辉辉觉得小松鼠是个很棒的朋友。",
-      "prompt": "A cute little hedgehog named 'Hui Hui' with soft brown spines and big round glasses, wearing a red scarf. He is small, friendly, and expressive., A cute hedgehog wearing a red scarf and glasses playing block towers with a fluffy squirrel in a bright kindergarten classroom. Sunlight streams through the window. Warm, happy expression., Medium shot, eye-level, focus on the interaction between the two characters and the colorful blocks., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8.",
-      "compositionHint": "Medium shot, eye-level, focus on the interaction between the two characters and the colorful blocks.",
-      "narration": "新朋友，真好玩，\n一起搭塔笑开颜。\n可是，好玩只是开始，\n真心还要慢慢看。",
+      "title": "初识的惊喜",
+      "description": "栗栗和阿布在幼儿园的积木区初次见面。阿布大方地分享了他最珍贵的金色积木给栗栗，两人立刻玩在了一起，看起来非常投缘。",
+      "prompt": "主角是一只戴着红色围巾的小松鼠“栗栗”，性格活泼但偶尔粗心；配角是一只戴着圆框眼镜的小熊“阿布”，性格温和、稳重且乐于助人。两者均为毛茸茸的可爱造型，色彩以暖棕色和米色为主。, 温馨的幼儿园积木角，阳光透过窗户洒进来。小松鼠栗栗和小熊阿布正在开心地拼搭高塔，周围散落着彩色积木，画面充满欢乐和友谊的气息，暖色调水彩风。, 中景镜头，聚焦于两个角色互动的笑脸和共同搭建的积木塔，背景虚化以突出人物情感。, 温暖明快的水彩绘本风格，线条柔和，色彩饱和度适中，背景带有淡淡的纹理质感，营造温馨治愈的氛围。",
+      "narration": "刚见面，你就把宝贝分给我，\n我们好像，天生就是好搭档！",
+      "compositionHint": "中景镜头，聚焦于两个角色互动的笑脸和共同搭建的积木塔，背景虚化以突出人物情感。",
       "imageUrl": "/generated/proverb/路遥知马力，日久见人心/1.png"
     },
     {
       "id": 2,
-      "title": "下雨天的约定",
-      "description": "第二天放学时突然下起了大雨。小松鼠撑着一把漂亮的伞跑远了，没有回头叫上没带伞的辉辉。辉辉有点失落，但自己跑回了家。",
-      "prompt": "A cute little hedgehog named 'Hui Hui' with soft brown spines and big round glasses, wearing a red scarf. He is small, friendly, and expressive., Rainy day at the school gate. A squirrel runs away with a colorful umbrella, leaving the hedgehog behind without an umbrella. The hedgehog looks slightly sad but determined. Wet pavement, grey sky., Wide shot showing the separation, emphasizing the distance between the two characters and the rain environment., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8.",
-      "compositionHint": "Wide shot showing the separation, emphasizing the distance between the two characters and the rain environment.",
-      "narration": "雨哗哗，天变冷，\n伞儿跑，不见影。\n第一次，有点难过，\n是不是朋友？再想想。",
+      "title": "雨中的选择",
+      "description": "突然下起大雨，只有一个伞。阿布把伞大部分倾向栗栗，自己淋湿了半边身子，却笑着说没事。栗栗感动又愧疚，开始注意到阿布的细心。",
+      "prompt": "主角是一只戴着红色围巾的小松鼠“栗栗”，性格活泼但偶尔粗心；配角是一只戴着圆框眼镜的小熊“阿布”，性格温和、稳重且乐于助人。两者均为毛茸茸的可爱造型，色彩以暖棕色和米色为主。, 幼儿园门口的雨景，灰色的天空下有一把大大的黄色雨伞。小熊阿布半边身体湿漉漉的，但笑容温暖，小松鼠栗栗紧紧依偎在伞下，眼神中带着感激，画风细腻感人。, 特写雨伞下的两人，强调雨伞倾斜的角度和阿布湿漉的肩膀，对比出无私的爱护。, 温暖明快的水彩绘本风格，线条柔和，色彩饱和度适中，背景带有淡淡的纹理质感，营造温馨治愈的氛围。",
+      "narration": "大雨哗啦啦，伞儿歪向我，\n你的肩膀湿，心里却暖洋洋。",
+      "compositionHint": "特写雨伞下的两人，强调雨伞倾斜的角度和阿布湿漉的肩膀，对比出无私的爱护。",
       "imageUrl": "/generated/proverb/路遥知马力，日久见人心/2.png"
     },
     {
       "id": 3,
-      "title": "摔倒的膝盖",
-      "description": "过了一周，辉辉在公园跑步时不小心摔倒了，膝盖擦破了皮，疼得哭了起来。周围的小朋友都惊呆了。这时，小松鼠跑过来，拿出创可贴，轻轻帮辉辉包扎，还陪他坐在长椅上休息。",
-      "prompt": "A cute little hedgehog named 'Hui Hui' with soft brown spines and big round glasses, wearing a red scarf. He is small, friendly, and expressive., Autumn park scene. The hedgehog holds a large red apple. The squirrel offers half of its pinecone. They are sitting together on a bench, smiling and eating. Golden autumn leaves falling around them., Over-the-shoulder shot or side profile showing the exchange, warm golden tones, focusing on generosity., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8.",
-      "compositionHint": "Close-up on the comforting gesture, highlighting the care and empathy in the squirrel's face.",
-      "narration": "摔一跤，痛得哭，\n谁在身边扶一扶？\n不是看谁玩得好，\n是看谁肯帮忙。"
+      "title": "争执后的包容",
+      "description": "两人因为谁先滑滑梯发生了争吵，栗栗生气地跑开。第二天，栗栗发现阿布没有记仇，反而帮它捡起了掉落的画纸，并主动道歉求和。",
+      "prompt": "主角是一只戴着红色围巾的小松鼠“栗栗”，性格活泼但偶尔粗心；配角是一只戴着圆框眼镜的小熊“阿布”，性格温和、稳重且乐于助人。两者均为毛茸茸的可爱造型，色彩以暖棕色和米色为主。, 公园滑梯旁，阳光明媚。小松鼠栗栗有些不好意思地低着头，小熊阿布正弯腰捡起一张画纸递给栗栗，脸上带着宽容的微笑，画面柔和，展现和解的瞬间。, 对角线构图，连接两个角色，表现从冲突到和解的过程，光线明亮柔和。, 温暖明快的水彩绘本风格，线条柔和，色彩饱和度适中，背景带有淡淡的纹理质感，营造温馨治愈的氛围。",
+      "narration": "昨天吵了架，今天又和好？\n原来你呀，从不把气记心窝。",
+      "compositionHint": "对角线构图，连接两个角色，表现从冲突到和解的过程，光线明亮柔和。",
+      "imageUrl": "/generated/proverb/路遥知马力，日久见人心/3.png"
     },
     {
       "id": 4,
-      "title": "分享的苹果",
-      "description": "又过了很久，秋天到了。辉辉带了一个大大的红苹果来分享。小松鼠拿出自己最心爱的松果，换给了辉辉一半。他们互相交换食物，吃得很香。这种分享不是暂时的，而是持续的。",
-      "prompt": "A cute little hedgehog named 'Hui Hui' with soft brown spines and big round glasses, wearing a red scarf. He is small, friendly, and expressive., Spring garden. The hedgehog and the squirrel are walking hand-in-hand (or paw-in-paw) among blooming flowers. Bright, fresh green colors. Both look happy and secure. Time passing imagery like a sun dial or calendar subtly in background., Full body shot, moving forward together, symbolizing the journey of friendship over time., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8.",
-      "compositionHint": "Over-the-shoulder shot or side profile showing the exchange, warm golden tones, focusing on generosity.",
-      "narration": "分苹果，换松果，\n分享甜蜜不嫌多。\n日子长，情义深，\n真心朋友暖心窝。",
+      "title": "困难时的坚守",
+      "description": "栗栗在准备手工比赛时不小心打翻了胶水，急得大哭。其他小伙伴都去玩了，只有阿布留下来，耐心地陪栗栗一起清理桌面，重新制作。",
+      "prompt": "主角是一只戴着红色围巾的小松鼠“栗栗”，性格活泼但偶尔粗心；配角是一只戴着圆框眼镜的小熊“阿布”，性格温和、稳重且乐于助人。两者均为毛茸茸的可爱造型，色彩以暖棕色和米色为主。, 教室的一角，桌面上有些凌乱。小松鼠栗栗焦急地擦桌子，小熊阿布在旁边认真地帮忙整理工具，眼神专注而坚定，背景有其他模糊的孩子身影，突显陪伴的重要性。, 近景特写，聚焦在两只小手共同清理桌面的动作上，强调行动而非言语。, 温暖明快的水彩绘本风格，线条柔和，色彩饱和度适中，背景带有淡淡的纹理质感，营造温馨治愈的氛围。",
+      "narration": "手忙脚乱时，大家都走开，\n只有你留下，陪我慢慢来。",
+      "compositionHint": "近景特写，聚焦在两只小手共同清理桌面的动作上，强调行动而非言语。",
       "imageUrl": "/generated/proverb/路遥知马力，日久见人心/4.png"
     },
     {
       "id": 5,
-      "title": "时间告诉我们要什么",
-      "description": "春天来了，辉辉和小松鼠成了最好的朋友。他们一起经历了雨天和摔倒。辉辉明白了，虽然刚认识时很开心，但只有经过很长时间，遇到困难时互相帮助，才知道谁是真正的好朋友。",
-      "prompt": "A cute little hedgehog named 'Hui Hui' with soft brown spines and big round glasses, wearing a red scarf. He is small, friendly, and expressive., Spring garden. The hedgehog and the squirrel are walking hand-in-hand (or paw-in-paw) among blooming flowers. Bright, fresh green colors. Both look happy and secure. Time passing imagery like a sun dial or calendar subtly in background., Full body shot, moving forward together, symbolizing the journey of friendship over time., Warm watercolor illustration style, soft pastel colors, gentle lighting, cozy atmosphere, suitable for children aged 3-8.",
-      "compositionHint": "Full body shot, moving forward together, symbolizing the journey of friendship over time.",
-      "narration": "春花开，秋叶落，\n时间像个小侦探。\n跑得远，看得清，\n日久见心最真诚。",
+      "title": "成长的见证",
+      "description": "时间流逝，栗栗和阿布一起经历了春夏秋冬。栗栗明白了，真正的朋友不是刚开始有多热闹，而是在平淡和困难中始终如一的那份陪伴。",
+      "prompt": "主角是一只戴着红色围巾的小松鼠“栗栗”，性格活泼但偶尔粗心；配角是一只戴着圆框眼镜的小熊“阿布”，性格温和、稳重且乐于助人。两者均为毛茸茸的可爱造型，色彩以暖棕色和米色为主。, 四格漫画式的单幅大画面，左侧是春天的花朵，右侧是冬天的雪花，中间是小松鼠和小熊手牵手走过四季变化的森林小路，表情平静而幸福，色调随季节渐变但整体和谐。, 横向长卷构图，展示时间的流动，角色位于画面中心，背景随季节变化，象征长期的陪伴。, 温暖明快的水彩绘本风格，线条柔和，色彩饱和度适中，背景带有淡淡的纹理质感，营造温馨治愈的氛围。",
+      "narration": "日子像小河，静静往前流，\n真心好朋友，岁月里相守。",
+      "compositionHint": "横向长卷构图，展示时间的流动，角色位于画面中心，背景随季节变化，象征长期的陪伴。",
       "imageUrl": "/generated/proverb/路遥知马力，日久见人心/5.png"
+    },
+    {
+      "id": 6,
+      "title": "道理小课堂",
+      "description": "回顾页。栗栗和阿布坐在树桩上看着远处的风景。文字总结谚语的寓意：只有通过长时间的相处，才能知道谁是真正的好朋友。",
+      "prompt": "主角是一只戴着红色围巾的小松鼠“栗栗”，性格活泼但偶尔粗心；配角是一只戴着圆框眼镜的小熊“阿布”，性格温和、稳重且乐于助人。两者均为毛茸茸的可爱造型，色彩以暖棕色和米色为主。, 温馨的总结页，小松鼠和小熊坐在树桩上背影或侧影，望着远方的夕阳，画面留白较多，适合放置文字，色彩温暖宁静，充满哲理感。, 大面积留白，角色位于下方三分之一处，上方预留空间用于展示核心寓意，构图平衡稳定。, 温暖明快的水彩绘本风格，线条柔和，色彩饱和度适中，背景带有淡淡的纹理质感，营造温馨治愈的氛围。",
+      "narration": "路远才知马儿跑得多稳当，\n日子久了，才懂谁的心最真长。",
+      "compositionHint": "大面积留白，角色位于下方三分之一处，上方预留空间用于展示核心寓意，构图平衡稳定。",
+      "imageUrl": "/generated/proverb/路遥知马力，日久见人心/6.png"
     }
   ]
 }

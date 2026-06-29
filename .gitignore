@@ -37,3 +37,4 @@ next-env.d.ts
 picture-book-tasks.db
 *.db-shm
 *.db-wal
+regen-failed.mts

@@ -1,73 +1,10 @@
 {
-  "id": "小兔子乖乖",
+  "id": "b6fa242a-45f0-4cfb-8d86-219a94d6b1d2",
   "category": "nursery-rhyme",
   "sourceText": "小兔子乖乖",
   "title": "小兔子乖乖",
-  "meaning": "通过拟人化的动物互动，教导幼儿辨别陌生人、树立安全意识，同时传递家庭温暖与信任的美好价值观。",
-  "createdAt": "2026-06-28T04:19:37.448Z",
-  "scenes": [
-    {
-      "id": 1,
-      "title": "妈妈出门",
-      "description": "兔妈妈背起小篮子，温柔地摸了摸小兔子的头，转身离开家门。小兔子站在门口，双手挥舞，脸上带着乖巧又略带不舍的微笑。",
-      "prompt": "A cute, fluffy white rabbit with long pink-lined ears, big shiny black eyes, and a small round nose. The rabbit wears a simple red bow tie. The wolf has grey fur, sharp but comical-looking teeth, and wears a striped scarf to look slightly mischievous but not terrifying., A cute white rabbit mother waving goodbye at the door of a cozy wooden house, holding a small basket. A smaller baby rabbit stands at the threshold, waving back with a sweet smile. Bright sunny morning light, colorful garden background, soft edges, bright cartoon style., Focus on the interaction at the doorway, showing separation but safety., Bright cartoon style, vibrant colors, soft rounded shapes, high contrast suitable for infants, warm lighting, flat vector aesthetic with soft gradients.",
-      "compositionHint": "Focus on the interaction at the doorway, showing separation but safety.",
-      "narration": "小兔子乖乖，把门儿开开",
-      "imageUrl": "/generated/nursery-rhyme/小兔子乖乖/1.png"
-    },
-    {
-      "id": 2,
-      "title": "妈妈呼唤",
-      "description": "兔妈妈在门外，身体微微前倾，嘴巴张开正在唱歌。小兔子趴在窗边，耳朵竖得高高的，眼神好奇又专注地听着。",
-      "prompt": "A cute, fluffy white rabbit with long pink-lined ears, big shiny black eyes, and a small round nose. The rabbit wears a simple red bow tie. The wolf has grey fur, sharp but comical-looking teeth, and wears a striped scarf to look slightly mischievous but not terrifying., Rabbit mother standing outside the window, leaning forward to sing with an open mouth. Baby rabbit inside looking out through the window pane, ears perked up attentively. Warm interior lighting contrasting with bright exterior, cute expressions, vibrant colors., Split composition showing both inside and outside, emphasizing listening., Bright cartoon style, vibrant colors, soft rounded shapes, high contrast suitable for infants, warm lighting, flat vector aesthetic with soft gradients.",
-      "compositionHint": "Split composition showing both inside and outside, emphasizing listening.",
-      "narration": "快点儿开开，我来给你们开",
-      "imageUrl": "/generated/nursery-rhyme/小兔子乖乖/2.png"
-    },
-    {
-      "id": 3,
-      "title": "妈妈解释",
-      "description": "兔妈妈指着天空中的太阳，表情开心且肯定。小兔子恍然大悟，双手拍在一起，脸上露出安心的笑容，准备去开门。",
-      "prompt": "A cute, fluffy white rabbit with long pink-lined ears, big shiny black eyes, and a small round nose. The rabbit wears a simple red bow tie. The wolf has grey fur, sharp but comical-looking teeth, and wears a striped scarf to look slightly mischievous but not terrifying., Rabbit mother pointing at a bright yellow sun in the blue sky, smiling happily. Baby rabbit clapping paws with a relieved and joyful expression, ready to open the door. Clear sky, vibrant green grass, cheerful atmosphere., Eye-level view focusing on the rabbit's happy realization., Bright cartoon style, vibrant colors, soft rounded shapes, high contrast suitable for infants, warm lighting, flat vector aesthetic with soft gradients.",
-      "compositionHint": "Eye-level view focusing on the rabbit's happy realization.",
-      "narration": "不开不开我不开，妈妈没回来",
-      "imageUrl": "/generated/nursery-rhyme/小兔子乖乖/3.png"
-    },
-    {
-      "id": 4,
-      "title": "大灰狼伪装",
-      "description": "大灰狼躲在树后，只露出一半身体，眯着眼睛假装温柔地说话，手里还拿着一个花环试图讨好。小兔子警惕地捂住耳朵，眉头微皱，摇头拒绝。",
-      "prompt": "A cute, fluffy white rabbit with long pink-lined ears, big shiny black eyes, and a small round nose. The rabbit wears a simple red bow tie. The wolf has grey fur, sharp but comical-looking teeth, and wears a striped scarf to look slightly mischievous but not terrifying., A grey wolf peeking from behind a tree, holding a flower crown, making a fake sweet face. The baby rabbit covers its ears with paws, shaking head with a worried expression. Slightly darker but still safe cartoon tones, distinct character designs., Show the contrast between the wolf's disguise and the rabbit's alertness., Bright cartoon style, vibrant colors, soft rounded shapes, high contrast suitable for infants, warm lighting, flat vector aesthetic with soft gradients.",
-      "compositionHint": "Show the contrast between the wolf's disguise and the rabbit's alertness.",
-      "narration": "不开不开我不开，妈妈没回来",
-      "imageUrl": "/generated/nursery-rhyme/小兔子乖乖/4.png"
-    },
-    {
-      "id": 5,
-      "title": "再次确认",
-      "description": "大灰狼有些着急，大声喊叫，样子变得有点滑稽。小兔子从门缝里探出头，竖起一根手指，坚定地摇头，眼神清澈无邪。",
-      "prompt": "A cute, fluffy white rabbit with long pink-lined ears, big shiny black eyes, and a small round nose. The rabbit wears a simple red bow tie. The wolf has grey fur, sharp but comical-looking teeth, and wears a striped scarf to look slightly mischievous but not terrifying., Wolf shouting with exaggerated mouth shape, looking frustrated but comical. Baby rabbit poking head out of the crack, holding up one finger to say 'no', innocent and firm eyes. Bright colors, dynamic but non-scary composition., Close-up on the rejection gesture to emphasize boundary setting., Bright cartoon style, vibrant colors, soft rounded shapes, high contrast suitable for infants, warm lighting, flat vector aesthetic with soft gradients.",
-      "compositionHint": "Close-up on the rejection gesture to emphasize boundary setting.",
-      "narration": "不开不开我不开，妈妈没回来",
-      "imageUrl": "/generated/nursery-rhyme/小兔子乖乖/5.png"
-    },
-    {
-      "id": 6,
-      "title": "妈妈归来",
-      "description": "兔妈妈回到门口，脸上洋溢着幸福的笑容，张开双臂。小兔子欢快地跳起来，奔向妈妈，画面充满动感与喜悦。",
-      "prompt": "A cute, fluffy white rabbit with long pink-lined ears, big shiny black eyes, and a small round nose. The rabbit wears a simple red bow tie. The wolf has grey fur, sharp but comical-looking teeth, and wears a striped scarf to look slightly mischievous but not terrifying., Rabbit mother returning home, arms wide open with a huge smile. Baby rabbit jumping up in excitement towards her. Dynamic motion lines, confetti-like petals in the air, extremely bright and happy atmosphere., Central composition focusing on the reunion hug., Bright cartoon style, vibrant colors, soft rounded shapes, high contrast suitable for infants, warm lighting, flat vector aesthetic with soft gradients.",
-      "compositionHint": "Central composition focusing on the reunion hug.",
-      "narration": "妈妈回来了，快把门儿开开",
-      "imageUrl": "/generated/nursery-rhyme/小兔子乖乖/6.png"
-    },
-    {
-      "id": 7,
-      "title": "温馨团圆",
-      "description": "兔妈妈抱着小兔子坐在草地上，旁边放着篮子和大灰狼留下的花环（作为教具）。两者都面带微笑，背景是温暖的夕阳，传达安全与爱的主题。",
-      "prompt": "A cute, fluffy white rabbit with long pink-lined ears, big shiny black eyes, and a small round nose. The rabbit wears a simple red bow tie. The wolf has grey fur, sharp but comical-looking teeth, and wears a striped scarf to look slightly mischievous but not terrifying., Mother rabbit hugging baby rabbit sitting on green grass, sunset background. The discarded flower crown lies nearby. Warm golden hour lighting, cozy and safe feeling, soft focus background, heartwarming family scene., Wide shot showing the peaceful environment and the bond between characters., Bright cartoon style, vibrant colors, soft rounded shapes, high contrast suitable for infants, warm lighting, flat vector aesthetic with soft gradients.",
-      "compositionHint": "Wide shot showing the peaceful environment and the bond between characters.",
-      "narration": "乖乖把门开开，快点儿开开，我要进来",
-      "imageUrl": "/generated/nursery-rhyme/小兔子乖乖/7.png"
-    }
-  ]
+  "idiom": "小兔子乖乖",
+  "meaning": "",
+  "createdAt": "2026-06-28T13:33:03.064Z",
+  "scenes": []
 }

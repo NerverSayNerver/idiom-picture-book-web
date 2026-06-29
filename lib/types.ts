@@ -56,8 +56,8 @@ export interface PictureBook {
   videoUrl?: string
 }
 
-// Agnes API 响应类型
-export interface AgnesChatResponse {
+// OpenAI 兼容的聊天完成响应
+export interface ChatCompletionResponse {
   id: string
   choices: Array<{
     message: {

@@ -1,10 +1,27 @@
 import type {
-  AgnesChatResponse,
+  ChatCompletionResponse,
   AgnesImageResponse,
   AgnesVideoTaskResponse,
   AgnesVideoResultResponse,
 } from './types'
 
+// ── LLM 对话配置 ────────────────────────────────────────────
+// 通过环境变量配置，支持任何 OpenAI 兼容的 API 端点。
+// 默认值保持与原有 Agnes AI 配置一致，向后兼容。
+const LLM_API_BASE = process.env.LLM_API_BASE || 'https://apihub.agnes-ai.com/v1'
+const LLM_API_KEY = process.env.LLM_API_KEY || process.env.AGNES_API_KEY || ''
+const LLM_MODEL = process.env.LLM_MODEL || 'agnes-2.0-flash'
+
+function getLlmApiKey(): string {
+  const key = LLM_API_KEY
+  if (!key) {
+    console.warn('LLM_API_KEY is not set')
+    return ''
+  }
+  return key
+}
+
+// ── Agnes 生图 / 视频配置（保持原样，暂未通用化） ──────────
 const API_BASE = 'https://apihub.agnes-ai.com/v1'
 
 function getApiKey(): string {
@@ -16,28 +33,37 @@ function getApiKey(): string {
   return key
 }
 
-// LLM 对话（场景拆分）
+// LLM 对话（场景拆分 / 推荐），兼容任何 OpenAI 兼容 API
 export async function chatCompletion(
-  messages: Array<{ role: string; content: string }>
-): Promise<AgnesChatResponse> {
+  messages: Array<{ role: string; content: string }>,
+  options?: {
+    model?: string
+    temperature?: number
+    maxTokens?: number
+  }
+): Promise<ChatCompletionResponse> {
+  const model = options?.model || LLM_MODEL
+  const temperature = options?.temperature ?? 0.7
+  const maxTokens = options?.maxTokens ?? 8192
   console.log('\n========== [LLM 请求] ==========')
-  console.log('Model: agnes-2.0-flash')
+  console.log(`Base URL: ${LLM_API_BASE}`)
+  console.log(`Model: ${model}`)
   console.log('Messages:')
   for (const msg of messages) {
     console.log(`  [${msg.role}] ${msg.content}`)
   }
 
-  const response = await fetch(`${API_BASE}/chat/completions`, {
+  const response = await fetch(`${LLM_API_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${getApiKey()}`,
+      Authorization: `Bearer ${getLlmApiKey()}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'agnes-2.0-flash',
+      model,
       messages,
-      temperature: 0.7,
-      max_tokens: 8192,
+      temperature,
+      max_tokens: maxTokens,
     }),
   })
 
@@ -56,7 +82,7 @@ export async function chatCompletion(
   console.log('Usage:', JSON.stringify(result.usage, null, 2))
   console.log('=================================\n')
 
-  return result
+  return result as ChatCompletionResponse
 }
 
 // 图像生成（文生图）
