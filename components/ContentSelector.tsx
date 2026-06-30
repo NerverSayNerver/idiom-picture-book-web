@@ -150,10 +150,13 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
             const isDisabled = isGenerated || isActive
 
             let btnClass: string
+            let badge: string | null = null
             if (isActive) {
-              btnClass = 'bg-blue-50 text-blue-600 border border-blue-200 cursor-not-allowed'
+              btnClass = 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
+              badge = '分析中'
             } else if (isGenerated) {
-              btnClass = 'bg-green-50 text-green-700 border border-green-200 cursor-not-allowed'
+              btnClass = 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
+              badge = '已生成'
             } else if (isSelected) {
               btnClass = 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
             } else {
@@ -173,11 +176,8 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
                 {isSelected && (
                   <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
                 )}
-                {isActive && !isSelected && (
-                  <span className="absolute -top-1 -right-1 bg-blue-400 text-white text-[8px] rounded-full px-1 h-3.5 flex items-center justify-center">排队中</span>
-                )}
-                {isGenerated && !isSelected && (
-                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center">✓</span>
+                {badge && (
+                  <span className="absolute -top-1 -right-1 bg-slate-400 text-white text-[8px] rounded-full px-1 h-3.5 flex items-center justify-center">{badge}</span>
                 )}
               </button>
             )
