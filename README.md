@@ -90,9 +90,16 @@ idiom-picture-book-web/
 │   ├── Header.tsx                # 页头导航
 │   └── SceneCard.tsx             # 场景卡片
 ├── lib/
-│   ├── agnes-api.ts              # Agnes API 统一封装
+│   ├── agnes-api.ts              # 生成 API 统一封装（向后兼容）
 │   ├── content-info.ts           # 各品类内置内容列表
 │   ├── content-types/            # 各品类分镜策略
+│   ├── generation/               # 🔌 通用多模型 Provider 抽象层
+│   │   ├── types.ts              #   ImageProvider / VideoProvider 接口
+│   │   ├── config.ts             #   环境变量配置读取
+│   │   ├── registry.ts           #   Provider 注册表 + 工厂
+│   │   ├── index.ts              #   统一导出
+│   │   └── adapters/
+│   │       └── agnes.ts          #   Agnes 适配器实现
 │   ├── task-db.ts                # SQLite 任务数据库
 │   ├── task-types.ts             # 任务类型定义
 │   ├── path-security.ts          # 路径安全校验
@@ -125,9 +132,9 @@ idiom-picture-book-web/
 | 本地存储 | SQLite (better-sqlite3) | 任务状态持久化 |
 | 图像存储 | 本地文件系统 | 绘本图像持久化 |
 | API 调用 | Next.js Server Actions / API Routes | 保护 API Key 安全 |
-| LLM 对话 | Agnes-2.0-Flash | 分镜拆分与故事生成 |
-| 图像生成 | Agnes Image 2.1 Flash | 漫画风格插图生成 |
-| 视频生成 | Agnes Video V2.0 | 关键帧动画视频 |
+| LLM 对话 | Agnes-2.0-Flash（可切换） | 分镜拆分与故事生成，支持任何 OpenAI 兼容端点 |
+| 图像生成 | Agnes Image 2.1 Flash（可切换） | 漫画风格插图生成，Provider 抽象层支持多模型 |
+| 视频生成 | Agnes Video V2.0（可切换） | 关键帧动画视频，Provider 抽象层支持多模型 |
 | PDF 生成 | jsPDF | 客户端 PDF 导出 |
 | 翻页效果 | react-pageflip | 真实翻页动画 |
 | 任务轮询 | SWR | 前端实时获取任务状态 |
@@ -189,8 +196,34 @@ npm run lint
 
 ### 环境变量
 
+#### 基础配置（向后兼容）
+
 ```env
+# LLM 对话（支持任何 OpenAI 兼容端点）
+LLM_API_KEY=your_llm_api_key_here
+LLM_API_BASE=https://apihub.agnes-ai.com/v1
+LLM_MODEL=agnes-2.0-flash
+
+# Agnes 密钥（图像/视频默认复用此 Key）
 AGNES_API_KEY=your_agnes_api_key_here
+```
+
+#### Provider 配置（多模型切换）
+
+```env
+# ── 生图 Provider（默认 agnes，后续可切换其他模型） ─────────
+IMAGE_PROVIDER=agnes              # Provider 名称：agnes | openai-dalle | flux | ...
+IMAGE_API_KEY=                    # 留空则复用 AGNES_API_KEY
+IMAGE_API_BASE=                   # 留空则使用 Provider 默认端点
+IMAGE_MODEL=                      # 留空则使用 Provider 默认模型
+
+# ── 视频 Provider（默认 agnes，后续可切换其他模型） ─────────
+VIDEO_PROVIDER=agnes              # Provider 名称：agnes | runway | kling | ...
+VIDEO_API_KEY=                    # 留空则复用 AGNES_API_KEY
+VIDEO_API_BASE=                   # 留空则使用 Provider 默认端点
+VIDEO_MODEL=                      # 留空则使用 Provider 默认模型
+VIDEO_FRAMES=241                  # 默认总帧数
+VIDEO_FPS=24                      # 默认帧率
 ```
 
 ### 架构说明
@@ -203,7 +236,29 @@ AGNES_API_KEY=your_agnes_api_key_here
   → 生成完成 → 翻页阅读 / PDF 导出 / 视频生成
 ```
 
-### 数据存储
+#### 多模型 Provider 抽象层 (`lib/generation/`)
+
+生图 / 生视频逻辑通过统一的 Provider 接口抽象，支持通过环境变量无缝切换底层模型：
+
+```
+lib/agnes-api.ts（向后兼容层）
+  ↓ 委托
+lib/generation/registry.ts（Provider 注册表 + 工厂）
+  ↓ 按名称加载
+lib/generation/adapters/agnes.ts（Agnes 适配器）
+  ↓ 实现
+lib/generation/types.ts（ImageProvider / VideoProvider 接口）
+```
+
+**对接新模型只需三步**：
+
+1. 创建适配器实现 `ImageProvider` 或 `VideoProvider` 接口
+2. 调用 `registerImage('name', factory)` 或 `registerVideo('name', factory)` 注册
+3. 设置环境变量 `IMAGE_PROVIDER=name` / `VIDEO_PROVIDER=name`
+
+业务代码（worker、actions、UI）无需任何改动。
+
+#### 数据存储
 
 - **任务状态** — SQLite (`picture-book-tasks.db`)
 - **绘本图像** — 本地文件系统 (`public/generated/{category}/{title}/`)

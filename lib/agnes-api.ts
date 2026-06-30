@@ -4,7 +4,8 @@ import type {
   AgnesVideoTaskResponse,
   AgnesVideoResultResponse,
 } from './types'
-import { getImageConfig, getVideoConfig } from './prompts'
+import { getImageConfig } from './prompts'
+import { getImageProvider, getVideoProvider } from './generation'
 
 // S1: 仅在开发环境且 DEBUG_LLM=1 时输出详细日志
 const DEBUG = process.env.NODE_ENV === 'development' && process.env.DEBUG_LLM === '1'
@@ -27,9 +28,10 @@ async function fetchWithTimeout(
   }
 }
 
-// ── LLM 对话配置 ────────────────────────────────────────────
-// 通过环境变量配置，支持任何 OpenAI 兼容的 API 端点。
-// 默认值保持与原有 Agnes AI 配置一致，向后兼容。
+// ════════════════════════════════════════════════════════════
+// LLM 对话配置（保持不变，已通过环境变量支持任何 OpenAI 兼容端点）
+// ════════════════════════════════════════════════════════════
+
 const LLM_API_BASE = process.env.LLM_API_BASE || 'https://apihub.agnes-ai.com/v1'
 const LLM_API_KEY = process.env.LLM_API_KEY || process.env.AGNES_API_KEY || ''
 const LLM_MODEL = process.env.LLM_MODEL || 'agnes-2.0-flash'
@@ -43,19 +45,10 @@ function getLlmApiKey(): string {
   return key
 }
 
-// ── Agnes 生图 / 视频配置（保持原样，暂未通用化） ──────────
-const API_BASE = 'https://apihub.agnes-ai.com/v1'
-
-function getApiKey(): string {
-  const key = process.env.AGNES_API_KEY
-  if (!key) {
-    console.warn('AGNES_API_KEY is not set')
-    return ''
-  }
-  return key
-}
-
+// ════════════════════════════════════════════════════════════
 // LLM 对话（场景拆分 / 推荐），兼容任何 OpenAI 兼容 API
+// ════════════════════════════════════════════════════════════
+
 export async function chatCompletion(
   messages: Array<{ role: string; content: string }>,
   options?: {
@@ -111,30 +104,32 @@ export async function chatCompletion(
   return result as ChatCompletionResponse
 }
 
-// 图像生成（文生图）
+// ════════════════════════════════════════════════════════════
+// 图像生成（委托给 Provider 层）
+// ════════════════════════════════════════════════════════════
+
+/** 文生图 — 通过 IMAGE_PROVIDER 配置的 Provider 执行 */
 export async function generateImage(
   prompt: string,
   size = '512x512'
 ): Promise<AgnesImageResponse> {
   const imgCfg = getImageConfig()
 
-  // 确保 prompt 存在且为字符串
+  // prompt 兜底与风格注入（保持原有逻辑不变）
   if (!prompt || typeof prompt !== 'string') {
     prompt = imgCfg.fallback
   }
-
-  // 截断过长的 prompt 并简化
   let truncatedPrompt = prompt.length > imgCfg.maxLength ? prompt.substring(0, imgCfg.maxLength) : prompt
-  // 确保 prompt 包含风格关键词
   if (!truncatedPrompt.toLowerCase().includes(imgCfg.styleKeyword)) {
     truncatedPrompt += imgCfg.styleSuffix
   }
   if (DEBUG) console.log('生成图像，prompt:', truncatedPrompt.substring(0, 50) + '...')
 
-  return fetchImageApi({
-    prompt: truncatedPrompt,
-    size,
-  })
+  const provider = getImageProvider()
+  const result = await provider.generate({ prompt: truncatedPrompt, size })
+
+  // 转换为旧格式返回（向后兼容）
+  return { data: [{ url: result.url }] }
 }
 
 /**
@@ -162,124 +157,61 @@ export async function generateImageWithRef(
   }
   if (DEBUG) console.log('图生图，参考图:', referenceImageUrl, 'prompt:', truncatedPrompt.substring(0, 50) + '...')
 
-  return fetchImageApi({
+  const provider = getImageProvider()
+  const result = await provider.generateWithRef({
     prompt: truncatedPrompt,
+    referenceImageUrl,
     size,
-    extraBody: {
-      image: [referenceImageUrl],
-      response_format: 'url',
-    },
-  })
-}
-
-async function fetchImageApi(params: {
-  prompt: string
-  size?: string
-  extraBody?: Record<string, any>
-}): Promise<AgnesImageResponse> {
-  const isImg2img = !!params.extraBody?.image
-  const body: Record<string, any> = {
-    model: 'agnes-image-2.1-flash',
-    prompt: params.prompt,
-    size: params.size || '512x512',
-  }
-  if (params.extraBody) {
-    body.extra_body = params.extraBody
-  }
-
-  if (DEBUG) {
-    console.log('\n========== [图像生成请求] ==========')
-    console.log('Model: agnes-image-2.1-flash')
-    console.log('Mode:', isImg2img ? '图生图 (img2img)' : '文生图')
-    console.log('Size:', params.size || '512x512')
-    if (isImg2img) {
-      const refImages = Array.isArray(params.extraBody?.image)
-        ? params.extraBody.image.map((img: string) => img.length > 80 ? img.substring(0, 80) + '...[truncated]' : img)
-        : [params.extraBody?.image]
-      console.log('参考图 (image):', refImages)
-    }
-    console.log('Prompt:', params.prompt)
-  }
-
-  const response = await fetchWithTimeout(`${API_BASE}/images/generations`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${getApiKey()}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
   })
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'unknown')
-    console.error('Image API error:', response.status, errorText)
-    throw new Error(`Image API error: ${response.status}`)
-  }
-
-  const result = await response.json()
-  const imageUrl = result.data?.[0]?.url
-  if (DEBUG) {
-    console.log('\n========== [图像生成响应] ==========')
-    console.log('Status:', response.status)
-    console.log('Image URL:', imageUrl ? imageUrl.substring(0, 100) + (imageUrl.length > 100 ? '...' : '') : 'null')
-    console.log('Revised prompt:', result.data?.[0]?.revised_prompt || 'N/A')
-    console.log('====================================\n')
-  }
-
-  return result
+  return { data: [{ url: result.url }] }
 }
 
-// 创建视频任务（关键帧动画）
+// ════════════════════════════════════════════════════════════
+// 视频生成（委托给 Provider 层）
+// ════════════════════════════════════════════════════════════
+
+/** 创建视频任务 — 通过 VIDEO_PROVIDER 配置的 Provider 执行 */
 export async function createVideoTask(
   imageUrls: string[],
   prompt?: string
 ): Promise<AgnesVideoTaskResponse> {
-  const response = await fetchWithTimeout('https://apihub.agnes-ai.com/v1/videos', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${getApiKey()}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'agnes-video-v2.0',
-      prompt: prompt || getVideoConfig().fallback,
-      extra_body: {
-        image: imageUrls,
-        mode: 'keyframes',
-      },
-      num_frames: 241,
-      frame_rate: 24,
-    }),
-  })
+  const provider = getVideoProvider()
+  const task = await provider.submit({ imageUrls, prompt })
 
-  if (!response.ok) {
-    throw new Error(`Video API error: ${response.status}`)
+  // 转换为旧格式返回（向后兼容）
+  return {
+    id: task.taskId,
+    task_id: task.taskId,
+    video_id: task.taskId,
+    status: task.status,
+    progress: 0,
   }
-
-  return response.json()
 }
 
-// 查询视频生成状态
+/** 查询视频生成状态 — 通过 VIDEO_PROVIDER 配置的 Provider 执行 */
 export async function getVideoResult(
   videoId: string
 ): Promise<AgnesVideoResultResponse> {
-  const response = await fetchWithTimeout(
-    `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${getApiKey()}`,
-      },
-    }
-  )
+  const provider = getVideoProvider()
+  const result = await provider.poll(videoId)
 
-  if (!response.ok) {
-    throw new Error(`Video result API error: ${response.status}`)
+  // 转换为旧格式返回（向后兼容）
+  return {
+    id: result.taskId,
+    video_id: result.videoId || result.taskId,
+    status: result.status,
+    progress: result.progress,
+    remixed_from_video_id: result.videoUrl,
+    error: result.error,
   }
-
-  return response.json()
 }
 
-// 下载图像为 Blob
+// ════════════════════════════════════════════════════════════
+// 工具函数（保持不变）
+// ════════════════════════════════════════════════════════════
+
+/** 下载图像为 Blob */
 export async function downloadImageAsBlob(url: string): Promise<Blob> {
   const response = await fetchWithTimeout(url, {}, 30000)
   if (!response.ok) {
