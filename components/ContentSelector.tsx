@@ -13,13 +13,15 @@ interface ContentSelectorProps {
   category: ContentCategory
   compact?: boolean
   generatedTexts?: string[]
+  activeTexts?: Set<string>
 }
 
 const DISPLAY_COUNT = 40
 
-export function ContentSelector({ category, compact, generatedTexts = [] }: ContentSelectorProps) {
+export function ContentSelector({ category, compact, generatedTexts = [], activeTexts = new Set() }: ContentSelectorProps) {
   const [customInput, setCustomInput] = useState('')
-  const [selectedItem, setSelectedItem] = useState<string | null>(null)
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [submitting, setSubmitting] = useState(false)
   const [displayItems, setDisplayItems] = useState<ContentInfo[]>([])
   const [refreshing, setRefreshing] = useState(false)
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
@@ -30,7 +32,7 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
   useEffect(() => {
     setRefreshing(false)
     loadRecommended()
-    setSelectedItem(null)
+    setSelectedItems(new Set())
     setCustomInput('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category])
@@ -59,40 +61,54 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     try {
-      const newItems = await fetchRecommendations(category, refreshExcludeRef.current)
+      // server action 底层 LLM 调用最长 60s，前端额外设 90s 兜底
+      const newItems = await Promise.race([
+        fetchRecommendations(category, refreshExcludeRef.current),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('请求超时，请稍后重试')), 90_000)
+        ),
+      ])
+      if (newItems.length === 0) {
+        throw new Error('未获取到新推荐，请再试一次')
+      }
       await saveRecommendedItems(newItems, category)
       const random = await getRandomItems(category, DISPLAY_COUNT)
       if (random.length > 0) setDisplayItems(random)
-      setSelectedItem(null)
+      setSelectedItems(new Set())
     } catch (error) {
       console.error(`获取推荐${strategy.label}失败:`, error)
+      alert(error instanceof Error ? error.message : `获取推荐${strategy.label}失败`)
     } finally {
       setRefreshing(false)
     }
   }, [category, strategy.label])
 
-  const handleSelect = (text: string) => {
-    setSelectedItem(text)
+  const handleToggleSelect = (text: string) => {
+    if (activeTexts.has(text)) return
+    if (generatedTexts.includes(text)) return
+    setSelectedItems(prev => {
+      const next = new Set(prev)
+      if (next.has(text)) { next.delete(text) } else { next.add(text) }
+      return next
+    })
     setCustomInput('')
   }
 
   const handleStart = async () => {
-    const text = selectedItem || customInput.trim()
-    if (!text) return
-    if (!strategy.validate(text)) {
-      alert(`请输入有效的${strategy.label}`)
-      return
+    const allTexts = [...selectedItems]
+    if (customInput.trim() && strategy.validate(customInput.trim())) {
+      allTexts.push(customInput.trim())
     }
+    if (allTexts.length === 0) return
     setCurrentCategory(category)
-    setCurrentIdiom(text)
-    // 通过 API 提交任务到服务端队列
-    await createJobAPI(text, category)
-    // 重置选择状态
-    setSelectedItem(null)
+    setSubmitting(true)
+    await Promise.all(allTexts.map(t => createJobAPI(t, category)))
+    setSelectedItems(new Set())
     setCustomInput('')
+    setSubmitting(false)
   }
 
-  const activeItem = selectedItem || customInput.trim()
+  const hasSelection = selectedItems.size > 0 || !!customInput.trim()
 
   if (compact) {
     return (
@@ -110,12 +126,12 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
         </div>
         <div className="grid grid-cols-4 gap-1.5 mb-3 max-h-[220px] overflow-y-auto">
           {displayItems.map((item) => {
-            const isSelected = selectedItem === item.sourceText
+            const isSelected = selectedItems.has(item.sourceText)
             const isGenerated = generatedTexts.includes(item.sourceText)
             return (
               <button
                 key={item.sourceText}
-                onClick={() => handleSelect(item.sourceText)}
+                onClick={() => handleToggleSelect(item.sourceText)}
                 className={`py-2 px-1 rounded-lg text-xs font-medium transition-all relative leading-tight ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
@@ -148,7 +164,7 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
           />
           <button
             onClick={handleStart}
-            disabled={!activeItem}
+            disabled={!hasSelection}
             className="px-4 py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             🚀 开始生成
@@ -179,12 +195,12 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
         </div>
         <div className="grid grid-cols-4 gap-2.5 max-h-[280px] overflow-y-auto">
           {displayItems.map((item) => {
-            const isSelected = selectedItem === item.sourceText
+            const isSelected = selectedItems.has(item.sourceText)
             const isGenerated = generatedTexts.includes(item.sourceText)
             return (
               <button
                 key={item.sourceText}
-                onClick={() => handleSelect(item.sourceText)}
+                onClick={() => handleToggleSelect(item.sourceText)}
                 className={`p-2.5 rounded-lg text-sm font-medium transition-all relative ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
@@ -223,7 +239,7 @@ export function ContentSelector({ category, compact, generatedTexts = [] }: Cont
       <div className="flex justify-center">
         <button
           onClick={handleStart}
-          disabled={!activeItem}
+          disabled={!hasSelection}
           className="button-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           🚀 开始生成绘本

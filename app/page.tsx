@@ -98,7 +98,8 @@ export default function Home() {
   const activeTexts = useMemo(() =>
     new Set(jobs
       .filter(j => ['pending', 'running', 'paused'].includes(j.status))
-      .map(j => j.sourceText)),
+      .map(j => j.sourceText)
+      .filter((t): t is string => !!t)),
     [jobs]
   )
 
