@@ -100,12 +100,18 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
       allTexts.push(customInput.trim())
     }
     if (allTexts.length === 0) return
+    if (allTexts.length > 0) {
+      setCurrentIdiom(allTexts[0])
+    }
     setCurrentCategory(category)
     setSubmitting(true)
-    await Promise.all(allTexts.map(t => createJobAPI(t, category)))
-    setSelectedItems(new Set())
-    setCustomInput('')
-    setSubmitting(false)
+    try {
+      await Promise.all(allTexts.map(t => createJobAPI(t, category)))
+    } finally {
+      setSelectedItems(new Set())
+      setCustomInput('')
+      setSubmitting(false)
+    }
   }
 
   const hasSelection = selectedItems.size > 0 || !!customInput.trim()
@@ -164,10 +170,10 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
           />
           <button
             onClick={handleStart}
-            disabled={!hasSelection}
+            disabled={!hasSelection || submitting}
             className="px-4 py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            🚀 开始生成
+            {submitting ? '⏳ 提交中...' : '🚀 开始生成'}
           </button>
         </div>
       </div>
@@ -239,10 +245,10 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
       <div className="flex justify-center">
         <button
           onClick={handleStart}
-          disabled={!hasSelection}
+          disabled={!hasSelection || submitting}
           className="button-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          🚀 开始生成绘本
+          {submitting ? '⏳ 提交中...' : '🚀 开始生成'}
         </button>
       </div>
     </div>
