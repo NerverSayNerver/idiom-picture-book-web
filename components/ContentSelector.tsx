@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { getContentListByCategory } from '@/lib/content-info'
 import { useAppStore } from '@/lib/store'
 import { createJobAPI } from '@/lib/use-jobs'
@@ -94,12 +94,16 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
     setCustomInput('')
   }
 
-  const handleToggleAll = () => {
-    const available = displayItems
+  const availableItems = useMemo(() =>
+    displayItems
       .map(i => i.sourceText)
-      .filter(t => !activeTexts.has(t) && !generatedTexts.includes(t))
-    const allSelected = available.length > 0 && available.every(t => selectedItems.has(t))
-    setSelectedItems(allSelected ? new Set() : new Set(available))
+      .filter(t => !activeTexts.has(t) && !generatedTexts.includes(t)),
+    [displayItems, activeTexts, generatedTexts]
+  )
+  const allSelected = availableItems.length > 0 && availableItems.every(t => selectedItems.has(t))
+
+  const handleToggleAll = () => {
+    setSelectedItems(allSelected ? new Set() : new Set(availableItems))
   }
 
   const handleStart = async () => {
@@ -185,13 +189,7 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
               onClick={handleToggleAll}
               className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
             >
-              {(() => {
-                const available = displayItems
-                  .map(i => i.sourceText)
-                  .filter(t => !activeTexts.has(t) && !generatedTexts.includes(t))
-                const allSelected = available.length > 0 && available.every(t => selectedItems.has(t))
-                return allSelected ? '🗑 清空已选' : '☑ 全选可用'
-              })()}
+              {allSelected ? '🗑 清空已选' : '☑ 全选可用'}
             </button>
             <span className="text-xs text-gray-400">
               已选 {selectedItems.size} 个
