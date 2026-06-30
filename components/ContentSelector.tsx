@@ -94,6 +94,14 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
     setCustomInput('')
   }
 
+  const handleToggleAll = () => {
+    const available = displayItems
+      .map(i => i.sourceText)
+      .filter(t => !activeTexts.has(t) && !generatedTexts.includes(t))
+    const allSelected = available.length > 0 && available.every(t => selectedItems.has(t))
+    setSelectedItems(allSelected ? new Set() : new Set(available))
+  }
+
   const handleStart = async () => {
     const allTexts = [...selectedItems]
     if (customInput.trim() && strategy.validate(customInput.trim())) {
@@ -171,21 +179,47 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
             )
           })}
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={customInput}
-            onChange={(e) => setCustomInput(e.target.value)}
-            placeholder={`输入${strategy.label}...`}
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-          />
-          <button
-            onClick={handleStart}
-            disabled={!hasSelection || submitting}
-            className="px-4 py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            {submitting ? '⏳ 提交中...' : '🚀 开始生成'}
-          </button>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={handleToggleAll}
+              className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              {(() => {
+                const available = displayItems
+                  .map(i => i.sourceText)
+                  .filter(t => !activeTexts.has(t) && !generatedTexts.includes(t))
+                const allSelected = available.length > 0 && available.every(t => selectedItems.has(t))
+                return allSelected ? '🗑 清空已选' : '☑ 全选可用'
+              })()}
+            </button>
+            <span className="text-xs text-gray-400">
+              已选 {selectedItems.size} 个
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customInput}
+              onChange={(e) => {
+                setCustomInput(e.target.value)
+                setSelectedItems(new Set())
+              }}
+              placeholder={`输入${strategy.label}...`}
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+            />
+            <button
+              onClick={handleStart}
+              disabled={!hasSelection || submitting}
+              className="px-4 py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {submitting
+                ? '⏳ 提交中...'
+                : selectedItems.size > 0
+                  ? `🚀 生成 ${selectedItems.size} 个`
+                  : '🚀 开始生成'}
+            </button>
+          </div>
         </div>
       </div>
     )
