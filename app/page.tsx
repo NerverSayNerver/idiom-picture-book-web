@@ -95,6 +95,13 @@ export default function Home() {
     return categoryData.items.map(item => item.sourceText).filter((text): text is string => !!text)
   }, [indexData, currentCategory])
 
+  const activeTexts = useMemo(() =>
+    new Set(jobs
+      .filter(j => ['pending', 'running', 'paused'].includes(j.status))
+      .map(j => j.sourceText)),
+    [jobs]
+  )
+
   const getFilteredBooks = () => {
     if (!indexData) return []
     if (filterCategory === 'all') {
@@ -142,7 +149,7 @@ export default function Home() {
         />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4 mb-8">
           <div className="lg:col-span-2">
-            <ContentSelector category={currentCategory} compact generatedTexts={generatedTexts} />
+            <ContentSelector category={currentCategory} compact generatedTexts={generatedTexts} activeTexts={activeTexts} />
           </div>
           <div className="lg:col-span-1 flex flex-col">
             <TaskQueue compact className="flex-1" />
