@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { CategoryTabs } from '@/components/CategoryTabs'
 import { ContentSelector } from '@/components/ContentSelector'
-import { TaskQueue } from '@/components/TaskQueue'
+import { TaskStatsCards } from '@/components/TaskStatsCards'
 import { BookCard } from '@/components/BookCard'
 import { useAppStore } from '@/lib/store'
 import { useJobs } from '@/lib/use-jobs'
@@ -152,8 +152,8 @@ export default function Home() {
           <div className="lg:col-span-2">
             <ContentSelector category={currentCategory} compact generatedTexts={generatedTexts} activeTexts={activeTexts} />
           </div>
-          <div className="lg:col-span-1 flex flex-col">
-            <TaskQueue compact className="flex-1" />
+          <div className="lg:col-span-1">
+            <TaskStatsCards />
           </div>
         </div>
 
