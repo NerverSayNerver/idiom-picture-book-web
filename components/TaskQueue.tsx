@@ -8,13 +8,18 @@ import { TaskCard } from './TaskCard'
 interface TaskQueueProps {
   compact?: boolean
   className?: string
+  initialFilter?: string
 }
 
 type FilterMode = 'all' | 'pending' | 'running' | 'paused' | 'completed' | 'failed'
 
-export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
-  const { jobs, allTasks } = useJobs()
-  const [filter, setFilter] = useState<FilterMode>('all')
+export function TaskQueue({ compact = false, className = '', initialFilter }: TaskQueueProps) {
+  const { jobs, allTasks, refresh } = useJobs()
+  const [filter, setFilter] = useState<FilterMode>(
+    (initialFilter && ['all', 'pending', 'running', 'paused', 'completed', 'failed'].includes(initialFilter)
+      ? initialFilter
+      : 'all') as FilterMode
+  )
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
   const [notify, setNotify] = useState<string | null>(null)
 
@@ -216,6 +221,7 @@ export function TaskQueue({ compact = false, className = '' }: TaskQueueProps) {
                       onToggle={() => toggleExpand(job.id)}
                       childTasks={childTasks}
                       jobProgress={{ completed: completedCount, total, percent }}
+                      onDelete={() => refresh()}
                     />
                   )
                 })}
