@@ -47,3 +47,6 @@ regen-failed.mts
 data/*.db
 data/*.db-shm
 data/*.db-wal
+
+# tool runtime cache
+.omo/
