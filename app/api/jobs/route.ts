@@ -1,13 +1,14 @@
 // app/api/jobs/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createTask, listJobs, getAllTasks } from '@/lib/task-db'
+import { validateCategory } from '@/lib/path-security'
 import type { TaskStatus } from '@/lib/task-types'
 
 // POST /api/jobs — 创建任务
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { sourceText, category } = body as { sourceText: string; category?: string }
+    const { sourceText, category } = body as { sourceText?: string; category?: string }
 
     if (!sourceText || typeof sourceText !== 'string') {
       return NextResponse.json({ error: 'sourceText is required' }, { status: 400 })
@@ -15,6 +16,14 @@ export async function POST(request: NextRequest) {
 
     if (sourceText.length > 200) {
       return NextResponse.json({ error: 'sourceText 长度不能超过 200 个字符' }, { status: 400 })
+    }
+
+    // 验证品类
+    let safeCategory: string
+    try {
+      safeCategory = validateCategory(category || 'idiom')
+    } catch {
+      return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
     }
 
     // 去重检查
@@ -30,7 +39,7 @@ export async function POST(request: NextRequest) {
       type: 'job',
       sourceText,
       idiom: sourceText,
-      category: category || 'idiom',
+      category: safeCategory,
     })
 
     return NextResponse.json({ success: true, jobId: job.id })

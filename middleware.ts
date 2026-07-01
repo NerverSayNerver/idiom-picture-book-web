@@ -1,6 +1,7 @@
 // middleware.ts — API 路由鉴权中间件
 // 部署到公网前务必设置 INTERNAL_API_KEY 环境变量
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from '@/lib/security'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -16,9 +17,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 校验请求头中的 API Key
-  const providedKey = request.headers.get('x-internal-key')
-  if (providedKey === apiKey) {
+  // 校验请求头中的 API Key（使用常量时间比较，防止时序攻击）
+  const providedKey = request.headers.get('x-internal-key') || ''
+  if (providedKey && timingSafeEqual(providedKey, apiKey)) {
     return NextResponse.next()
   }
 

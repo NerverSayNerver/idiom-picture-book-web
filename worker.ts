@@ -18,6 +18,7 @@ import type { ContentCategory, SceneTemplate } from './lib/types'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { sanitizeFilename, validateCategory } from './lib/path-security'
+import { validateUrl } from './lib/security'
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -49,6 +50,9 @@ const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
 
 /** 下载远程图片到本地文件系统 */
 async function downloadImageToFile(url: string, filePath: string, signal: AbortSignal): Promise<void> {
+  // 验证 URL 是否来自可信域名
+  validateUrl(url, '图片下载 URL')
+
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 30000)
   // 外部 signal 也触发中止

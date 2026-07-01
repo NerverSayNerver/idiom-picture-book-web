@@ -3,6 +3,7 @@
 import { chatCompletion } from '@/lib/agnes-api'
 import { getStrategy, getContentInfo } from '@/lib/content-types'
 import { getSystemPrompt, buildUserPrompt, getImageConfig } from '@/lib/prompts'
+import { sanitizeLlmOutput } from '@/lib/security'
 import type { IdiomDecomposition, SceneTemplateRaw, DecompositionRaw, ContentCategory } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -226,7 +227,7 @@ export async function decomposeSource(
 
   return {
     idiom: sourceText,
-    meaning: data.meaning,
+    meaning: sanitizeLlmOutput(data.meaning),
     characterDescription,
     styleDescription,
     scenes: normalizedScenes.map((s: SceneTemplateRaw, i: number) => {
@@ -237,11 +238,11 @@ export async function decomposeSource(
       return {
         id: i + 1,
         // 古诗：优先使用诗句原文（后处理已保证）；兜底使用 LLM 返回的 title
-        title: s.title || `场景 ${i + 1}`,
-        description: s.description || '',
-        prompt,
-        narration: s.narration || '',
-        compositionHint: s.compositionHint || '',
+        title: sanitizeLlmOutput(s.title || `场景 ${i + 1}`),
+        description: sanitizeLlmOutput(s.description || ''),
+        prompt, // prompt 发送给图像 API，不需 HTML 转义
+        narration: sanitizeLlmOutput(s.narration || ''),
+        compositionHint: sanitizeLlmOutput(s.compositionHint || ''),
       }
     }),
   }

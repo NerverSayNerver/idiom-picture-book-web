@@ -3,7 +3,17 @@ import { generateSceneImage } from '@/app/actions/generate'
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt } = await request.json()
+    const body = await request.json()
+    const { prompt } = body as { prompt?: string }
+
+    if (!prompt || typeof prompt !== 'string') {
+      return NextResponse.json({ error: 'prompt is required' }, { status: 400 })
+    }
+
+    if (prompt.length > 2000) {
+      return NextResponse.json({ error: 'prompt 长度不能超过 2000 个字符' }, { status: 400 })
+    }
+
     const url = await generateSceneImage(prompt)
     return NextResponse.json({ url })
   } catch (error) {

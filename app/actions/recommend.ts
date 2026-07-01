@@ -3,6 +3,7 @@
 import { chatCompletion } from '@/lib/agnes-api'
 import { getStrategy } from '@/lib/content-types'
 import { getSystemPrompt, buildUserPrompt } from '@/lib/prompts'
+import { sanitizeLlmOutput } from '@/lib/security'
 import type { ContentInfo, ContentCategory } from '@/lib/types'
 
 export async function fetchRecommendations(
@@ -52,9 +53,9 @@ export async function fetchRecommendations(
   const items = data
     .filter((item: any) => (item.idiom || item.sourceText) && item.meaning && item.category)
     .map((item: any) => ({
-      sourceText: item.idiom || item.sourceText,
-      meaning: item.meaning,
-      category: item.category,
+      sourceText: sanitizeLlmOutput(item.idiom || item.sourceText),
+      meaning: sanitizeLlmOutput(item.meaning),
+      category: item.category as ContentCategory,
     }))
 
   if (items.length === 0) {

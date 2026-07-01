@@ -6,6 +6,7 @@ import type {
 } from './types'
 import { getImageConfig } from './prompts'
 import { getImageProvider, getVideoProvider } from './generation'
+import { validateUrl } from './security'
 
 // S1: 仅在开发环境且 DEBUG_LLM=1 时输出详细日志
 const DEBUG = process.env.NODE_ENV === 'development' && process.env.DEBUG_LLM === '1'
@@ -213,6 +214,9 @@ export async function getVideoResult(
 
 /** 下载图像为 Blob */
 export async function downloadImageAsBlob(url: string): Promise<Blob> {
+  // 验证 URL 是否来自可信域名
+  validateUrl(url, '图片下载 URL')
+
   const response = await fetchWithTimeout(url, {}, 30000)
   if (!response.ok) {
     throw new Error(`Download error: ${response.status}`)
