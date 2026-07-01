@@ -147,28 +147,31 @@ export function createTask(data: {
   const id = uuidv4()
   const now = nowSeconds()
 
-  const maxOrder = data.type === 'job'
-    ? (db.prepare("SELECT COALESCE(MAX(sort_order), 0) + 1 AS next FROM tasks WHERE type = 'job' AND status = 'pending'").get() as { next: number }).next
-    : 0
+  const transaction = db.transaction(() => {
+    const maxOrder = data.type === 'job'
+      ? (db.prepare("SELECT COALESCE(MAX(sort_order), 0) + 1 AS next FROM tasks WHERE type = 'job' AND status = 'pending'").get() as { next: number }).next
+      : 0
 
-  db.prepare(`
-    INSERT INTO tasks (id, type, parent_id, status, category, source_text, idiom, scene_id, scene_title, progress, total, retry_count, max_retries, sort_order, created_at, updated_at)
-    VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?, ?)
-  `).run(
-    id,
-    data.type,
-    data.parentId ?? null,
-    data.category ?? 'idiom',
-    data.sourceText ?? null,
-    data.idiom ?? null,
-    data.sceneId ?? null,
-    data.sceneTitle ?? null,
-    data.total ?? 1,
-    data.maxRetries ?? 3,
-    maxOrder,
-    now,
-    now,
-  )
+    db.prepare(`
+      INSERT INTO tasks (id, type, parent_id, status, category, source_text, idiom, scene_id, scene_title, progress, total, retry_count, max_retries, sort_order, created_at, updated_at)
+      VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?, ?)
+    `).run(
+      id,
+      data.type,
+      data.parentId ?? null,
+      data.category ?? 'idiom',
+      data.sourceText ?? null,
+      data.idiom ?? null,
+      data.sceneId ?? null,
+      data.sceneTitle ?? null,
+      data.total ?? 1,
+      data.maxRetries ?? 3,
+      maxOrder,
+      now,
+      now,
+    )
+  })
+  transaction()
 
   return getTask(id)!
 }
@@ -321,17 +324,21 @@ export function reorderTask(id: string, direction: 'up' | 'down' | 'top'): void 
 
 export function addChildTasks(parentId: string, defs: ChildTaskDef[]): Task[] {
   const children: Task[] = []
-  for (const def of defs) {
-    const child = createTask({
-      type: def.type,
-      parentId,
-      sceneId: def.sceneId,
-      sceneTitle: def.sceneTitle,
-      total: def.total,
-      maxRetries: def.maxRetries,
-    })
-    children.push(child)
-  }
+  const db = getDb()
+  const transaction = db.transaction(() => {
+    for (const def of defs) {
+      const child = createTask({
+        type: def.type,
+        parentId,
+        sceneId: def.sceneId,
+        sceneTitle: def.sceneTitle,
+        total: def.total,
+        maxRetries: def.maxRetries,
+      })
+      children.push(child)
+    }
+  })
+  transaction()
   return children
 }
 
