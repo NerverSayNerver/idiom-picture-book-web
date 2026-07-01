@@ -102,3 +102,15 @@ export async function cancelJobAPI(jobId: string): Promise<void> {
 export async function retryJobAPI(jobId: string): Promise<void> {
   await fetch(`/api/jobs/${jobId}/retry`, { method: 'POST', headers: authHeaders })
 }
+
+export async function deleteJobAPI(jobId: string): Promise<void> {
+  await fetch(`/api/jobs/${jobId}`, { method: 'DELETE', headers: authHeaders })
+}
+
+export async function reorderJobAPI(jobId: string, direction: 'up' | 'down' | 'top'): Promise<void> {
+  await fetch(`/api/jobs/${jobId}/reorder`, {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ direction }),
+  })
+}
