@@ -5,7 +5,7 @@ import type { Task, TaskStatus, TaskType } from '@/lib/task-types'
 import type { SceneTemplate } from '@/lib/types'
 import Link from 'next/link'
 import { getStrategy } from '@/lib/content-types'
-import { retryJobAPI, pauseJobAPI, resumeJobAPI, cancelJobAPI } from '@/lib/use-jobs'
+import { retryJobAPI, pauseJobAPI, resumeJobAPI, cancelJobAPI, deleteJobAPI, reorderJobAPI } from '@/lib/use-jobs'
 
 interface TaskCardProps {
   task: Task
@@ -16,6 +16,8 @@ interface TaskCardProps {
   childTasks?: Task[]
   /** job 进度（由父组件计算） */
   jobProgress?: { completed: number; total: number; percent: number }
+  /** 删除成功后的回调（通常为刷新任务列表） */
+  onDelete?: () => void
 }
 
 function formatDuration(ms: number): string {
@@ -66,6 +68,8 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
   const [showDetail, setShowDetail] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [showDecomposeModal, setShowDecomposeModal] = useState(false)
+  const [showPromptModal, setShowPromptModal] = useState(false)
+  const canShowPrompt = task.status === 'completed' && !!task.prompt
   const elapsed = task.startTime ? formatDuration((task.endTime || Date.now()) - task.startTime) : null
   const progressPercent = task.total > 0 ? Math.round((task.progress / task.total) * 100) : 0
 
@@ -142,6 +146,15 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
           )}
         </div>
         {elapsed && <span className="text-xs text-gray-400 flex-shrink-0">⏱️ {elapsed}</span>}
+        {canShowPrompt && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowPromptModal(true) }}
+            className="flex-shrink-0 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
+            title="查看 Prompt"
+          >
+            📊 Prompt
+          </button>
+        )}
         {showActions && task.status === 'failed' && task.retryCount < (task.maxRetries ?? 3) && (
           <button
             onClick={(e) => { e.stopPropagation(); retryJobAPI(task.id) }}
@@ -263,13 +276,45 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
           </div>
         </div>
       )}
+
+      {/* Prompt 弹窗 */}
+      {showPromptModal && task.prompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowPromptModal(false)}
+        >
+          <div
+            className="relative w-full max-w-3xl max-h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 头部 */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-800">
+                📝 {task.type === 'decompose' ? 'LLM 分析 Prompt' : task.type === 'generate' ? '生图 Prompt' : 'Prompt'}
+              </h3>
+              <button
+                onClick={() => setShowPromptModal(false)}
+                className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full text-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            {/* 内容区 */}
+            <div className="px-6 py-4 overflow-y-auto max-h-[calc(85vh-64px)]">
+              <pre className="text-sm text-gray-700 whitespace-pre-wrap break-words bg-gray-50 rounded-lg p-4 border border-gray-100 font-mono">
+                {task.prompt}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // ── Main Component ──────────────────────────────────────────
 
-export function TaskCard({ task, expanded = false, onToggle, showActions = true, childTasks = [], jobProgress }: TaskCardProps) {
+export function TaskCard({ task, expanded = false, onToggle, showActions = true, childTasks = [], jobProgress, onDelete }: TaskCardProps) {
   const status = statusConfig[task.status]
   const elapsed = task.startTime ? formatDuration((task.endTime || Date.now()) - task.startTime) : null
 
@@ -341,6 +386,31 @@ export function TaskCard({ task, expanded = false, onToggle, showActions = true,
                 ❌ 取消
               </button>
             )}
+            {task.status === 'pending' && (
+              <>
+                <button
+                  onClick={async (e) => { e.stopPropagation(); await reorderJobAPI(task.id, 'up'); onDelete?.() }}
+                  className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
+                  title="上移"
+                >
+                  ↑
+                </button>
+                <button
+                  onClick={async (e) => { e.stopPropagation(); await reorderJobAPI(task.id, 'down'); onDelete?.() }}
+                  className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
+                  title="下移"
+                >
+                  ↓
+                </button>
+                <button
+                  onClick={async (e) => { e.stopPropagation(); await reorderJobAPI(task.id, 'top'); onDelete?.() }}
+                  className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
+                  title="置顶"
+                >
+                  ⬆
+                </button>
+              </>
+            )}
             {task.status === 'completed' && (task.idiom || task.sourceText) && (
               <Link
                 href={`/read/${task.category || 'idiom'}:${encodeURIComponent(task.idiom || task.sourceText || '')}`}
@@ -348,6 +418,23 @@ export function TaskCard({ task, expanded = false, onToggle, showActions = true,
               >
                 📖 查看绘本
               </Link>
+            )}
+            {['completed', 'failed', 'cancelled'].includes(task.status) && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  const isTerminal = task.status === 'failed' || task.status === 'cancelled'
+                  const msg = isTerminal
+                    ? `确定删除此${task.status === 'failed' ? '失败' : '取消'}任务？将同时清理已生成的临时文件。`
+                    : '确定删除此任务记录？生成的绘本不受影响。'
+                  if (!window.confirm(msg)) return
+                  await deleteJobAPI(task.id)
+                  onDelete?.()
+                }}
+                className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                🗑️ 删除
+              </button>
             )}
           </div>
         )}
