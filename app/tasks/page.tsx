@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense, useEffect } from 'react'
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { TaskQueue } from '@/components/TaskQueue'
 
@@ -29,7 +29,7 @@ function TasksContent() {
         </div>
 
         {/* 任务队列（全功能模式） */}
-        <TaskQueue compact={false} initialFilter={filterParam} />
+        <TaskQueue compact={false} initialFilter={filterParam ?? undefined} />
       </div>
     </main>
   )
