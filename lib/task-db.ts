@@ -252,6 +252,10 @@ export function updateTask(id: string, updates: Partial<Task>): void {
     setClauses.push('decompose_scenes_json = ?')
     values.push(updates.decomposeScenesJson)
   }
+  if (updates.prompt !== undefined) {
+    setClauses.push('prompt = ?')
+    values.push(updates.prompt)
+  }
 
   values.push(id)
   db.prepare(`UPDATE tasks SET ${setClauses.join(', ')} WHERE id = ?`).run(...values)
