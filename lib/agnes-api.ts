@@ -4,6 +4,7 @@ import type {
   AgnesVideoTaskResponse,
   AgnesVideoResultResponse,
 } from './types'
+import { validateUrl } from './security'
 
 const API_BASE = 'https://apihub.agnes-ai.com/v1'
 const API_KEY = process.env.AGNES_API_KEY
@@ -129,6 +130,9 @@ export async function getVideoResult(
 
 // 下载图像为 Blob
 export async function downloadImageAsBlob(url: string): Promise<Blob> {
+  // 验证 URL 是否来自可信域名
+  validateUrl(url, '图片下载 URL')
+
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error(`Download error: ${response.status}`)

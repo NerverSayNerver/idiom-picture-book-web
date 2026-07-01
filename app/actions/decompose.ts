@@ -2,6 +2,7 @@
 
 import { chatCompletion } from '@/lib/agnes-api'
 import type { IdiomDecomposition } from '@/lib/types'
+import { sanitizeLlmOutput, validateIdiom } from '@/lib/security'
 
 const SYSTEM_PROMPT =
   '你是一位专业的儿童绘本故事策划，擅长将成语故事拆分为适合儿童阅读的场景。请始终以 JSON 格式返回结果。'
@@ -36,6 +37,12 @@ const USER_PROMPT_TEMPLATE = (idiom: string) =>
 }`
 
 export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition> {
+  // 验证输入
+  const { valid, error } = validateIdiom(idiom)
+  if (!valid) {
+    throw new Error(`输入验证失败: ${error}`)
+  }
+
   const result = await chatCompletion([
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: USER_PROMPT_TEMPLATE(idiom) },
@@ -74,22 +81,22 @@ export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition>
 
   return {
     idiom,
-    meaning: data.meaning,
+    meaning: sanitizeLlmOutput(data.meaning),
     scenes: data.scenes.map((s: any, i: number) => {
       // 构建统一的prompt，包含角色描述和风格描述
       let prompt = s.prompt || `A cartoon scene for ${idiom} story`
-      
+
       // 如果有角色描述，添加到prompt开头
       if (characterDescription) {
         prompt = `${characterDescription}, ${prompt}`
       }
-      
+
       // 插入构图指令
       const compositionHint = s.compositionHint || ''
       if (compositionHint) {
         prompt = `${prompt}, ${compositionHint}`
       }
-      
+
       // 如果有风格描述，添加到prompt末尾
       if (styleDescription) {
         prompt = `${prompt}, ${styleDescription}`
@@ -97,11 +104,11 @@ export async function decomposeIdiom(idiom: string): Promise<IdiomDecomposition>
 
       return {
         id: i + 1,
-        title: s.title || `场景 ${i + 1}`,
-        description: s.description || '',
-        prompt: prompt,
-        narration: s.narration || '',
-        compositionHint,
+        title: sanitizeLlmOutput(s.title || `场景 ${i + 1}`),
+        description: sanitizeLlmOutput(s.description || ''),
+        prompt: prompt, // prompt 发送给图像API，不需要HTML转义，但需移除危险内容
+        narration: sanitizeLlmOutput(s.narration || ''),
+        compositionHint: sanitizeLlmOutput(compositionHint),
       }
     }),
   }

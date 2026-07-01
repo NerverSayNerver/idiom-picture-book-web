@@ -154,37 +154,49 @@ export class TaskExecutor {
     useAppStore.getState().setGenerating(true)
 
     try {
-      // 生成图像 URL
-      const imageUrl = await generateSceneImage(scene.prompt)
-      // 下载为 base64
-      const base64 = await downloadImageAsBase64(imageUrl)
-      // 转换为 Blob
-      const blob = base64ToBlob(base64)
-      // 保存到 appStore
-      useAppStore.getState().setSceneImage(task.sceneId, imageUrl, blob)
+      // 使用循环代替递归，避免栈溢出
+      let retryCount = 0
+      const maxRetries = task.maxRetries
 
-      useTaskStore.getState().updateTask(taskId, {
-        status: 'completed',
-        progress: 1,
-        total: 1,
-      })
-    } catch (error) {
-      const currentTask = useTaskStore.getState().getTaskById(taskId)
-      if (currentTask && currentTask.retryCount < currentTask.maxRetries) {
-        // 自动重试：重置为 pending，增加重试计数
-        useTaskStore.getState().updateTask(taskId, {
-          status: 'pending',
-          retryCount: currentTask.retryCount + 1,
-          error: undefined,
-          progress: 0,
-        })
-        await sleep(1000)
-        await this.executeGenerate(taskId)
-      } else {
-        useTaskStore.getState().updateTask(taskId, {
-          status: 'failed',
-          error: error instanceof Error ? error.message : String(error),
-        })
+      while (retryCount <= maxRetries) {
+        try {
+          // 生成图像 URL
+          const imageUrl = await generateSceneImage(scene.prompt)
+          // 下载为 base64
+          const base64 = await downloadImageAsBase64(imageUrl)
+          // 转换为 Blob
+          const blob = base64ToBlob(base64)
+          // 保存到 appStore
+          useAppStore.getState().setSceneImage(task.sceneId, imageUrl, blob)
+
+          useTaskStore.getState().updateTask(taskId, {
+            status: 'completed',
+            progress: 1,
+            total: 1,
+          })
+          return // 成功，退出
+        } catch (error) {
+          if (retryCount < maxRetries) {
+            // 自动重试：增加重试计数
+            retryCount++
+            useTaskStore.getState().updateTask(taskId, {
+              status: 'pending',
+              retryCount,
+              error: undefined,
+              progress: 0,
+            })
+            await sleep(1000)
+            // 标记为 running 继续重试
+            useTaskStore.getState().updateTask(taskId, { status: 'running' })
+          } else {
+            // 重试次数耗尽，标记失败
+            useTaskStore.getState().updateTask(taskId, {
+              status: 'failed',
+              error: error instanceof Error ? error.message : String(error),
+            })
+            return
+          }
+        }
       }
     } finally {
       useAppStore.getState().setGeneratingScene(null)

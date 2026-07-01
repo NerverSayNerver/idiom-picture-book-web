@@ -6,6 +6,7 @@ import { useAppStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import { getAllPictureBooks } from '@/lib/db'
 import { DuplicateCheckDialog } from './DuplicateCheckDialog'
+import { validateIdiom } from '@/lib/security'
 
 interface IdiomSelectorProps {
   onBatchGenerate?: (idioms: string[]) => void
@@ -18,6 +19,7 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
   const [existingIdioms, setExistingIdioms] = useState<Set<string>>(new Set())
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [duplicateIdiom, setDuplicateIdiom] = useState<string | null>(null)
+  const [inputError, setInputError] = useState<string | null>(null)
   const setCurrentIdiom = useAppStore((s) => s.setCurrentIdiom)
   const router = useRouter()
 
@@ -66,11 +68,24 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
   const handleCustomInput = (value: string) => {
     setCustomIdiom(value)
     setSelectedIdiom(null)
+    if (value.trim()) {
+      const { valid, error } = validateIdiom(value)
+      setInputError(valid ? null : error || null)
+    } else {
+      setInputError(null)
+    }
   }
 
   const handleStart = () => {
     const idiom = selectedIdiom || customIdiom.trim()
     if (!idiom) return
+
+    // 验证输入
+    const { valid, error } = validateIdiom(idiom)
+    if (!valid) {
+      setInputError(error || '输入无效')
+      return
+    }
 
     // 检查是否已存在
     if (existingIdioms.has(idiom)) {
@@ -154,8 +169,15 @@ export function IdiomSelector({ onBatchGenerate }: IdiomSelectorProps) {
           value={customIdiom}
           onChange={(e) => handleCustomInput(e.target.value)}
           placeholder="输入一个成语..."
+          maxLength={20}
           className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
         />
+        {/* 输入错误提示 */}
+        {inputError && (
+          <p className="text-sm text-red-600 mt-2">
+            ⚠️ {inputError}
+          </p>
+        )}
         {/* 自定义输入的已有提示 */}
         {customIdiom.trim() && existingIdioms.has(customIdiom.trim()) && (
           <p className="text-sm text-green-600 mt-2">

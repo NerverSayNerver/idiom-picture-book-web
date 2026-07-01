@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { PictureBook } from '@/lib/types'
 import { VideoGenerator } from './VideoGenerator'
 import { generatePDF } from '@/lib/pdf'
@@ -15,6 +15,31 @@ export function BookViewer({ book }: BookViewerProps) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [showVideoGenerator, setShowVideoGenerator] = useState(false)
   const totalPages = book.scenes.length + 2 // 封面 + 场景 + 含义页
+
+  // 管理 ObjectURL 的创建和释放，防止内存泄漏
+  const objectUrlsRef = useRef<string[]>([])
+  const prevUrlsRef = useRef<string[]>([])
+
+  // 获取场景图片 URL，优先使用 imageUrl，否则从 blob 创建 ObjectURL
+  const getSceneImageSrc = useCallback((scene: { imageUrl?: string; imageBlob?: Blob }): string | null => {
+    if (scene.imageUrl) return scene.imageUrl
+    if (scene.imageBlob) {
+      const url = URL.createObjectURL(scene.imageBlob)
+      objectUrlsRef.current.push(url)
+      return url
+    }
+    return null
+  }, [])
+
+  // 组件卸载或页面切换时释放上一轮创建的 ObjectURL
+  useEffect(() => {
+    return () => {
+      // 释放所有已创建的 ObjectURL
+      prevUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+      objectUrlsRef.current = []
+    }
+  }, [currentPage])
 
   const goToNext = useCallback(() => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
@@ -97,7 +122,7 @@ export function BookViewer({ book }: BookViewerProps) {
               {/* 所有插图网格 */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {book.scenes.map((s, i) => {
-                  const imgSrc = s.imageUrl || (s.imageBlob ? URL.createObjectURL(s.imageBlob) : null)
+                  const imgSrc = getSceneImageSrc(s)
                   return (
                     <div
                       key={i}
@@ -144,7 +169,7 @@ export function BookViewer({ book }: BookViewerProps) {
                 </div>
                 {(scene.imageUrl || scene.imageBlob) && (
                   <img
-                    src={scene.imageUrl || URL.createObjectURL(scene.imageBlob!)}
+                    src={getSceneImageSrc(scene) || undefined}
                     alt={scene.title}
                     className="w-full h-auto rounded-lg shadow-md"
                   />

@@ -6,6 +6,7 @@ import {
   createVideoTask,
   getVideoResult,
 } from '@/lib/agnes-api'
+import { validateUrl, isAllowedUrl } from '@/lib/security'
 
 export async function generateSceneImage(prompt: string): Promise<string> {
   // 重试逻辑，最多5次
@@ -16,6 +17,8 @@ export async function generateSceneImage(prompt: string): Promise<string> {
       if (!imageUrl) {
         throw new Error('图像生成失败')
       }
+      // 验证返回的图片 URL 是否可信
+      validateUrl(imageUrl, '图片生成 URL')
       return imageUrl
     } catch (error) {
       console.log(`图像生成重试 ${i + 1}/5...`)
@@ -49,7 +52,15 @@ export async function generateBookVideo(
     const result = await getVideoResult(videoId)
 
     if (result.status === 'completed' && result.remixed_from_video_id) {
-      return { videoUrl: result.remixed_from_video_id }
+      const videoUrl = result.remixed_from_video_id
+      // 验证视频 URL 是否可信；若为纯 ID 则构造完整 URL
+      const fullUrl = videoUrl.startsWith('http')
+        ? videoUrl
+        : `https://apihub.agnes-ai.com/${videoUrl}`
+      if (!isAllowedUrl(fullUrl)) {
+        throw new Error('视频生成失败：返回的 URL 不可信')
+      }
+      return { videoUrl: fullUrl }
     } else if (result.status === 'failed') {
       throw new Error('视频生成失败')
     }
