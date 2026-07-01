@@ -21,7 +21,13 @@ export async function fetchRecommendations(
   const result = await chatCompletion([
     { role: 'system', content: systemMessage },
     { role: 'user', content: userMessage },
-  ])
+  ]).catch((err) => {
+    // 区分超时与其他错误，方便客户端给出明确提示
+    if (err.name === 'AbortError') {
+      throw new Error('LLM 请求超时（60s），请稍后重试')
+    }
+    throw err
+  })
 
   const content = result.choices[0]?.message?.content
   if (!content) throw new Error('LLM 返回内容为空')
@@ -43,11 +49,17 @@ export async function fetchRecommendations(
   })()
   if (!Array.isArray(data) || data.length === 0) throw new Error('LLM 返回格式不正确')
 
-  return data
+  const items = data
     .filter((item: any) => (item.idiom || item.sourceText) && item.meaning && item.category)
     .map((item: any) => ({
       sourceText: item.idiom || item.sourceText,
       meaning: item.meaning,
       category: item.category,
     }))
+
+  if (items.length === 0) {
+    throw new Error('LLM 返回结果为空（过滤后无有效条目），请重试')
+  }
+
+  return items
 }
