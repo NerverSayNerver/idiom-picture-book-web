@@ -54,13 +54,19 @@ function initSchema(db: Database.Database) {
       start_time INTEGER,
       end_time INTEGER,
       created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      prompt TEXT,
+      sort_order INTEGER DEFAULT 0
     );
 
     CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
     CREATE INDEX IF NOT EXISTS idx_tasks_type ON tasks(type);
   `)
+
+  // 迁移：为已有数据库添加新列（忽略已存在的错误）
+  try { db.exec("ALTER TABLE tasks ADD COLUMN prompt TEXT") } catch {}
+  try { db.exec("ALTER TABLE tasks ADD COLUMN sort_order INTEGER DEFAULT 0") } catch {}
 }
 
 // ── Row ↔ Task mapping ──────────────────────────────────────
@@ -89,6 +95,8 @@ interface TaskRow {
   end_time: number | null
   created_at: number
   updated_at: number
+  prompt: string | null
+  sort_order: number | null
 }
 
 function rowToTask(row: TaskRow): Task {
@@ -117,6 +125,8 @@ function rowToTask(row: TaskRow): Task {
     endTime: row.end_time ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    prompt: row.prompt ?? undefined,
+    sortOrder: row.sort_order ?? undefined,
   }
 }
 
@@ -137,9 +147,13 @@ export function createTask(data: {
   const id = uuidv4()
   const now = nowSeconds()
 
+  const maxOrder = data.type === 'job'
+    ? (db.prepare("SELECT COALESCE(MAX(sort_order), 0) + 1 AS next FROM tasks WHERE type = 'job' AND status = 'pending'").get() as { next: number }).next
+    : 0
+
   db.prepare(`
-    INSERT INTO tasks (id, type, parent_id, status, category, source_text, idiom, scene_id, scene_title, progress, total, retry_count, max_retries, created_at, updated_at)
-    VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?)
+    INSERT INTO tasks (id, type, parent_id, status, category, source_text, idiom, scene_id, scene_title, progress, total, retry_count, max_retries, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?, ?)
   `).run(
     id,
     data.type,
@@ -151,6 +165,7 @@ export function createTask(data: {
     data.sceneTitle ?? null,
     data.total ?? 1,
     data.maxRetries ?? 3,
+    maxOrder,
     now,
     now,
   )
@@ -264,6 +279,46 @@ function deriveParentStatus(parentId: string): void {
   getDb().prepare(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`).run(...values)
 }
 
+/**
+ * 重新排序等待中的任务
+ * direction: 'up' — 与上一个交换 | 'down' — 与下一个交换 | 'top' — 置顶
+ */
+export function reorderTask(id: string, direction: 'up' | 'down' | 'top'): void {
+  const db = getDb()
+  const task = getTask(id)
+  if (!task || task.type !== 'job' || task.status !== 'pending') {
+    throw new Error('Only pending jobs can be reordered')
+  }
+
+  if (direction === 'top') {
+    const transaction = db.transaction(() => {
+      const currentOrder = task.sortOrder ?? 0
+      if (currentOrder === 1) return
+
+      db.prepare("UPDATE tasks SET sort_order = sort_order + 1 WHERE type = 'job' AND status = 'pending' AND id != ?").run(id)
+      db.prepare("UPDATE tasks SET sort_order = 1 WHERE id = ?").run(id)
+    })
+    transaction()
+  } else {
+    const compareOp = direction === 'up' ? '<' : '>'
+    const orderBy = direction === 'up' ? 'DESC' : 'ASC'
+
+    const transaction = db.transaction(() => {
+      const neighbor = db.prepare(`
+        SELECT id, sort_order FROM tasks
+        WHERE type = 'job' AND status = 'pending' AND sort_order ${compareOp} ?
+        ORDER BY sort_order ${orderBy} LIMIT 1
+      `).get(task.sortOrder ?? 0) as { id: string; sort_order: number } | undefined
+
+      if (!neighbor) return
+
+      db.prepare("UPDATE tasks SET sort_order = ? WHERE id = ?").run(neighbor.sort_order, id)
+      db.prepare("UPDATE tasks SET sort_order = ? WHERE id = ?").run(task.sortOrder ?? 0, neighbor.id)
+    })
+    transaction()
+  }
+}
+
 export function addChildTasks(parentId: string, defs: ChildTaskDef[]): Task[] {
   const children: Task[] = []
   for (const def of defs) {
@@ -288,7 +343,7 @@ export function pollPendingJob(): Task | null {
   // 原子认领：UPDATE + RETURNING 在单条语句内完成认领和返回，防止多 worker 重复执行
   const row = db.prepare(
     "UPDATE tasks SET status = 'running', start_time = ?, updated_at = ? " +
-    "WHERE id = (SELECT id FROM tasks WHERE type = 'job' AND status = 'pending' ORDER BY created_at LIMIT 1) " +
+    "WHERE id = (SELECT id FROM tasks WHERE type = 'job' AND status = 'pending' ORDER BY sort_order ASC, created_at ASC LIMIT 1) " +
     "RETURNING *"
   ).get(now, now) as TaskRow | undefined
   if (!row) return null
@@ -339,6 +394,23 @@ export function recoverInterruptedTasks(): number {
     "UPDATE tasks SET status = 'failed', error = '页面刷新，执行中断', end_time = ?, updated_at = ? WHERE status IN ('running', 'paused')"
   ).run(now, now)
   return result.changes
+}
+
+// ── Delete ─────────────────────────────────────────────────
+
+/**
+ * 删除任务及其所有子任务
+ * 已取消/已失败的任务在前端删除时，调用方应事先清理生成的图像文件
+ */
+export function deleteTask(id: string): void {
+  const db = getDb()
+  const transaction = db.transaction(() => {
+    // 先删子任务
+    db.prepare('DELETE FROM tasks WHERE parent_id = ?').run(id)
+    // 再删主任务
+    db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
+  })
+  transaction()
 }
 
 // ── Cleanup ─────────────────────────────────────────────────
