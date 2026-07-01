@@ -36,6 +36,10 @@ export interface Task {
   decomposeScenesJson?: string
   createdAt?: number
   updatedAt?: number
+  /** 使用的完整 prompt 文本（LLM 或生图 prompt） */
+  prompt?: string
+  /** 等待中任务的排序序号（越小越前） */
+  sortOrder?: number
 }
 
 export interface ChildTaskDef {
