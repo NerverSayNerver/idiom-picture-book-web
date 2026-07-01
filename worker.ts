@@ -11,7 +11,8 @@ import { pollPendingJob, updateTask, getTask, getChildTasks, addChildTasks, reco
 import { decomposeSource } from './app/actions/decompose'
 import { generateSceneImage, generateSceneImageWithRef } from './app/actions/generate'
 import { saveBook } from './lib/save-book'
-import { buildEnhancedPrompt } from './lib/prompts'
+import { buildEnhancedPrompt, getSystemPrompt, buildUserPrompt } from './lib/prompts'
+import { getStrategy, getContentInfo } from './lib/content-types'
 import type { Task, ChildTaskDef } from './lib/task-types'
 import type { ContentCategory, SceneTemplate } from './lib/types'
 import { promises as fs } from 'fs'
@@ -79,7 +80,17 @@ async function executeJob(jobId: string, abortController: AbortController): Prom
   const decomposeId = decomposeChild.id
 
   // Step 2: Execute decompose
-  await executeDecompose(decomposeId, jobId, job.sourceText, job.category as ContentCategory, signal)
+  // 构造 decompose prompt 用于存储
+  const decomposeSysPrompt = getSystemPrompt('decompose', job.category as ContentCategory)
+  const decomposeStrategy = getStrategy(job.category as ContentCategory)
+  const decomposeInfo = job.category === 'poetry'
+    ? getContentInfo(job.sourceText!, job.category as ContentCategory)
+    : undefined
+  const decomposeTemplateVars = decomposeStrategy.getDecomposeVars(job.sourceText!, decomposeInfo?.fullText)
+  const decomposeUserPrompt = buildUserPrompt('decompose', job.category as ContentCategory, decomposeTemplateVars)
+  const decomposePrompt = `[System]\n${decomposeSysPrompt}\n\n[User]\n${decomposeUserPrompt}`
+
+  await executeDecompose(decomposeId, jobId, job.sourceText, job.category as ContentCategory, signal, decomposePrompt)
 
   if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
@@ -111,6 +122,7 @@ async function executeDecompose(
   sourceText: string,
   category: ContentCategory,
   signal: AbortSignal,
+  prompt: string,
 ): Promise<void> {
   updateTask(taskId, { status: 'running', startTime: Date.now() })
 
@@ -140,6 +152,7 @@ async function executeDecompose(
       decomposeCharacterDescription: result.characterDescription,
       decomposeStyleDescription: result.styleDescription,
       decomposeScenesJson: JSON.stringify(result.scenes),
+      prompt,  // 新增：存储使用的 LLM prompt
     })
   } catch (error) {
     updateTask(taskId, {
@@ -200,6 +213,9 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
         compositionHint: scene.compositionHint,
         scenePrompt: scene.prompt,
       })
+
+      // 存储 prompt 用于后续查看
+      updateTask(taskId, { prompt: enhancedPrompt })
 
       // 查找参考图：优先使用首个已完成的生成场景作为 img2img 参考
       const referenceImageUrl = await findReferenceImage(job?.id, task.sceneId)
