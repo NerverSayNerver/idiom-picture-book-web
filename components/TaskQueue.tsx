@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useJobs, pauseJobAPI, resumeJobAPI, cancelJobAPI } from '@/lib/use-jobs'
+import { useJobs, pauseJobAPI, resumeJobAPI, cancelJobAPI, deleteJobAPI, retryJobAPI } from '@/lib/use-jobs'
 import type { Task, TaskStatus } from '@/lib/task-types'
 import { TaskCard } from './TaskCard'
 
@@ -22,6 +22,9 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
   )
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
   const [notify, setNotify] = useState<string | null>(null)
+  const [clearing, setClearing] = useState(false)
+  const [clearingFailed, setClearingFailed] = useState(false)
+  const [retrying, setRetrying] = useState(false)
 
   // ── 完成通知 ──────────────────────────────────────────
   const [hadActiveJobs, setHadActiveJobs] = useState(false)
@@ -70,8 +73,8 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
       case 'pending': return j.status === 'pending'
       case 'running': return j.status === 'running' || j.status === 'paused'
       case 'paused': return j.status === 'paused'
-      case 'completed': return j.status === 'completed' || j.status === 'cancelled'
-      case 'failed': return j.status === 'failed'
+      case 'completed': return j.status === 'completed'
+      case 'failed': return j.status === 'failed' || j.status === 'cancelled'
       default: return true
     }
   })
@@ -79,11 +82,15 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
   const runningJobs = filteredJobs.filter(j => j.status === 'running')
   const pausedJobs = filteredJobs.filter(j => j.status === 'paused')
   const pendingJobs = filteredJobs.filter(j => j.status === 'pending')
-  const failedJobs = filteredJobs.filter(j => j.status === 'failed')
-  const completedJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'cancelled')
+  const failedJobs = filteredJobs.filter(j => j.status === 'failed' || j.status === 'cancelled')
+  const completedJobs = filteredJobs.filter(j => j.status === 'completed')
 
   const hasActive = stats.pending > 0 || stats.running > 0 || stats.paused > 0
   const hasCompleted = stats.completed > 0 || stats.cancelled > 0 || stats.failed > 0
+  const retriableFailedCount = jobs.filter(j =>
+    (j.status === 'failed' || j.status === 'cancelled') && j.retryCount < (j.maxRetries ?? 3)
+  ).length
+  const failedClearCount = stats.failed + stats.cancelled
 
   // ── 统计栏点击筛选（点击相同状态恢复全部） ──────────
   const toggleFilter = useCallback((mode: FilterMode) => {
@@ -109,6 +116,62 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
     }
   }, [jobs])
 
+  // ── 批量清理已完成 ──────────────────────────────────
+  const handleClearCompleted = useCallback(async () => {
+    const completed = jobs.filter(j => j.status === 'completed')
+    if (completed.length === 0) return
+    if (!window.confirm(`确定批量清理 ${completed.length} 个已完成任务？生成的绘本不受影响。`)) return
+    setClearing(true)
+    try {
+      for (const j of completed) {
+        await deleteJobAPI(j.id)
+      }
+      setNotify(`🗑️ 已清理 ${completed.length} 个已完成任务`)
+      setTimeout(() => setNotify(null), 4000)
+      await refresh()
+    } finally {
+      setClearing(false)
+    }
+  }, [jobs, refresh])
+
+  // ── 批量清理已失败/已取消 ──────────────────────────
+  const handleClearFailed = useCallback(async () => {
+    const failed = jobs.filter(j => j.status === 'failed' || j.status === 'cancelled')
+    if (failed.length === 0) return
+    if (!window.confirm(`确定批量清理 ${failed.length} 个失败/已取消任务？将同时清理已生成的临时文件。`)) return
+    setClearingFailed(true)
+    try {
+      for (const j of failed) {
+        await deleteJobAPI(j.id)
+      }
+      setNotify(`🗑️ 已清理 ${failed.length} 个失败/已取消任务`)
+      setTimeout(() => setNotify(null), 4000)
+      await refresh()
+    } finally {
+      setClearingFailed(false)
+    }
+  }, [jobs, refresh])
+
+  // ── 批量重试已失败/已取消 ──────────────────────────
+  const handleRetryFailed = useCallback(async () => {
+    const retriable = jobs.filter(j =>
+      (j.status === 'failed' || j.status === 'cancelled') && j.retryCount < (j.maxRetries ?? 3)
+    )
+    if (retriable.length === 0) return
+    if (!window.confirm(`确定批量重试 ${retriable.length} 个失败/已取消任务？`)) return
+    setRetrying(true)
+    try {
+      for (const j of retriable) {
+        await retryJobAPI(j.id)
+      }
+      setNotify(`🔄 已重新排队 ${retriable.length} 个任务`)
+      setTimeout(() => setNotify(null), 4000)
+      await refresh()
+    } finally {
+      setRetrying(false)
+    }
+  }, [jobs, refresh])
+
   // ── 分组 ──────────────────────────────────────────────
   const orderedGroups: { label: string; color: string; jobs: Task[] }[] = [
     { label: '执行中', color: 'bg-blue-500 animate-pulse', jobs: runningJobs },
@@ -132,8 +195,8 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
   const statItems: { label: string; mode: FilterMode; count: number; activeClass: string; defaultClass: string }[] = [
     { label: '等待', mode: 'pending', count: stats.pending, activeClass: 'text-yellow-500 ring-2 ring-yellow-300', defaultClass: 'text-yellow-500' },
     { label: '执行中', mode: 'running', count: stats.running + stats.paused, activeClass: 'text-blue-500 ring-2 ring-blue-300', defaultClass: 'text-blue-500' },
-    { label: '完成', mode: 'completed', count: stats.completed + stats.cancelled, activeClass: 'text-green-500 ring-2 ring-green-300', defaultClass: 'text-green-500' },
-    { label: '失败', mode: 'failed', count: stats.failed, activeClass: 'text-red-500 ring-2 ring-red-300', defaultClass: 'text-red-500' },
+    { label: '完成', mode: 'completed', count: stats.completed, activeClass: 'text-green-500 ring-2 ring-green-300', defaultClass: 'text-green-500' },
+    { label: '失败', mode: 'failed', count: stats.failed + stats.cancelled, activeClass: 'text-red-500 ring-2 ring-red-300', defaultClass: 'text-red-500' },
     { label: '总计', mode: 'all', count: jobs.length, activeClass: 'text-gray-700 ring-2 ring-gray-300', defaultClass: 'text-gray-700' },
   ]
 
@@ -182,6 +245,39 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
               <div className="text-xs text-gray-500">{item.label}</div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* 批量操作工具栏 */}
+      {jobs.length > 0 && (retriableFailedCount > 0 || stats.completed > 0 || failedClearCount > 0) && (
+        <div className="flex items-center justify-end gap-2 px-3 py-2 bg-white border-b border-gray-100">
+          {retriableFailedCount > 0 && (
+            <button
+              onClick={handleRetryFailed}
+              disabled={retrying}
+              className="px-2.5 py-1 text-xs bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50"
+            >
+              {retrying ? '重试中...' : `🔄 批量重试 (${retriableFailedCount})`}
+            </button>
+          )}
+          {failedClearCount > 0 && (
+            <button
+              onClick={handleClearFailed}
+              disabled={clearingFailed}
+              className="px-2.5 py-1 text-xs bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
+            >
+              {clearingFailed ? '清理中...' : `🗑️ 清理已失败 (${failedClearCount})`}
+            </button>
+          )}
+          {stats.completed > 0 && (
+            <button
+              onClick={handleClearCompleted}
+              disabled={clearing}
+              className="px-2.5 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              {clearing ? '清理中...' : `🗑️ 清理已完成 (${stats.completed})`}
+            </button>
+          )}
         </div>
       )}
 

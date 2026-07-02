@@ -11,8 +11,8 @@ export async function POST(
     const task = getTask(id)
     if (!task) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
 
-    if (task.status !== 'failed') {
-      return NextResponse.json({ error: '只有失败任务可重试' }, { status: 400 })
+    if (task.status !== 'failed' && task.status !== 'cancelled') {
+      return NextResponse.json({ error: '只有失败或已取消的任务可重试' }, { status: 400 })
     }
     if (task.retryCount >= task.maxRetries) {
       return NextResponse.json({ error: '已达最大重试次数' }, { status: 400 })

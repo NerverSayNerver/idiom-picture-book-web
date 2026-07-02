@@ -35,7 +35,7 @@ export function TaskStatsCards() {
     { label: '等待', count: stats.pending, color: 'text-yellow-600', bg: 'bg-yellow-50 border-yellow-200', filter: 'pending' },
     { label: '执行中', count: stats.running + stats.paused, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', filter: 'running' },
     { label: '已完成', count: stats.completed, color: 'text-green-600', bg: 'bg-green-50 border-green-200', filter: 'completed' },
-    { label: '失败', count: stats.failed, color: 'text-red-600', bg: 'bg-red-50 border-red-200', filter: 'failed' },
+    { label: '失败', count: stats.failed + stats.cancelled, color: 'text-red-600', bg: 'bg-red-50 border-red-200', filter: 'failed' },
   ]
 
   return (
