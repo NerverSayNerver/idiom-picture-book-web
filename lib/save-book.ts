@@ -28,6 +28,13 @@ export async function saveBook(book: PictureBook): Promise<{ path: string }> {
   const bookDir = path.join(baseDir, safeCategory, safeSourceText)
   assertPathWithinBase(bookDir, baseDir)
 
+  // 防御性校验：scenes 为空说明 decompose 数据缺失或任务被中断，
+  // 此时不应写入 book.json 和 index.json，否则会留下"幽灵条目"
+  // 导致首页出现点击后 404 的空绘本卡片
+  if (!Array.isArray(book.scenes) || book.scenes.length === 0) {
+    throw new Error('scenes 不能为空，拒绝保存空绘本')
+  }
+
   await fs.mkdir(bookDir, { recursive: true })
 
   await fs.writeFile(

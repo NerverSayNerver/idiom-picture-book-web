@@ -19,11 +19,11 @@ export function TaskStatsCards() {
 
   if (total === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-800">📋 任务队列</h2>
         </div>
-        <div className="text-center py-6 text-gray-400">
+        <div className="text-center py-6 text-gray-400 flex-1 flex flex-col items-center justify-center">
           <div className="text-3xl mb-2">📭</div>
           <p className="text-sm">暂无任务</p>
         </div>
@@ -39,7 +39,7 @@ export function TaskStatsCards() {
   ]
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold text-gray-800">📋 任务队列</h2>
         <Link
@@ -49,12 +49,12 @@ export function TaskStatsCards() {
           查看全部 →
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 grid-rows-2 gap-2 flex-1">
         {cards.map(card => (
           <Link
             key={card.label}
             href={`/tasks?filter=${card.filter}`}
-            className={`${card.bg} border rounded-lg p-3 text-center hover:shadow-sm transition-shadow`}
+            className={`${card.bg} border rounded-lg p-3 text-center hover:shadow-sm transition-shadow flex flex-col items-center justify-center`}
           >
             <div className={`text-2xl font-bold ${card.color}`}>{card.count}</div>
             <div className="text-xs text-gray-500 mt-0.5">{card.label}</div>

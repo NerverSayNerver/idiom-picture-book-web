@@ -3,14 +3,17 @@
  * 提供输入验证、输出消毒、URL白名单验证等功能
  */
 
-import crypto from 'crypto'
-
 // ── 输入验证 ─────────────────────────────────────────────
 
-// 允许的图片/视频域名白名单
-const ALLOWED_DOMAINS = [
-  'apihub.agnes-ai.com',
-]
+// 允许的图片/视频域名白名单（完全由环境变量 ALLOWED_IMAGE_DOMAINS 配置，逗号分隔）
+// 例如: apihub.agnes-ai.com,platform-outputs.agnes-ai.space
+// 注意：必须在函数内读取，避免 ESM import hoisting 导致 dotenv 加载前求值
+function getAllowedDomains(): string[] {
+  return (process.env.ALLOWED_IMAGE_DOMAINS || '')
+    .split(',')
+    .map((d) => d.trim())
+    .filter(Boolean)
+}
 
 /**
  * 验证内容输入（成语、古诗等）
@@ -99,7 +102,7 @@ export function isAllowedUrl(url: string): boolean {
 
   try {
     const parsed = new URL(url)
-    return ALLOWED_DOMAINS.some(
+    return getAllowedDomains().some(
       (domain) => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
     )
   } catch {
@@ -125,17 +128,24 @@ export function validateUrl(url: string, context = 'URL'): string {
 
 /**
  * 使用常量时间比较字符串，防止时序攻击
+ * 纯 JS 实现，兼容 Edge Runtime（不依赖 Node 的 crypto/Buffer）
  */
 export function timingSafeEqual(a: string, b: string): boolean {
-  const bufA = Buffer.from(a, 'utf-8')
-  const bufB = Buffer.from(b, 'utf-8')
+  if (typeof a !== 'string' || typeof b !== 'string') return false
 
-  // 长度不同时也执行比较，避免泄漏长度信息
-  if (bufA.length !== bufB.length) {
-    // 仍执行比较以保持常量时间
-    crypto.timingSafeEqual(bufA, bufA)
-    return false
+  const aLen = a.length
+  const bLen = b.length
+
+  // 长度差异通过 XOR 累加到结果中，不提前返回
+  let result = aLen ^ bLen
+
+  // 遍历最长字符串，避免通过循环次数泄漏长度信息
+  const maxLen = Math.max(aLen, bLen)
+  for (let i = 0; i < maxLen; i++) {
+    const charA = i < aLen ? a.charCodeAt(i) : 0
+    const charB = i < bLen ? b.charCodeAt(i) : 0
+    result |= charA ^ charB
   }
 
-  return crypto.timingSafeEqual(bufA, bufB)
+  return result === 0
 }

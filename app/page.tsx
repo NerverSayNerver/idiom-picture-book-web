@@ -149,19 +149,18 @@ export default function Home() {
           onCategoryChange={setCurrentCategory}
         />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4 mb-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 h-full">
             <ContentSelector category={currentCategory} compact generatedTexts={generatedTexts} activeTexts={activeTexts} />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 h-full">
             <TaskStatsCards />
           </div>
         </div>
 
         {/* 书架 */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4">
             <h2 className="text-2xl font-bold text-gray-800">📚 绘本成品</h2>
-            <span className="text-gray-500">{totalBooks} 本</span>
           </div>
 
           {/* 书架筛选 Tab */}

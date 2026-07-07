@@ -142,7 +142,7 @@ export function ContentSelector({ category, compact, generatedTexts = [], active
             {refreshing ? '获取中...' : '换一批'}
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-1.5 mb-3">
+        <div className="grid grid-cols-4 gap-1.5 mb-3 h-[220px] overflow-y-auto overflow-x-hidden pr-1">
           {displayItems.map((item) => {
             const isGenerated = generatedTexts.includes(item.sourceText)
             const isActive = activeTexts.has(item.sourceText)

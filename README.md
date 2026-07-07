@@ -224,6 +224,11 @@ VIDEO_API_BASE=                   # 留空则使用 Provider 默认端点
 VIDEO_MODEL=                      # 留空则使用 Provider 默认模型
 VIDEO_FRAMES=241                  # 默认总帧数
 VIDEO_FPS=24                      # 默认帧率
+
+# ── 图片/视频下载域名白名单 ─────────────────────────────────
+# Worker 下载生成的图片/视频时会校验 URL 域名，防止 SSRF
+# 逗号分隔，需包含 API 网关域名 + Provider 返回的 CDN 域名
+ALLOWED_IMAGE_DOMAINS=apihub.agnes-ai.com,platform-outputs.agnes-ai.space
 ```
 
 ### 架构说明

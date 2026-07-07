@@ -52,11 +52,12 @@ export function BookCard({ book, onDelete }: BookCardProps) {
       }
     }
     // 尝试从文件系统路径构造封面图 URL
-    const sourceText = book.sourceText || book.idiom || book.title
-    if (sourceText && book.category) {
-      setCoverImage(`/generated/${book.category}/${sourceText}/1.png`)
+    // 注意：必须用 book.id（经过 sanitizeFilename 净化的文件夹名），
+    // 而非 sourceText（原始文本，可能含逗号等标点），否则路径不匹配
+    if (book.id && book.category) {
+      setCoverImage(`/generated/${book.category}/${book.id}/1.png`)
     }
-  }, [book.scenes, book.category, book.sourceText, book.idiom, book.title])
+  }, [book.scenes, book.category, book.id])
 
   const sourceText = book.sourceText || book.idiom || book.title
   const isPoetry = book.category === 'poetry'
@@ -76,7 +77,7 @@ export function BookCard({ book, onDelete }: BookCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-card overflow-hidden shadow-md hover:shadow-lg transition-all hover:scale-[1.02] relative">
+    <div className="bg-white rounded-card overflow-hidden shadow-md hover:shadow-lg transition-all hover:scale-[1.02] relative flex flex-col">
       {/* 品类徽标 */}
       {strategy && (
         <span className="absolute top-2 left-2 z-10 bg-white/90 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm">
@@ -85,7 +86,7 @@ export function BookCard({ book, onDelete }: BookCardProps) {
       )}
 
       {/* 封面 */}
-      <div className="h-48 bg-gradient-to-br from-secondary to-primary/20 flex items-center justify-center overflow-hidden">
+      <div className="h-48 bg-gradient-to-br from-secondary to-primary/20 flex items-center justify-center overflow-hidden shrink-0">
         {coverImage ? (
           <img src={coverImage} alt={book.title} className="w-full h-full object-cover"
             onError={() => setCoverImage(null)}
@@ -96,7 +97,7 @@ export function BookCard({ book, onDelete }: BookCardProps) {
       </div>
 
       {/* 信息 */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1">
         <h3 className="text-lg font-bold text-gray-800 mb-1">{book.title}</h3>
         {isPoetry && poetryAttribution && (
           <p className="text-xs text-amber-700 mb-1">{poetryAttribution}</p>
@@ -116,15 +117,15 @@ export function BookCard({ book, onDelete }: BookCardProps) {
         </div>
 
         {/* 操作按钮 */}
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 mt-auto">
           <Link
-            href={`/read/${book.category}:${encodeURIComponent(sourceText)}`}
-            className="flex-1 text-center py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors"
+            href={`/read/${book.category}:${encodeURIComponent(book.id)}`}
+            className="flex-1 flex items-center justify-center py-2 bg-primary text-white rounded-button text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             📖 阅读
           </Link>
           {showConfirm ? (
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               <button onClick={handleRegenerate} className="px-2 py-2 bg-orange-500 text-white rounded-button text-sm hover:bg-orange-600 transition-colors">确定</button>
               <button onClick={() => setShowConfirm(false)} className="px-2 py-2 bg-gray-200 text-gray-600 rounded-button text-sm hover:bg-gray-300 transition-colors">取消</button>
             </div>

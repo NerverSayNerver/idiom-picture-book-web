@@ -223,7 +223,7 @@ export function BookViewer({ book }: BookViewerProps) {
           ◀
         </button>
 
-        <div className="flex-1" style={{ perspective: '800px' }}>
+        <div className="flex-1">
           {/* 封面页 - 展示所有插图 */}
           {isCover && (
             <div className="bg-gradient-to-br from-secondary to-primary/20 rounded-card p-8 shadow-lg">
@@ -286,11 +286,10 @@ export function BookViewer({ book }: BookViewerProps) {
 
           {/* 场景页 */}
           {scene && (
-            <div className="flex">
+            <div className="flex items-stretch">
               {/* 左页 - 插图 */}
               <div
                 className="w-1/2 bg-gradient-to-r from-secondary to-primary/20 rounded-l-card p-6 shadow-lg"
-                style={{ transform: 'rotateY(2deg)' }}
               >
                 <div className="text-center mb-4">
                   <span className="text-sm text-gray-500">
@@ -312,7 +311,6 @@ export function BookViewer({ book }: BookViewerProps) {
               {/* 右页 - 文本 */}
               <div
                 className="w-1/2 bg-gradient-to-l from-secondary to-primary/20 rounded-r-card p-6 shadow-lg"
-                style={{ transform: 'rotateY(-2deg)' }}
               >
                 <div className="space-y-4">
                   {!isNurseryRhyme && (
