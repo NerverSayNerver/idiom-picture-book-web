@@ -50,3 +50,6 @@ data/*.db-wal
 
 # tool runtime cache
 .omo/
+
+# generated content (regenerable illustrations/books, not version controlled)
+public/generated/
