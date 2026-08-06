@@ -8,6 +8,7 @@
 - 🤖 **AI 分镜生成** — LLM 将内容拆分为多个关键场景
 - 🎨 **实时图像生成** — 为每个场景生成漫画风格插图
 - 📖 **翻页阅读** — 真实翻页动画，沉浸式阅读体验
+- 🔊 **语音朗读 (TTS)** — 阅读页逐场景朗读旁白，支持暂停/继续与语速调节
 - 🎬 **视频生成** — 将绘本场景转化为动态视频（关键帧动画）
 - 📄 **PDF 导出** — 一键导出可打印的 PDF 绘本
 - ⚡ **后端任务引擎** — 独立 Worker 进程串行执行生成任务，支持暂停/继续/取消/重试
@@ -18,7 +19,7 @@
 
 ### 环境要求
 
-- Node.js 18+
+- Node.js 18.18+（推荐 20+）
 - npm 或 yarn
 
 ### 安装与运行
@@ -60,31 +61,39 @@ npm run start
 idiom-picture-book-web/
 ├── app/
 │   ├── layout.tsx                # 根布局
-│   ├── page.tsx                  # 首页 — 品类选择 + 内容选择 + 任务队列
+│   ├── page.tsx                  # 首页 — 品类选择 + 内容选择 + 书架 + 任务概览
+│   ├── loading.tsx               # 路由级加载态
+│   ├── error.tsx                 # 路由级错误边界
+│   ├── not-found.tsx             # 全局 404 页
+│   ├── icon.svg                  # 站点 favicon
+│   ├── globals.css               # 全局样式（Tailwind + 童趣绘本风）
 │   ├── generate/page.tsx         # 生成进度页
-│   ├── read/[id]/page.tsx        # 绘本阅读页
+│   ├── read/[id]/page.tsx        # 绘本阅读页（翻页阅读）
+│   ├── tasks/page.tsx            # 任务中心（全功能任务队列）
+│   ├── library/page.tsx          # 书库（重定向至首页）
 │   ├── actions/
 │   │   ├── decompose.ts          # LLM 分镜拆分 (Server Action)
 │   │   ├── generate.ts           # 图像/视频生成 (Server Action)
 │   │   └── recommend.ts          # AI 内容推荐 (Server Action)
 │   └── api/
-│       ├── books/[id]/route.ts   # 绘本详情 API
-│       ├── books/route.ts        # 绘本列表 API
+│       ├── books/[id]/route.ts   # 绘本详情 / 删除 API
 │       ├── decompose/route.ts    # 分镜拆分 API
 │       ├── generate-image/route.ts # 图像生成 API
-│       ├── jobs/route.ts         # 任务列表 API
+│       ├── jobs/route.ts         # 任务列表 / 创建 API
 │       ├── jobs/[id]/route.ts    # 任务详情 API
 │       ├── jobs/[id]/pause/route.ts   # 暂停任务
 │       ├── jobs/[id]/resume/route.ts  # 恢复任务
 │       ├── jobs/[id]/cancel/route.ts  # 取消任务
 │       ├── jobs/[id]/retry/route.ts   # 重试任务
+│       ├── jobs/[id]/reorder/route.ts # 调整任务优先级
 │       └── save-book/route.ts    # 保存绘本 API
 ├── components/
 │   ├── CategoryTabs.tsx          # 品类标签切换
 │   ├── ContentSelector.tsx       # 内容选择器（按品类展示推荐列表）
 │   ├── BookCard.tsx              # 绘本卡片
 │   ├── BookViewer.tsx            # 翻页阅读器
-│   ├── TaskQueue.tsx             # 任务队列面板
+│   ├── TaskQueue.tsx             # 任务队列面板（全功能）
+│   ├── TaskStatsCards.tsx        # 任务概览卡片（首页轻量统计）
 │   ├── TaskCard.tsx              # 任务卡片（主/子任务）
 │   ├── VideoGenerator.tsx        # 视频生成器
 │   ├── Header.tsx                # 页头导航
@@ -93,6 +102,7 @@ idiom-picture-book-web/
 │   ├── agnes-api.ts              # 生成 API 统一封装（向后兼容）
 │   ├── content-info.ts           # 各品类内置内容列表
 │   ├── content-types/            # 各品类分镜策略
+│   ├── prompts/                  # LLM 提示词模板
 │   ├── generation/               # 🔌 通用多模型 Provider 抽象层
 │   │   ├── types.ts              #   ImageProvider / VideoProvider 接口
 │   │   ├── config.ts             #   环境变量配置读取
@@ -102,18 +112,33 @@ idiom-picture-book-web/
 │   │       └── agnes.ts          #   Agnes 适配器实现
 │   ├── task-db.ts                # SQLite 任务数据库
 │   ├── task-types.ts             # 任务类型定义
+│   ├── db.ts                     # 数据库连接封装
+│   ├── security.ts               # 安全工具（常量时间比较等）
 │   ├── path-security.ts          # 路径安全校验
 │   ├── pdf.ts                    # PDF 生成
-│   ├── save-book.ts              # 绘本保存逻辑
-│   ├── store.ts                  # 应用状态管理
+│   ├── save-book.ts              # 绘本保存逻辑（含 SSRF 域名白名单）
+│   ├── store.ts                  # 应用状态管理（Zustand）
 │   ├── types.ts                  # TypeScript 类型定义
 │   ├── use-jobs.ts               # 任务状态 Hook（SWR 轮询）
 │   └── book-display.ts           # 绘本展示逻辑
-├── middleware.ts                 # Next.js 中间件（路径安全）
+├── hooks/
+│   └── useTTS.ts                 # 语音朗读 Hook（中文语音、语速调节、逐场景连读）
+├── prompts/                      # LLM 提示词模板（分镜 / 插图 / 视频 / 推荐）
+├── scripts/
+│   ├── batch-generate.js         # 批量生成流水线脚本（需 dev server 运行中）
+│   ├── create-pregenerated.js    # 预生成内置内容绘本
+│   └── create-placeholders.js    # 生成占位图
+├── data/                         # SQLite 数据库目录
+│   └── picture-book-tasks.db     # 任务与绘本数据持久化
+├── regenerate-all.ts             # 串行重新生成全部品类绘本（清库重建，npx tsx 运行）
+├── regen-failed.mts              # 仅重新生成失败/不完整的绘本
+├── e2e-test.js                   # 端到端冒烟测试脚本
+├── proxy.ts                      # API 鉴权代理（/api/* 校验 X-Internal-Key，Next.js 16）
 ├── worker.ts                     # 任务执行 Worker 进程
 ├── docs/                         # 设计文档与实施计划
+├── .env.example                  # 环境变量模板
 └── public/                       # 静态资源
-    └── generated/                # 已生成的绘本
+    └── generated/                # 已生成的绘本（已 gitignore，可重新生成）
         ├── index.json            # 绘本索引
         ├── idiom/                # 成语绘本
         ├── poetry/               # 诗歌绘本
@@ -126,7 +151,7 @@ idiom-picture-book-web/
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
-| 框架 | Next.js 14 (App Router) | React 全栈框架 |
+| 框架 | Next.js 16 (App Router, Turbopack) | React 全栈框架 |
 | UI | Tailwind CSS | 原子化 CSS 框架 |
 | 状态管理 | Zustand | 轻量级状态管理 |
 | 本地存储 | SQLite (better-sqlite3) | 任务状态持久化 |
@@ -137,6 +162,7 @@ idiom-picture-book-web/
 | 视频生成 | Agnes Video V2.0（可切换） | 关键帧动画视频，Provider 抽象层支持多模型 |
 | PDF 生成 | jsPDF | 客户端 PDF 导出 |
 | 翻页效果 | react-pageflip | 真实翻页动画 |
+| 语音朗读 | Web Speech API | 中文语音逐场景朗读（浏览器原生，无需密钥） |
 | 任务轮询 | SWR | 前端实时获取任务状态 |
 | Worker | tsx | 独立任务执行进程 |
 
@@ -149,6 +175,10 @@ idiom-picture-book-web/
 3. **开始生成** — AI 自动拆分分镜并逐个生成插图，可在任务队列查看进度
 4. **阅读绘本** — 生成完成后，进入翻页阅读
 5. **导出分享** — 导出 PDF 打印成实体书，或生成视频分享
+
+### 语音朗读
+
+阅读页支持语音朗读：点击朗读按钮后自动逐页朗读旁白并翻页，可随时暂停/继续，右上角可调节语速（默认 1.0x，设置保存在浏览器本地）。基于浏览器 Web Speech API 实现，无需额外密钥。
 
 ### 内置内容
 
@@ -229,6 +259,16 @@ VIDEO_FPS=24                      # 默认帧率
 # Worker 下载生成的图片/视频时会校验 URL 域名，防止 SSRF
 # 逗号分隔，需包含 API 网关域名 + Provider 返回的 CDN 域名
 ALLOWED_IMAGE_DOMAINS=apihub.agnes-ai.com,platform-outputs.agnes-ai.space
+
+# ── API 鉴权（部署到公网时务必设置） ─────────────────────────
+# 设置后，所有 /api/* 请求需携带 X-Internal-Key 头（由 proxy.ts 校验，常量时间比较）
+# 开发环境不设置则跳过鉴权。INTERNAL_API_KEY 和 NEXT_PUBLIC_INTERNAL_API_KEY 需设为相同值
+INTERNAL_API_KEY=
+NEXT_PUBLIC_INTERNAL_API_KEY=
+
+# ── 调试日志（仅开发环境） ──────────────────────────────────
+# 设为 1 开启 LLM/生图的详细请求日志
+DEBUG_LLM=0
 ```
 
 ### 架构说明
@@ -265,14 +305,42 @@ lib/generation/types.ts（ImageProvider / VideoProvider 接口）
 
 #### 数据存储
 
-- **任务状态** — SQLite (`picture-book-tasks.db`)
+- **任务状态** — SQLite (`data/picture-book-tasks.db`)
 - **绘本图像** — 本地文件系统 (`public/generated/{category}/{title}/`)
 - **绘本索引** — `public/generated/index.json`
 
+#### 安全加固
+
+- **API 鉴权** — `proxy.ts` 拦截所有 `/api/*` 请求，设置 `INTERNAL_API_KEY` 后需携带 `X-Internal-Key` 头，使用常量时间比较防时序攻击；开发环境未设置 Key 时自动跳过
+- **SSRF 防护** — Worker 下载生成的图片/视频前校验 URL 域名（`ALLOWED_IMAGE_DOMAINS` 白名单），绘本保存同样校验来源域名
+- **路径安全** — `lib/path-security.ts` 校验生成文件的路径，防止路径穿越
+- **安全响应头** — `next.config.js` 全局配置 CSP、`X-Frame-Options: DENY`、HSTS 等安全头
+
+### 批量生成工具
+
+```bash
+# 批量生成绘本（需要 dev server 运行在 localhost:3000）
+node scripts/batch-generate.js --category=idiom        # 只生成成语
+node scripts/batch-generate.js --category=all          # 生成所有品类
+node scripts/batch-generate.js --category=poetry --items=静夜思,春晓  # 指定条目
+
+# 串行重新生成全部品类（清库重建，直接调用内部逻辑，无需 dev server）
+npx tsx regenerate-all.ts
+
+# 仅重新生成失败/不完整的绘本
+npx tsx regen-failed.mts
+
+# 端到端冒烟测试（校验生成、保存、读取全链路）
+node e2e-test.js
+```
+
 ## 📚 相关文档
 
-- [后端任务执行架构设计](docs/plans/2026-06-28-backend-task-execution.md)
-- [后端任务执行设计文档](docs/plans/2026-06-28-backend-task-execution-design.md)
+- [后端任务执行架构计划](docs/superpowers/plans/2026-06-28-backend-task-execution.md)
+- [后端任务执行设计文档](docs/superpowers/specs/2026-06-28-backend-task-execution-design.md)
+- [多品类扩展计划](docs/superpowers/plans/2026-06-28-multi-category-expansion.md)
+- [任务中心重构计划](docs/superpowers/plans/2026-07-01-task-center-redesign.md)
+- [批量生成计划](docs/superpowers/plans/2026-06-30-batch-generate.md)
 
 ## 📄 许可证
 
