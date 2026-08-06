@@ -1,9 +1,9 @@
-// middleware.ts — API 路由鉴权中间件
+// proxy.ts — API 路由鉴权代理（Next.js 16 proxy 约定，原 middleware）
 // 部署到公网前务必设置 INTERNAL_API_KEY 环境变量
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from '@/lib/security'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 只保护 /api/ 路由
