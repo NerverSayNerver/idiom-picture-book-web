@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
+const path = require('path')
+
 const nextConfig = {
+  // 明确指定 Turbopack workspace root，避免父级目录存在 lockfile 时
+  // Next.js 推断出错误的根目录（多 lockfile 警告）
+  turbopack: {
+    root: path.join(__dirname),
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'apihub.agnes-ai.com' },
