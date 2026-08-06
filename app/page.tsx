@@ -143,6 +143,33 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-secondary/30 to-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hero 横幅 */}
+        <section className="relative overflow-hidden rounded-card shadow-md mb-6 bg-gradient-to-r from-secondary via-primary/30 to-accent/20">
+          <div className="grid grid-cols-1 md:grid-cols-5 items-center">
+            <div className="md:col-span-3 p-6 md:p-8">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+                🎨 绘本工坊
+              </h1>
+              <p className="text-sm md:text-base text-gray-600 mb-3">
+                把成语、古诗、童话变成可视、可听、可读的童趣绘本，和宝贝一起翻开创作之旅。
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-gray-700">
+                <span className="bg-white/70 px-3 py-1 rounded-full">🖼️ AI 自动配图</span>
+                <span className="bg-white/70 px-3 py-1 rounded-full">🔊 语音朗读</span>
+                <span className="bg-white/70 px-3 py-1 rounded-full">📚 多类内容</span>
+              </div>
+            </div>
+            <div className="md:col-span-2 h-40 md:h-48 relative">
+              <img
+                src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20picture%20book%20illustration%2C%20warm%20pastel%20tone%20with%20peach%20pink%20and%20cream%20color%20palette%2C%20a%20parent%20and%20child%20reading%20a%20storybook%20together%20surrounded%20by%20cute%20woodland%20animals%20and%20floating%20stars%2C%20soft%20watercolor%20style%2C%20whimsical%20and%20dreamy%2C%20no%20text&image_size=landscape_4_3"
+                alt="和宝贝一起读绘本"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </section>
+
         {/* Tab 导航 + 选择器 + 队列 */}
         <CategoryTabs
           activeCategory={currentCategory}
@@ -195,9 +222,14 @@ export default function Home() {
               <div className="text-2xl text-gray-500 animate-pulse">加载中...</div>
             </div>
           ) : filteredBooks.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-card shadow-md">
-              <div className="text-6xl mb-4">📖</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            <div className="text-center py-12 bg-white rounded-card shadow-md overflow-hidden">
+              <img
+                src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20illustration%2C%20an%20empty%20wooden%20bookshelf%20with%20a%20small%20potted%20plant%20on%20top%2C%20soft%20warm%20sunlight%2C%20peach%20pink%20and%20cream%20color%20palette%2C%20cute%20watercolor%20style%2C%20cozy%20and%20minimal%2C%20no%20text&image_size=landscape_4_3"
+                alt="还没有绘本"
+                className="w-full max-w-md mx-auto rounded-lg"
+                loading="lazy"
+              />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2 mt-4">
                 {filterCategory === 'all' ? '还没有绘本' : '暂无该分类绘本'}
               </h3>
               <p className="text-gray-500">
@@ -206,7 +238,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBooks.map((book: any) => (
+              {filteredBooks.map((book: IndexBook & { category: string }) => (
                 <BookCard
                   key={`${book.category}-${book.id}`}
                   book={book}

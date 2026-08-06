@@ -92,7 +92,12 @@ export function BookCard({ book, onDelete }: BookCardProps) {
             onError={() => setCoverImage(null)}
           />
         ) : (
-          <div className="text-6xl">📖</div>
+          <img
+            src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20cover%20illustration%2C%20a%20blank%20open%20storybook%20with%20magical%20sparkles%20and%20stars%20floating%20around%2C%20peach%20pink%20and%20cream%20pastel%20color%20palette%2C%20soft%20watercolor%20style%2C%20dreamy%20and%20whimsical%2C%20no%20text&image_size=portrait_4_3"
+            alt={book.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         )}
       </div>
 
