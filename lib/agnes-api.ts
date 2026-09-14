@@ -203,6 +203,7 @@ export async function getVideoResult(
     video_id: result.videoId || result.taskId,
     status: result.status,
     progress: result.progress,
+    video_url: result.videoUrl,
     remixed_from_video_id: result.videoUrl,
     error: result.error,
   }

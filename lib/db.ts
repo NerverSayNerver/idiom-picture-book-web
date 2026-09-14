@@ -46,15 +46,3 @@ export async function getRandomItems(category: string, n: number): Promise<Conte
   }
   return shuffled.slice(0, n)
 }
-
-// ── 向后兼容 ──
-
-/** @deprecated 使用 saveRecommendedItems */
-export const saveRecommendedIdioms = (idioms: ContentInfo[]) =>
-  saveRecommendedItems(idioms, 'idiom')
-
-/** @deprecated 使用 getAllRecommendedItems */
-export const getAllRecommendedIdioms = () => getAllRecommendedItems('idiom')
-
-/** @deprecated 使用 getRandomItems */
-export const getRandomIdioms = (n: number) => getRandomItems('idiom', n)

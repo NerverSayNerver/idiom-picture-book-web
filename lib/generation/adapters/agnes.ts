@@ -199,6 +199,8 @@ export class AgnesVideoProvider implements VideoProvider {
       status: this.mapStatus(result.status),
       progress: result.progress || 0,
       videoId: result.video_id,
+      // Agnes Video V2.0 文档：任务完成后 remixed_from_video_id 字段即最终视频 URL
+      videoUrl: result.remixed_from_video_id || result.video_url || undefined,
       error: result.error,
     }
   }
@@ -212,9 +214,11 @@ export class AgnesVideoProvider implements VideoProvider {
       case 'failed':
       case 'error':
         return 'failed'
+      case 'in_progress':
       case 'processing':
       case 'running':
         return 'processing'
+      case 'queued':
       default:
         return 'pending'
     }

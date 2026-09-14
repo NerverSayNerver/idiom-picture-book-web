@@ -462,10 +462,11 @@ export function BookViewer({ book }: BookViewerProps) {
           <video src={videoUrl} controls className="w-full rounded-card" />
           <a
             href={videoUrl}
-            download
+            target="_blank"
+            rel="noopener noreferrer"
             className="mt-4 inline-block text-blue-600 hover:underline"
           >
-            📥 下载视频
+            📥 打开/下载视频
           </a>
         </div>
       )}

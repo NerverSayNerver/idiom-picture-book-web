@@ -45,7 +45,7 @@ export async function downloadImageAsBase64(url: string): Promise<string> {
 
 export async function generateBookVideo(
   imageUrls: string[]
-): Promise<{ videoId: string }> {
+): Promise<{ videoId: string; videoUrl: string }> {
   // 1. 创建视频任务
   const task = await createVideoTask(imageUrls)
   const videoId = task.video_id
@@ -55,11 +55,13 @@ export async function generateBookVideo(
     await new Promise((resolve) => setTimeout(resolve, 10000))
     const result = await getVideoResult(videoId)
 
-    if (result.status === 'completed' && result.video_id) {
-      // 注意: remixed_from_video_id 是视频 ID 而非 URL。
-      // 实际视频访问方式需要查阅 Agnes Video API 文档确认。
-      // 暂时使用 video_id 作为标识，前端可尝试以 ID 构建访问 URL。
-      return { videoId: result.video_id }
+    if (result.status === 'completed') {
+      // Agnes Video V2.0：完成时 remixed_from_video_id / video_url 字段即最终视频 URL
+      const videoUrl = result.video_url || result.remixed_from_video_id
+      if (!videoUrl) {
+        throw new Error('视频生成完成，但响应中未包含视频地址')
+      }
+      return { videoId: result.video_id || videoId, videoUrl }
     } else if (result.status === 'failed') {
       throw new Error('视频生成失败')
     }

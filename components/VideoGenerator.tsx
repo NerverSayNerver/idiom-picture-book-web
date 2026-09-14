@@ -20,8 +20,8 @@ export function VideoGenerator({
     setError(null)
 
     try {
-      const { videoId } = await generateBookVideo(imageUrls)
-      onVideoGenerated(videoId)
+      const { videoUrl } = await generateBookVideo(imageUrls)
+      onVideoGenerated(videoUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : '视频生成失败')
     } finally {

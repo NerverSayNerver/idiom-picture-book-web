@@ -65,6 +65,9 @@ async function updateIndex(baseDir: string, book: PictureBook, safeCategory: str
       // 文件不存在，使用默认
     }
 
+    // 每次写入都刷新 generatedAt，标识最近一次生成/更新绘本的时间
+    index.generatedAt = new Date().toISOString()
+
     if (!index.categories[safeCategory]) {
       const labels: Record<string, string> = { idiom: '成语', poetry: '古诗', 'nursery-rhyme': '儿歌', proverb: '谚语', 'fairy-tale': '童话' }
       const icons: Record<string, string> = { idiom: '🎭', poetry: '📜', 'nursery-rhyme': '🎵', proverb: '💬', 'fairy-tale': '🏰' }

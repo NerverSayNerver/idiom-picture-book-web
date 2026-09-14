@@ -92,6 +92,8 @@ export interface AgnesVideoResultResponse {
   video_id: string
   status: string
   progress: number
+  /** 最终视频播放 URL（Agnes 原始字段 remixed_from_video_id，completed 时即为可播放地址） */
+  video_url?: string
   remixed_from_video_id?: string
   error?: string
 }
