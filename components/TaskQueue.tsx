@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useJobs, pauseJobAPI, resumeJobAPI, cancelJobAPI, deleteJobAPI, retryJobAPI } from '@/lib/use-jobs'
 import type { Task, TaskStatus } from '@/lib/task-types'
 import { TaskCard } from './TaskCard'
+import { NotificationToggle } from './NotificationToggle'
 
 interface TaskQueueProps {
   compact?: boolean
@@ -217,7 +218,9 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
             {jobs.length} 个任务 | {stats.completed} 完成 | {stats.failed} 失败
           </p>
         </div>
-        {hasActive && (
+        <div className="flex items-center gap-2">
+          <NotificationToggle />
+          {hasActive && (
           <div className="flex gap-2">
             {stats.running > 0 && (
               <button onClick={handlePauseAll} className="px-2 py-1 text-xs bg-white/20 text-white rounded hover:bg-white/30">⏸ 全部暂停</button>
@@ -228,6 +231,7 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
             <button onClick={handleCancelAll} className="px-2 py-1 text-xs bg-red-500/80 text-white rounded hover:bg-red-500">✕ 取消全部</button>
           </div>
         )}
+        </div>
       </div>
 
       {/* 可点击的统计栏 */}

@@ -33,6 +33,15 @@ interface IndexData {
   categories: Record<string, IndexCategory>
 }
 
+type SortOrder = 'default' | 'newest' | 'oldest' | 'title'
+
+const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: 'default', label: '默认排序' },
+  { value: 'newest', label: '最近创建' },
+  { value: 'oldest', label: '最早创建' },
+  { value: 'title', label: '按标题' },
+]
+
 export default function Home() {
   const currentCategory = useAppStore((s) => s.currentCategory)
   const setCurrentCategory = useAppStore((s) => s.setCurrentCategory)
@@ -40,6 +49,8 @@ export default function Home() {
   // 书架数据
   const [indexData, setIndexData] = useState<IndexData | null>(null)
   const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [searchText, setSearchText] = useState('')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('default')
   const [loading, setLoading] = useState(true)
 
   // 任务状态（通过 API 轮询）
@@ -105,15 +116,45 @@ export default function Home() {
 
   const getFilteredBooks = () => {
     if (!indexData) return []
+    let books: (IndexBook & { category: string })[]
     if (filterCategory === 'all') {
-      return Object.entries(indexData.categories).flatMap(([cat, data]) =>
+      books = Object.entries(indexData.categories).flatMap(([cat, data]) =>
         data.items.map((item: IndexBook) => ({ ...item, category: cat }))
       )
+    } else {
+      books = (indexData.categories[filterCategory]?.items || []).map((item: IndexBook) => ({
+        ...item,
+        category: filterCategory,
+      }))
     }
-    return (indexData.categories[filterCategory]?.items || []).map((item: IndexBook) => ({
-      ...item,
-      category: filterCategory,
-    }))
+
+    // 关键词搜索：标题/原文/含义，忽略大小写
+    const keyword = searchText.trim().toLowerCase()
+    if (keyword) {
+      books = books.filter((book) =>
+        [book.title, book.sourceText, book.meaning]
+          .filter((t): t is string => !!t)
+          .some((t) => t.toLowerCase().includes(keyword))
+      )
+    }
+
+    // 排序（createdAt 缺失时排最后，保持稳定）
+    if (sortOrder !== 'default') {
+      books = [...books].sort((a, b) => {
+        if (sortOrder === 'title') {
+          return (a.title || '').localeCompare(b.title || '', 'zh-Hans-CN')
+        }
+        const ta = a.createdAt ? Date.parse(a.createdAt) : 0
+        const tb = b.createdAt ? Date.parse(b.createdAt) : 0
+        // 无效日期字符串统一按 0（排最后），避免 NaN 破坏排序
+        const na = Number.isFinite(ta) ? ta : 0
+        const nb = Number.isFinite(tb) ? tb : 0
+        if (na === nb) return 0
+        if (sortOrder === 'newest') return nb - na
+        return na - nb
+      })
+    }
+    return books
   }
 
   const handleDelete = async (id: string) => {
@@ -217,6 +258,39 @@ export default function Home() {
             ))}
           </div>
 
+          {/* 搜索 + 排序 */}
+          <div className="flex gap-2 mb-4 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <input
+                type="search"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="搜索标题、原文或含义…"
+                className="w-full px-4 py-2 pr-9 rounded-full text-sm bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                aria-label="搜索绘本"
+              />
+              {searchText && (
+                <button
+                  onClick={() => setSearchText('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="清空搜索"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+              className="px-3 py-2 rounded-full text-sm bg-white border border-gray-200 text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              aria-label="排序方式"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
           {loading ? (
             <div className="text-center py-16">
               <div className="text-2xl text-gray-500 animate-pulse">加载中...</div>
@@ -230,10 +304,14 @@ export default function Home() {
                 loading="lazy"
               />
               <h3 className="text-xl font-semibold text-gray-700 mb-2 mt-4">
-                {filterCategory === 'all' ? '还没有绘本' : '暂无该分类绘本'}
+                {searchText.trim()
+                  ? '未找到匹配的绘本'
+                  : filterCategory === 'all' ? '还没有绘本' : '暂无该分类绘本'}
               </h3>
               <p className="text-gray-500">
-                {filterCategory === 'all' ? '选择一个内容开始创作吧！' : '切换到其他分类看看吧！'}
+                {searchText.trim()
+                  ? '换个关键词试试，或清空搜索查看全部。'
+                  : filterCategory === 'all' ? '选择一个内容开始创作吧！' : '切换到其他分类看看吧！'}
               </p>
             </div>
           ) : (

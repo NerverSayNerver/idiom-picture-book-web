@@ -7,6 +7,7 @@ import type {
 import { getImageConfig } from './prompts'
 import { getImageProvider, getVideoProvider } from './generation'
 import { validateUrl } from './security'
+import { getLlmConfig } from './generation/config'
 
 // S1: 仅在开发环境且 DEBUG_LLM=1 时输出详细日志
 const DEBUG = process.env.NODE_ENV === 'development' && process.env.DEBUG_LLM === '1'
@@ -22,23 +23,27 @@ async function fetchWithTimeout(
   if (init.signal) {
     init.signal.addEventListener('abort', () => controller.abort())
   }
+  // 仅允许 http(s) 协议，阻断 file:/data:/ftp: 等；URL 解析失败同样拒绝
+  const parsed = new URL(url)
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error(`不支持的请求协议: ${parsed.protocol}`)
+  }
   try {
-    return await fetch(url, { ...init, signal: controller.signal })
+    return await fetch(parsed.toString(), { ...init, signal: controller.signal })
   } finally {
     clearTimeout(timer)
   }
 }
 
 // ════════════════════════════════════════════════════════════
-// LLM 对话配置（保持不变，已通过环境变量支持任何 OpenAI 兼容端点）
+// LLM 对话配置（已通过环境变量支持任何 OpenAI 兼容端点；
+// 配置统一从 lib/generation/config.ts 读取，与 provider 层同源）
 // ════════════════════════════════════════════════════════════
 
-const LLM_API_BASE = process.env.LLM_API_BASE || 'https://apihub.agnes-ai.com/v1'
-const LLM_API_KEY = process.env.LLM_API_KEY || process.env.AGNES_API_KEY || ''
-const LLM_MODEL = process.env.LLM_MODEL || 'agnes-2.0-flash'
+const LLM_MODEL = getLlmConfig().model
 
 function getLlmApiKey(): string {
-  const key = LLM_API_KEY
+  const key = getLlmConfig().apiKey
   if (!key) {
     console.warn('LLM_API_KEY is not set')
     return ''
@@ -58,12 +63,13 @@ export async function chatCompletion(
     maxTokens?: number
   }
 ): Promise<ChatCompletionResponse> {
+  const llm = getLlmConfig()
   const model = options?.model || LLM_MODEL
   const temperature = options?.temperature ?? 0.7
   const maxTokens = options?.maxTokens ?? 8192
   if (DEBUG) {
     console.log('\n========== [LLM 请求] ==========')
-    console.log(`Base URL: ${LLM_API_BASE}`)
+    console.log(`Base URL: ${llm.apiBase}`)
     console.log(`Model: ${model}`)
     console.log('Messages:')
     for (const msg of messages) {
@@ -71,7 +77,7 @@ export async function chatCompletion(
     }
   }
 
-  const response = await fetchWithTimeout(`${LLM_API_BASE}/chat/completions`, {
+  const response = await fetchWithTimeout(`${llm.apiBase}/chat/completions`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getLlmApiKey()}`,

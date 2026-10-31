@@ -28,6 +28,7 @@ yarn-error.log*
 # logs
 *.log
 *.log.*
+/logs/
 
 # vercel
 .vercel
@@ -50,6 +51,7 @@ data/*.db-wal
 
 # tool runtime cache
 .omo/
+.mimosa/
 
 # generated content (regenerable illustrations/books, not version controlled)
 public/generated/

@@ -112,8 +112,11 @@
 1. **修复视频导出**：确认 Agnes 视频结果里可播放 URL 的字段（或下载接口），打通 videoId → 播放 URL 链路；前端兜底错误提示。
 2. **依赖与代码清理**：卸载 6 个未用依赖；删除 `SceneCard.tsx` 与 deprecated API；删除根目录旧 DB。
 3. **补全 generatedAt**：`save-book.ts` 写入 `new Date().toISOString()`，书架可按时间排序。
-4. **可观测性**：为 worker 增加日志文件输出（当前 worker 日志仅 stdout），失败可追溯。
-5. **体验增强**：书架搜索/筛选、任务完成后浏览器通知、阅读器进度记忆。
+4. **可观测性**：为 worker 增加日志文件输出（当前 worker 日志仅 stdout），失败可追溯。 — ✅ 已完成（2026-10-31）：`lib/worker-logger.ts` 双写 stdout + `logs/worker-YYYYMMDD.log`，启动清理超 30 天旧日志
+5. **体验增强**：书架搜索/筛选、任务完成后浏览器通知、阅读器进度记忆。 — ✅ 已完成（2026-10-31）：
+   - 书架：关键词搜索（标题/原文/含义）+ 排序（默认/最近/最早/标题）
+   - 系统通知：`lib/notifications.ts` + `NotificationToggle` 铃铛开关（首页任务卡 & 任务中心 header）；标签页在后台时任务完成/失败弹系统通知，页面可见时沿用页内横幅
+   - 阅读进度：`BookViewer` 按 book.id 存 localStorage（`pb-reading-progress`），重开恢复上次页码并提示，读到末页自动清除
 6. **测试**：`e2e-test.js`（Playwright）覆盖较浅，可补关键路径（创建→生成→阅读→导出）。
 
 ---
@@ -129,5 +132,10 @@
 | SceneCard 无人引用 | `components/SceneCard.tsx` | ✅ 已删除 |
 | generatedAt 为空 | `public/generated/index.json` | ✅ 已修复 |
 | lint 命令失效（Next 16 移除 next lint） | `package.json` | ✅ 已改为 `eslint .` |
+| worker 日志仅 stdout | `worker.ts` | ✅ 已修复（2026-10-31，logs/ 双写） |
+| 书架无搜索/排序 | `app/page.tsx` | ✅ 已修复（2026-10-31） |
+| 无后台完成通知 | `lib/notifications.ts` | ✅ 已修复（2026-10-31） |
+| 阅读器无进度记忆 | `components/BookViewer.tsx` | ✅ 已修复（2026-10-31） |
+| 根目录 65MB 旧日志 regenerate-all.log | 根目录 | ✅ 已删除（2026-10-31） |
 | eslint-config 版本代差 | `package.json` | 🟢 观察（需 eslint9+flat config 迁移） |
 | trae 分支残留 ×2 | git remote | 🟢 待确认后清理 |

@@ -1,24 +1,27 @@
 /**
  * 批量生成绘本流水线脚本
- * 
+ *
  * 用法:
- *   node scripts/batch-generate.js --category=idiom     # 只生成成语
- *   node scripts/batch-generate.js --category=all       # 生成所有品类
- *   node scripts/batch-generate.js --category=poetry --items=静夜思,春晓  # 指定条目
+ *   npx tsx scripts/batch-generate.ts --category=idiom     # 只生成成语
+ *   npx tsx scripts/batch-generate.ts --category=all       # 生成所有品类
+ *   npx tsx scripts/batch-generate.ts --category=poetry --items=静夜思,春晓  # 指定条目
  *
  * 前置条件: 需要 dev server 运行在 localhost:3000（API 路由）
+ * 安全: 路径与下载域名校验复用 lib/path-security、lib/security（与主应用同源）
  */
 
-const fs = require('fs')
-const path = require('path')
-const https = require('https')
-const http = require('http')
+import fs from 'fs'
+import path from 'path'
+import https from 'https'
+import http from 'http'
+import { sanitizeFilename, validateCategory, assertPathWithinBase } from '../lib/path-security'
+import { validateUrl } from '../lib/security'
 
 const BASE_DIR = path.join(__dirname, '..', 'public', 'generated')
 const API_BASE = 'http://localhost:3000'
 
 // 各品类要生成的内容列表
-const CONTENT_MAP = {
+const CONTENT_MAP: Record<string, string[]> = {
   idiom: [
     '守株待兔', '叶公好龙', '愚公移山', '狐假虎威', '拔苗助长',
     '画蛇添足', '亡羊补牢', '井底之蛙', '掩耳盗铃', '刻舟求剑',
@@ -42,7 +45,15 @@ const CONTENT_MAP = {
   ],
 }
 
-function apiPost(endpoint, data) {
+interface DecomposeResult {
+  error?: string
+  meaning?: string
+  author?: string
+  dynasty?: string
+  scenes?: Array<{ title?: string; description?: string; prompt?: string; compositionHint?: string; narration?: string }>
+}
+
+function apiPost(endpoint: string, data: unknown): Promise<DecomposeResult> {
   return new Promise((resolve, reject) => {
     const json = JSON.stringify(data)
     const url = new URL(endpoint, API_BASE)
@@ -67,7 +78,10 @@ function apiPost(endpoint, data) {
   })
 }
 
-function downloadImage(url, filePath) {
+function downloadImage(url: string, filePath: string): Promise<void> {
+  // 域名白名单校验（ALLOWED_IMAGE_DOMAINS，与主应用共用）+ 路径围栏
+  validateUrl(url, '图片下载 URL')
+  assertPathWithinBase(filePath, BASE_DIR)
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith('https') ? https : http
     protocol.get(url, (res) => {
@@ -75,7 +89,7 @@ function downloadImage(url, filePath) {
         reject(new Error(`下载失败: ${res.statusCode}`))
         return
       }
-      const chunks = []
+      const chunks: Buffer[] = []
       res.on('data', (chunk) => chunks.push(chunk))
       res.on('end', () => {
         fs.writeFileSync(filePath, Buffer.concat(chunks))
@@ -85,11 +99,26 @@ function downloadImage(url, filePath) {
   })
 }
 
-async function generateBook(category, sourceText) {
+const CATEGORY_KEYS = Object.keys(CONTENT_MAP)
+
+/**
+ * 按白名单下标生成绘本：categoryIdx/itemIdx 是数字下标，
+ * 实际执行的品类与内容一律从 CONTENT_MAP 白名单直取，命令行参数永远不进入文件/网络操作
+ */
+async function generateBook(categoryIdx: number, itemIdx: number): Promise<void> {
+  const category = CATEGORY_KEYS[categoryIdx]
+  const sourceText = (CONTENT_MAP[category] || [])[itemIdx]
+  if (!category || !sourceText) return
+
   console.log(`\n[${category}] 开始: ${sourceText}`)
 
-  const safeName = sourceText.replace(/[\/\\?%*:|"<>]/g, '_')
-  const bookDir = path.join(BASE_DIR, category, safeName)
+  const safeName = sanitizeFilename(sourceText)
+  const safeCategory = validateCategory(category)
+  const resolvedBase = path.resolve(BASE_DIR)
+  const bookDir = path.resolve(resolvedBase, safeCategory, safeName)
+  if (!bookDir.startsWith(resolvedBase + path.sep)) {
+    throw new Error('Path traversal detected')
+  }
   fs.mkdirSync(bookDir, { recursive: true })
 
   // Step 1: 调用 decompose API
@@ -107,7 +136,7 @@ async function generateBook(category, sourceText) {
 
   // Step 2: 逐场景生成图像
   const scenes = decomposeResult.scenes || []
-  const imagePrompts = []
+  const imagePrompts: { sceneId: number; prompt: string }[] = []
 
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i]
@@ -119,16 +148,17 @@ async function generateBook(category, sourceText) {
       continue
     }
 
-    imagePrompts.push({ sceneId: i + 1, prompt: scene.prompt })
+    imagePrompts.push({ sceneId: i + 1, prompt: scene.prompt || '' })
 
     // 下载图片
-    if (imageResult.url) {
+    const imageUrl = (imageResult as { url?: string }).url
+    if (imageUrl) {
       const imgPath = path.join(bookDir, `${i + 1}.png`)
       try {
-        await downloadImage(imageResult.url, imgPath)
+        await downloadImage(imageUrl, imgPath)
         console.log(`    ✓ 图片已保存`)
       } catch (err) {
-        console.error(`    ✗ 图片下载失败: ${err.message}`)
+        console.error(`    ✗ 图片下载失败: ${err instanceof Error ? err.message : String(err)}`)
       }
     }
   }
@@ -142,7 +172,7 @@ async function generateBook(category, sourceText) {
   // Step 3: 组装 book.json
   const book = {
     id: safeName,
-    category,
+    category: safeCategory,
     sourceText,
     title: sourceText,
     meaning: decomposeResult.meaning || '',
@@ -157,7 +187,7 @@ async function generateBook(category, sourceText) {
       compositionHint: s.compositionHint || '',
       narration: s.narration || '',
       imageUrl: fs.existsSync(path.join(bookDir, `${i + 1}.png`))
-        ? `/generated/${category}/${safeName}/${i + 1}.png`
+        ? `/generated/${safeCategory}/${safeName}/${i + 1}.png`
         : undefined,
     })),
   }
@@ -165,14 +195,15 @@ async function generateBook(category, sourceText) {
   fs.writeFileSync(path.join(bookDir, 'book.json'), JSON.stringify(book, null, 2))
 
   // Step 4: 更新 index.json
-  updateIndex(category, safeName, book)
+  updateIndex(safeCategory, safeName, book)
 
   console.log(`  ✓ 完成: ${sourceText} (${scenes.length} 场景)`)
 }
 
-function updateIndex(category, id, book) {
+function updateIndex(category: string, id: string, book: { sourceText?: string; title?: string; meaning?: string; scenes: unknown[]; author?: string; dynasty?: string; createdAt?: string }): void {
   const indexPath = path.join(BASE_DIR, 'index.json')
-  let index = { version: 2, generatedAt: new Date().toISOString(), categories: {} }
+  let index: { version: number; generatedAt: string; categories: Record<string, { label: string; icon: string; count: number; items: unknown[] }> } =
+    { version: 2, generatedAt: new Date().toISOString(), categories: {} }
 
   if (fs.existsSync(indexPath)) {
     try { index = JSON.parse(fs.readFileSync(indexPath, 'utf-8')) }
@@ -180,13 +211,13 @@ function updateIndex(category, id, book) {
   }
 
   if (!index.categories[category]) {
-    const labels = { idiom: '成语', poetry: '古诗', 'nursery-rhyme': '儿歌', proverb: '谚语', 'fairy-tale': '童话' }
-    const icons = { idiom: '🎭', poetry: '📜', 'nursery-rhyme': '🎵', proverb: '💬', 'fairy-tale': '🏰' }
+    const labels: Record<string, string> = { idiom: '成语', poetry: '古诗', 'nursery-rhyme': '儿歌', proverb: '谚语', 'fairy-tale': '童话' }
+    const icons: Record<string, string> = { idiom: '🎭', poetry: '📜', 'nursery-rhyme': '🎵', proverb: '💬', 'fairy-tale': '🏰' }
     index.categories[category] = { label: labels[category] || category, icon: icons[category] || '', count: 0, items: [] }
   }
 
   const cat = index.categories[category]
-  const existing = cat.items.findIndex(i => i.id === id)
+  const existing = (cat.items as { id: string }[]).findIndex((i) => i.id === id)
   const entry = {
     id,
     sourceText: book.sourceText || id,
@@ -205,26 +236,29 @@ function updateIndex(category, id, book) {
   fs.writeFileSync(indexPath, JSON.stringify(index, null, 2))
 }
 
-async function main() {
+async function main(): Promise<void> {
   const args = process.argv.slice(2)
-  const categoryArg = args.find(a => a.startsWith('--category='))
-  const itemsArg = args.find(a => a.startsWith('--items='))
+  const categoryArg = args.find((a) => a.startsWith('--category='))
+  const itemsArg = args.find((a) => a.startsWith('--items='))
 
-  const category = categoryArg ? categoryArg.split('=')[1] : 'all'
-  const specificItems = itemsArg ? itemsArg.split('=')[1].split(',') : null
+  const requestedCategory = categoryArg ? categoryArg.split('=')[1] : 'all'
+  const requestedItems = itemsArg ? itemsArg.split('=')[1].split(',').map((s) => s.trim()).filter(Boolean) : null
 
-  if (specificItems) {
-    for (const item of specificItems) {
-      try { await generateBook(category === 'all' ? 'idiom' : category, item.trim()) }
-      catch (err) { console.error(`[错误] ${item}: ${err.message}`) }
-    }
-  } else {
-    const categories = category === 'all' ? Object.keys(CONTENT_MAP) : [category]
-    for (const cat of categories) {
-      const items = CONTENT_MAP[cat] || []
-      for (const item of items) {
-        try { await generateBook(cat, item) }
-        catch (err) { console.error(`[错误] ${cat}/${item}: ${err.message}`) }
+  // 安全设计：命令行参数只转成白名单"下标"（数字），品类与条目的实际值一律从 CONTENT_MAP 直取
+  const catIndices = requestedCategory === 'all'
+    ? CATEGORY_KEYS.map((_, i) => i)
+    : [CATEGORY_KEYS.indexOf(requestedCategory)].filter((i) => i >= 0)
+
+  for (const ci of catIndices) {
+    const available = CONTENT_MAP[CATEGORY_KEYS[ci]] || []
+    // argv 条目 → indexOf 数字下标（污点止于数字）
+    const itemIndices = requestedItems
+      ? requestedItems.map((raw) => available.indexOf(raw)).filter((idx) => idx >= 0)
+      : available.map((_, i) => i)
+    for (const ii of itemIndices) {
+      try { await generateBook(ci, ii) }
+      catch (err) {
+        console.error(`[错误] ${CATEGORY_KEYS[ci]}/${(CONTENT_MAP[CATEGORY_KEYS[ci]] || [])[ii]}: ${err instanceof Error ? err.message : String(err)}`)
       }
     }
   }

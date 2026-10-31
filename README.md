@@ -11,7 +11,10 @@
 - 🔊 **语音朗读 (TTS)** — 阅读页逐场景朗读旁白，支持暂停/继续与语速调节
 - 🎬 **视频生成** — 将绘本场景转化为动态视频（关键帧动画）
 - 📄 **PDF 导出** — 一键导出可打印的 PDF 绘本
-- ⚡ **后端任务引擎** — 独立 Worker 进程串行执行生成任务，支持暂停/继续/取消/重试
+- ⚡ **后端任务引擎** — 独立 Worker 进程串行执行生成任务，支持暂停/继续/取消/重试；日志落盘 `logs/`（按日分文件，保留 30 天）
+- 🔔 **完成通知** — 标签页在后台时，任务完成/失败弹系统通知（铃铛开关，页面可见时用页内横幅）
+- 📚 **书架管理** — 绘本按品类筛选，支持关键词搜索与排序
+- 🔖 **阅读进度记忆** — 重开绘本自动恢复上次阅读位置
 - 🗄️ **SQLite 持久化** — 任务状态和绘本数据持久化存储
 - 💾 **本地图像存储** — 所有图像持久化到本地文件系统
 
@@ -97,7 +100,7 @@ idiom-picture-book-web/
 │   ├── TaskCard.tsx              # 任务卡片（主/子任务）
 │   ├── VideoGenerator.tsx        # 视频生成器
 │   ├── Header.tsx                # 页头导航
-│   └── SceneCard.tsx             # 场景卡片
+│   └── NotificationToggle.tsx    # 系统通知开关（铃铛按钮）
 ├── lib/
 │   ├── agnes-api.ts              # 生成 API 统一封装（向后兼容）
 │   ├── content-info.ts           # 各品类内置内容列表
@@ -120,6 +123,8 @@ idiom-picture-book-web/
 │   ├── store.ts                  # 应用状态管理（Zustand）
 │   ├── types.ts                  # TypeScript 类型定义
 │   ├── use-jobs.ts               # 任务状态 Hook（SWR 轮询）
+│   ├── notifications.ts          # 任务完成系统通知（后台标签页提醒）
+│   ├── worker-logger.ts          # Worker 日志双写（stdout + logs/，30 天保留）
 │   └── book-display.ts           # 绘本展示逻辑
 ├── hooks/
 │   └── useTTS.ts                 # 语音朗读 Hook（中文语音、语速调节、逐场景连读）

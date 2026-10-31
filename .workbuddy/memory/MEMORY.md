@@ -15,6 +15,8 @@
 - **middleware.ts → proxy.ts 迁移**：✅ 已完成（2026-07-17）。git mv 重命名 + 函数名改为 proxy，鉴权逻辑不变，build 警告消失。
 - /library 页面为重定向占位（router.replace('/')），首页已集成书架
 - Header 导航仅"任务中心"一个入口
+- **2026-08-07 分析报告遗留优化项**：✅ 已完成（2026-10-31）——worker 日志落盘（lib/worker-logger.ts + logs/，30 天保留）、系统通知（lib/notifications.ts + NotificationToggle，仅后台标签页弹）、书架搜索/排序、阅读器进度记忆（pb-reading-progress）、65MB regenerate-all.log 已删除
+- 仍遗留：eslint-config-next ^14→16（需 eslint9 flat config）；远端 trae/agent 分支 ×2 待用户确认；e2e 关键路径测试覆盖浅
 
 ## 环境配置
 - .env.example 提供完整模板；.env.local 为本地实际配置（已 gitignore）

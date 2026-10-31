@@ -19,6 +19,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { sanitizeFilename, validateCategory } from './lib/path-security'
 import { validateUrl } from './lib/security'
+import { workerLog, pruneOldLogs } from './lib/worker-logger'
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ async function executeJob(jobId: string, abortController: AbortController): Prom
 
   if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
-  console.log(`\n>>> 开始执行任务: ${job.sourceText} (${job.category}) [${jobId}]`)
+  workerLog(`\n>>> 开始执行任务: ${job.sourceText} (${job.category}) [${jobId}]`)
 
   // Step 1: Create decompose child task
   const [decomposeChild] = addChildTasks(jobId, [{ type: 'decompose', sceneTitle: '分析含义' }])
@@ -117,7 +118,7 @@ async function executeJob(jobId: string, abortController: AbortController): Prom
     }
   }
 
-  console.log(`<<< 任务完成: ${job.sourceText} (${job.category}) [${jobId}]\n`)
+  workerLog(`<<< 任务完成: ${job.sourceText} (${job.category}) [${jobId}]\n`)
 }
 
 async function executeDecompose(
@@ -255,7 +256,7 @@ async function executeGenerate(taskId: string, signal: AbortSignal): Promise<voi
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') throw error
       if (attempt < maxAttempts) {
-        console.log(`图像生成重试 ${attempt}/${maxAttempts - 1}...`)
+        workerLog(`图像生成重试 ${attempt}/${maxAttempts - 1}...`)
         continue
       }
       updateTask(taskId, {
@@ -291,8 +292,14 @@ async function findReferenceImage(
   if (!imageUrl) return undefined
 
   try {
+    // imageUrl 存于任务库，读取前校验：仅允许 /generated/ 下相对路径，且解析后不得逃逸
+    if (!imageUrl.startsWith('/generated/') || imageUrl.includes('..')) return undefined
+    const generatedBase = path.join(process.cwd(), 'public', 'generated')
     const absolutePath = path.join(process.cwd(), 'public', imageUrl)
-    const buffer = await fs.readFile(absolutePath)
+    const resolvedBase = path.resolve(generatedBase)
+    const resolved = path.resolve(absolutePath)
+    if (!resolved.startsWith(resolvedBase + path.sep)) return undefined
+    const buffer = await fs.readFile(resolved)
     const base64 = buffer.toString('base64')
     const ext = path.extname(imageUrl).toLowerCase()
     const mimeType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
@@ -361,27 +368,30 @@ async function executeSave(taskId: string, jobId: string, signal: AbortSignal): 
 // ── Main Loop ───────────────────────────────────────────────
 
 async function main() {
-  console.log('🔧 Worker 启动...')
+  workerLog('🔧 Worker 启动...')
+
+  // 清理超过保留期的旧日志文件（不阻塞启动）
+  pruneOldLogs()
 
   // Recover interrupted tasks from previous run
   const recovered = recoverInterruptedTasks()
   if (recovered > 0) {
-    console.log(`♻️ 恢复了 ${recovered} 个中断的任务`)
+    workerLog(`♻️ 恢复了 ${recovered} 个中断的任务`)
   }
 
   const abortController = new AbortController()
   const signal = abortController.signal
 
   process.on('SIGINT', () => {
-    console.log('\n🛑 收到 SIGINT，正在停止...')
+    workerLog('\n🛑 收到 SIGINT，正在停止...')
     abortController.abort()
   })
   process.on('SIGTERM', () => {
-    console.log('\n🛑 收到 SIGTERM，正在停止...')
+    workerLog('\n🛑 收到 SIGTERM，正在停止...')
     abortController.abort()
   })
 
-  console.log('🔄 开始轮询任务队列...')
+  workerLog('🔄 开始轮询任务队列...')
 
   while (!signal.aborted) {
     const job = pollPendingJob()
@@ -390,11 +400,11 @@ async function main() {
       continue
     }
 
-    console.log(`📋 开始执行: ${job.sourceText} (${job.category})`)
+    workerLog(`📋 开始执行: ${job.sourceText} (${job.category})`)
 
     try {
       await executeJob(job.id, abortController)
-      console.log(`✅ 完成: ${job.sourceText}`)
+      workerLog(`✅ 完成: ${job.sourceText}`)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         updateTask(job.id, { status: 'cancelled', error: '任务已取消', endTime: Date.now() })
@@ -405,12 +415,12 @@ async function main() {
           endTime: Date.now(),
         })
       }
-      console.log(`❌ 失败: ${job.sourceText} - ${error}`)
+      workerLog(`❌ 失败: ${job.sourceText} - ${error}`)
     }
   }
 
   closeDb()
-  console.log('👋 Worker 已停止')
+  workerLog('👋 Worker 已停止')
 }
 
 main()

@@ -3,6 +3,15 @@
 
 import type { ImageProviderConfig, VideoProviderConfig } from './types'
 
+/** LLM 对话配置（场景拆分 / 推荐等 OpenAI 兼容端点） */
+export function getLlmConfig(): { apiBase: string; apiKey: string; model: string } {
+  return {
+    apiBase: process.env.LLM_API_BASE || 'https://apihub.agnes-ai.com/v1',
+    apiKey: process.env.LLM_API_KEY || process.env.AGNES_API_KEY || '',
+    model: process.env.LLM_MODEL || 'agnes-2.0-flash',
+  }
+}
+
 /** 生图 Provider 配置（含 provider 名称） */
 export function getImageProviderConfig(): ImageProviderConfig & { provider: string } {
   return {

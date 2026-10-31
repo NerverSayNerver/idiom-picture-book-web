@@ -14,6 +14,9 @@ interface BookViewerProps {
 
 const RATES = [0.5, 0.75, 1.0, 1.25, 1.5]
 
+// 阅读进度 localStorage 键：{ [bookId]: 页码索引（0=封面）}
+const PROGRESS_KEY = 'pb-reading-progress'
+
 export function BookViewer({ book }: BookViewerProps) {
   // 页面索引: 0=封面, 1~N=场景, N+1=含义页
   const [currentPage, setCurrentPage] = useState(0)
@@ -30,6 +33,56 @@ export function BookViewer({ book }: BookViewerProps) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [showVideoGenerator, setShowVideoGenerator] = useState(false)
   const totalPages = book.scenes.length + 2 // 封面 + 场景 + 含义页
+
+  // ── 阅读进度记忆（localStorage，按 book.id）──────────
+  const [hydrated, setHydrated] = useState(false)
+  const [progressRestored, setProgressRestored] = useState(false)
+
+  // 挂载时恢复上次阅读位置（仅一次，按 book.id）
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(PROGRESS_KEY)
+      if (raw) {
+        const map = JSON.parse(raw) as Record<string, number>
+        const saved = map[book.id]
+        const lastPage = book.scenes.length + 1
+        if (typeof saved === 'number' && Number.isInteger(saved) && saved >= 1 && saved <= lastPage) {
+          setCurrentPage(saved)
+          setProgressRestored(true)
+        }
+      }
+    } catch {
+      // localStorage 不可用或数据损坏，忽略
+    }
+    setHydrated(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book.id])
+
+  // 恢复提示 3.5 秒后自动消失
+  useEffect(() => {
+    if (!progressRestored) return
+    const timer = setTimeout(() => setProgressRestored(false), 3500)
+    return () => clearTimeout(timer)
+  }, [progressRestored])
+
+  // 页面变化时保存进度；读到最后一页（含义页）视为读完，清除记录
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      const raw = window.localStorage.getItem(PROGRESS_KEY)
+      const map: Record<string, number> = raw ? JSON.parse(raw) : {}
+      const lastPage = book.scenes.length + 1
+      if (currentPage >= 1 && currentPage < lastPage) {
+        map[book.id] = currentPage
+      } else {
+        // 回到封面或已读到最后一页：不保留进度
+        delete map[book.id]
+      }
+      window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(map))
+    } catch {
+      // 隐私模式等场景下写入失败，忽略
+    }
+  }, [hydrated, currentPage, book.id, book.scenes.length])
 
   const {
     isPlaying,
@@ -440,6 +493,11 @@ export function BookViewer({ book }: BookViewerProps) {
         <span className="text-sm text-gray-500">
           {currentPage + 1} / {totalPages}
         </span>
+        {progressRestored && (
+          <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
+            📖 已恢复上次阅读位置
+          </span>
+        )}
       </div>
 
       {/* 视频生成 */}

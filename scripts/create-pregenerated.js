@@ -7,6 +7,28 @@ const path = require('path')
 
 const BASE = path.join(__dirname, '..', 'public', 'generated')
 
+// ── 安全护栏（与 lib/path-security.ts 同语义）────────────
+
+const ALLOWED_CATEGORIES = ['idiom', 'poetry', 'nursery-rhyme', 'proverb', 'fairy-tale']
+
+/** 净化文件名：只保留中文、字母、数字、连字符、下划线；拒绝空值、. 与 .. */
+function sanitizeName(name) {
+  const cleaned = String(name).replace(/[^\p{L}\p{N}_-]/gu, '_').slice(0, 100)
+  if (!cleaned || cleaned === '.' || cleaned === '..' || /^_+$/.test(cleaned)) {
+    throw new Error(`Invalid filename: ${name}`)
+  }
+  return cleaned
+}
+
+/** 校验最终路径仍在 baseDir 内（防止 .. 穿越） */
+function assertWithinBase(filePath, baseDir) {
+  const resolvedBase = path.resolve(baseDir)
+  const resolved = path.resolve(filePath)
+  if (!resolved.startsWith(resolvedBase + path.sep) && resolved !== resolvedBase) {
+    throw new Error('Path traversal detected')
+  }
+}
+
 // ── 各品类绘本数据 ──────────────────────────────────────
 
 const BOOKS = {
@@ -170,9 +192,17 @@ const BOOKS = {
 
 let total = 0
 
+const resolvedBase = path.resolve(BASE)
 for (const [category, books] of Object.entries(BOOKS)) {
+  if (!ALLOWED_CATEGORIES.includes(category)) {
+    throw new Error(`Invalid category: ${category}`)
+  }
   for (const bookData of books) {
-    const dir = path.join(BASE, category, bookData.sourceText)
+    const safeName = sanitizeName(bookData.sourceText)
+    const dir = path.resolve(resolvedBase, category, safeName)
+    if (!dir.startsWith(resolvedBase + path.sep)) {
+      throw new Error('Path traversal detected')
+    }
     fs.mkdirSync(dir, { recursive: true })
 
     const book = {
