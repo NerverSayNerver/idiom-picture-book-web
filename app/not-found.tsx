@@ -4,7 +4,7 @@ import Link from 'next/link'
 export default function NotFound() {
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center bg-white rounded-card shadow-md p-8">
+      <div className="max-w-md w-full text-center bg-white rounded-card shadow-md p-8 animate-fade-up">
         <img
           src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20illustration%2C%20a%20cute%20curious%20child%20standing%20in%20front%20of%20an%20empty%20floating%20story%20book%20page%20with%20soft%20question%20marks%20drifting%20around%2C%20peach%20pink%20and%20cream%20pastel%20color%20palette%2C%20soft%20watercolor%20style%2C%20whimsical%20and%20gentle%2C%20no%20text&image_size=portrait_4_3"
           alt="找不到页面"

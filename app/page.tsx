@@ -185,7 +185,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-secondary/30 to-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Hero 横幅 */}
-        <section className="relative overflow-hidden rounded-card shadow-md mb-6 bg-gradient-to-r from-secondary via-primary/30 to-accent/20">
+        <section className="relative overflow-hidden rounded-card shadow-md mb-6 bg-gradient-to-r from-secondary via-primary/30 to-accent/20 animate-fade-up">
           <div className="grid grid-cols-1 md:grid-cols-5 items-center">
             <div className="md:col-span-3 p-6 md:p-8">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
@@ -204,7 +204,7 @@ export default function Home() {
               <img
                 src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20picture%20book%20illustration%2C%20warm%20pastel%20tone%20with%20peach%20pink%20and%20cream%20color%20palette%2C%20a%20parent%20and%20child%20reading%20a%20storybook%20together%20surrounded%20by%20cute%20woodland%20animals%20and%20floating%20stars%2C%20soft%20watercolor%20style%2C%20whimsical%20and%20dreamy%2C%20no%20text&image_size=landscape_4_3"
                 alt="和宝贝一起读绘本"
-                className="w-full h-full object-cover"
+                className="w-full h-[calc(100%_+_16px)] -mt-2 object-cover animate-float-soft hero-float"
                 loading="lazy"
               />
             </div>
@@ -235,9 +235,9 @@ export default function Home() {
           <div className="flex gap-2 mb-4 flex-wrap">
             <button
               onClick={() => setFilterCategory('all')}
-              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+              className={`px-3 py-1 rounded-full text-sm transition-colors duration-fast ${
                 filterCategory === 'all'
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-ink'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -247,9 +247,9 @@ export default function Home() {
               <button
                 key={cat}
                 onClick={() => setFilterCategory(cat)}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                className={`px-3 py-1 rounded-full text-sm transition-colors duration-fast ${
                   filterCategory === cat
-                    ? 'bg-primary text-white'
+                    ? 'bg-primary text-ink'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -266,7 +266,7 @@ export default function Home() {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder="搜索标题、原文或含义…"
-                className="w-full px-4 py-2 pr-9 rounded-full text-sm bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full px-4 py-2 pr-9 rounded-full text-sm bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-fast"
                 aria-label="搜索绘本"
               />
               {searchText && (
@@ -282,7 +282,7 @@ export default function Home() {
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-              className="px-3 py-2 rounded-full text-sm bg-white border border-gray-200 text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="px-3 py-2 rounded-full text-sm bg-white border border-gray-200 text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all duration-fast"
               aria-label="排序方式"
             >
               {SORT_OPTIONS.map((opt) => (
@@ -293,7 +293,7 @@ export default function Home() {
 
           {loading ? (
             <div className="text-center py-16">
-              <div className="text-2xl text-gray-500 animate-pulse">加载中...</div>
+              <div className="text-2xl text-gray-500 animate-fade-in">加载中...</div>
             </div>
           ) : filteredBooks.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-card shadow-md overflow-hidden">
@@ -316,11 +316,12 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBooks.map((book: IndexBook & { category: string }) => (
+              {filteredBooks.map((book: IndexBook & { category: string }, index: number) => (
                 <BookCard
                   key={`${book.category}-${book.id}`}
                   book={book}
                   onDelete={handleDelete}
+                  entranceDelay={index < 6 ? index * 50 : 250}
                 />
               ))}
             </div>

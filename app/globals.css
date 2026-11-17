@@ -5,6 +5,37 @@
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-rgb: 250, 247, 245;
+
+  /* 缓动曲线 */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce-soft: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --ease-flip: cubic-bezier(0.42, 0, 0.2, 1);
+
+  /* 动效时长 */
+  --dur-instant: 80ms;
+  --dur-fast: 150ms;
+  --dur-normal: 240ms;
+  --dur-entrance: 320ms;
+  --dur-slow: 360ms;
+  --dur-flip: 560ms;
+  --dur-poll: 1800ms;
+
+  /* 状态色（实色 + soft） */
+  --status-waiting: #EAB308;
+  --status-waiting-soft: #FEF9C3;
+  --status-running: #3B82F6;
+  --status-running-soft: #DBEAFE;
+  --status-paused: #F97316;
+  --status-paused-soft: #FFEDD5;
+  --status-completed: #22C55E;
+  --status-completed-soft: #DCFCE7;
+  --status-failed: #EF4444;
+  --status-failed-soft: #FEE2E2;
+  --status-cancelled: #94A3B8;
+  --status-cancelled-soft: #F1F5F9;
 }
 
 body {
@@ -14,9 +45,64 @@ body {
 
 /* 童趣绘本风全局样式 */
 .card {
-  @apply rounded-card shadow-md transition-transform hover:scale-[1.02];
+  @apply rounded-card shadow-md transition-all duration-normal ease-standard hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg;
 }
 
 .button-primary {
-  @apply rounded-button bg-gradient-to-r from-primary to-accent px-6 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all;
+  @apply rounded-button bg-gradient-to-r from-primary to-accent px-6 py-3 text-ink font-semibold shadow-lg hover:shadow-xl transition-all active:scale-[0.97] duration-fast ease-bounce-soft;
 }
+
+.progress-fill {
+  transition: width var(--dur-poll) linear;
+  will-change: width;
+}
+
+.progress-sheen {
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.65) 50%, transparent 70%);
+  @apply animate-sheen;
+}
+
+.status-dot--running {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* 翻页舞台基础类（供 Package B 使用） */
+.book-stage { position: relative; perspective: 1600px; perspective-origin: 50% 45%; transform-style: preserve-3d; }
+.book-stage[data-flipping="true"] { pointer-events: none; }
+.page-layer { width: 100%; height: 100%; }
+.flip-leaf { position: absolute; width: 50%; height: 100%; top: 0; backface-visibility: hidden; transform-style: preserve-3d; box-shadow: 0 12px 28px rgba(90,63,45,.12); will-change: transform, opacity; }
+.flip-leaf--next { left: 50%; transform-origin: left center; }
+.flip-leaf--prev { left: 0; transform-origin: right center; }
+.leaf-sheen { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(90,60,40,.22) 0%, rgba(255,255,255,.16) 38%, rgba(90,60,40,0) 72%); }
+.leaf-sheen--prev { transform: scaleX(-1); }
+.page-shadow { pointer-events: none; background: linear-gradient(90deg, rgba(91,63,45,.16), transparent 55%); }
+.spine-shadow { position: absolute; top: 0; bottom: 0; left: calc(50% - 14px); width: 28px; pointer-events: none; z-index: 3; background: linear-gradient(90deg, rgba(60,40,30,.10), transparent 45%, transparent 55%, rgba(60,40,30,.10)); }
+
+/* reduced-motion 与手动开关双通道：系统偏好 + .motion-reduced 顶层 class */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.motion-full) *, html:not(.motion-full) *::before, html:not(.motion-full) *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 120ms !important; scroll-behavior: auto !important;
+  }
+}
+html.motion-reduced *, html.motion-reduced *::before, html.motion-reduced *::after {
+  animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+  transition-duration: 120ms !important; scroll-behavior: auto !important;
+}
+/* 循环装饰类：两套通道都彻底停掉并停在终态 */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.motion-full) .hero-float, html:not(.motion-full) .breathing, html:not(.motion-full) .twinkle, html:not(.motion-full) .snail-wobble, html:not(.motion-full) .progress-sheen, html:not(.motion-full) .status-dot--running { animation: none !important; transform: none !important; }
+  html:not(.motion-full) .book-stage .flip-leaf { display: none !important; }
+  html:not(.motion-full) .book-stage .page-layer { transition: opacity 140ms linear !important; }
+  html:not(.motion-full) .progress-fill { transition: transform 120ms linear !important; }
+  html:not(.motion-full) .modal-in, html:not(.motion-full) .toast-in, html:not(.motion-full) .collapse-in { transform: none !important; }
+}
+html.motion-reduced .hero-float, html.motion-reduced .breathing, html.motion-reduced .twinkle,
+html.motion-reduced .snail-wobble, html.motion-reduced .progress-sheen, html.motion-reduced .status-dot--running { animation: none !important; transform: none !important; }
+html.motion-reduced .book-stage .flip-leaf { display: none !important; }
+html.motion-reduced .book-stage .page-layer { transition: opacity 140ms linear !important; }
+html.motion-reduced .progress-fill { transition: transform 120ms linear !important; }
+html.motion-reduced .modal-in, html.motion-reduced .toast-in, html.motion-reduced .collapse-in { transform: none !important; }
+
+/* 通用无障碍辅助类（.sr-only 由 Tailwind utilities 内置提供） */
+.focus-ring:focus-visible { outline: 2px solid #3B82F6; outline-offset: 2px; }

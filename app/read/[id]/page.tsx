@@ -48,7 +48,9 @@ export default function ReadPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <div className="text-xl text-gray-600">加载中...</div>
+        <div role="status" className="text-xl text-gray-600 animate-fade-up">
+          加载中...
+        </div>
       </main>
     )
   }
@@ -56,7 +58,7 @@ export default function ReadPage() {
   if (!book) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
+        <div className="text-center animate-fade-up">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">绘本未找到</h1>
           <a href="/" className="button-primary">返回首页</a>
         </div>

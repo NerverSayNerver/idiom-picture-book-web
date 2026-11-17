@@ -37,7 +37,13 @@ function TasksContent() {
 
 export default function TasksPage() {
   return (
-    <Suspense fallback={<div className="text-center py-16 text-gray-500">加载中...</div>}>
+    <Suspense
+      fallback={
+        <div role="status" className="text-center py-16 text-gray-500 animate-fade-up">
+          加载中...
+        </div>
+      }
+    >
       <TasksContent />
     </Suspense>
   )

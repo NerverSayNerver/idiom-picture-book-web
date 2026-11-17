@@ -81,7 +81,8 @@ export default function GeneratePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-2xl space-y-8">
-        <div className="text-center">
+        {/* key 随状态文案变化重挂载标题区，触发一次柔和淡入（⏳ → ⚠️） */}
+        <div key={statusTitle} className="text-center animate-fade-in">
           <h1 className="text-3xl font-bold text-primary">
             {statusTitle}
           </h1>
@@ -91,7 +92,7 @@ export default function GeneratePage() {
         <TaskQueue />
 
         {allCompleted && (
-          <div className="text-center">
+          <div className="text-center animate-fade-up">
             <p className="text-green-600 font-medium">✅ 生成完成，即将跳转到书架...</p>
           </div>
         )}

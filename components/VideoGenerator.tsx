@@ -34,20 +34,20 @@ export function VideoGenerator({
       <button
         onClick={handleGenerate}
         disabled={isGenerating}
-        className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-button font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-button font-semibold shadow-lg hover:shadow-xl transition-all duration-fast active:scale-[0.97] disabled:opacity-50"
       >
         {isGenerating ? '⏳ 生成中...' : '🎬 生成视频'}
       </button>
 
       {isGenerating && (
-        <div className="bg-purple-50 rounded-card p-4 text-center">
+        <div className="bg-purple-50 rounded-card p-4 text-center animate-fade-up">
           <p className="text-purple-700">正在生成视频，请稍候...</p>
           <p className="text-sm text-purple-500 mt-1">预计需要 2-5 分钟</p>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 rounded-card p-4 text-red-700">
+        <div className="bg-red-50 rounded-card p-4 text-red-700 animate-fade-up">
           ❌ {error}
         </div>
       )}

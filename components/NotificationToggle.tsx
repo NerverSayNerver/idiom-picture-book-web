@@ -58,12 +58,21 @@ export function NotificationToggle() {
           ? '已开启：生成完成/失败时（标签页在后台）弹系统通知'
           : '开启后，生成完成/失败时（标签页在后台）弹系统通知'
       }
-      aria-pressed={enabled}
-      className={`px-2 py-1 rounded-full text-sm transition-colors ${
+      role="switch"
+      aria-checked={enabled}
+      aria-label="系统通知"
+      className={`px-2 py-1 rounded-full text-sm transition-colors duration-fast ${
         enabled ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
       } ${unsupported ? 'opacity-40 cursor-not-allowed' : ''}`}
     >
-      {enabled ? '🔔' : '🔕'}
+      {/* key 变化触发重挂载，图标 80ms 淡入；不做铃铛摇晃 */}
+      <span
+        key={enabled ? 'on' : 'off'}
+        aria-hidden="true"
+        className="inline-block animate-fade-in duration-instant [animation-duration:80ms]"
+      >
+        {enabled ? '🔔' : '🔕'}
+      </span>
     </button>
   )
 }

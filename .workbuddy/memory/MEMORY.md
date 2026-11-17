@@ -11,6 +11,14 @@
 - **public/generated 已 gitignore**：只提交源码，不提交生成图片（约531MB PNG + index.json 可重新生成）
 - feature/multi-category-expansion 分支已删除，本地有 archive tag `archive/feature-multi-category-expansion`（未推送）可恢复
 
+## UI 动效体系（2026-11-16 建立）
+- **无动画库**：纯 CSS + Tailwind 实现，所有 token 在 tailwind.config.ts（13 keyframes / 14 animation / duration-* / ease-*），状态色/缓动/时长 CSS 变量在 globals.css :root
+- **单一主角原则**：阅读器 3D 翻页是唯一仪式感动效（前进 560/后退 480/收尾 600ms），其余反馈 ≤240ms；弹性过冲 ≤4%、最多一次回弹
+- **翻页实现**：BookViewer 用 isFlipping/flipFrom/flipDir + ref 状态机，连点丢弃+300ms 冷却+animationend 幂等+700ms 兜底，leaf 用旧页快照；TTS 逐字高亮为逐字持久 span + active 类名（非 slice 重建）
+- **减少动效三态**：Header 开关 + localStorage['pb-motion-reduced']，优先级 用户选择 > 系统偏好；off→html.motion-full 覆盖系统 @media，on→html.motion-reduced，auto→跟随系统
+- **状态色通道**：6 组 var(--status-*)，必须"颜色 + 图标 + 文字"三通道，静态字面量映射（忌动态拼接，Tailwind JIT 扫不到）
+- 改动 20 文件约 +1650 行，**未提交**（留在工作区待用户确认）；详见 .workbuddy/memory/2026-11-16.md
+
 ## 待办/已知项
 - **middleware.ts → proxy.ts 迁移**：✅ 已完成（2026-07-17）。git mv 重命名 + 函数名改为 proxy，鉴权逻辑不变，build 警告消失。
 - /library 页面为重定向占位（router.replace('/')），首页已集成书架
