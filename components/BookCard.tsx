@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import Illustration from '@/components/Illustration'
+import { TIER_SETS, imageSrcSet, isTierable, tierUrl } from '@/lib/image-tiers'
 import { useAppStore } from '@/lib/store'
 import { createJobAPI } from '@/lib/use-jobs'
 import { getStrategy } from '@/lib/content-types'
@@ -137,7 +139,9 @@ export function BookCard({ book, onDelete, entranceDelay = 0, removing = false }
         <div className="h-40 sm:h-44 lg:h-48 bg-gradient-to-br from-secondary to-primary/20 flex items-center justify-center overflow-hidden shrink-0">
           {coverImage ? (
             <img
-              src={coverImage}
+              src={isTierable(coverImage) ? tierUrl(coverImage, 480) : coverImage}
+              srcSet={isTierable(coverImage) ? imageSrcSet(coverImage, TIER_SETS.shelf.tiers) : undefined}
+              sizes={TIER_SETS.shelf.sizes}
               alt={`《${book.title}》封面`}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -145,13 +149,7 @@ export function BookCard({ book, onDelete, entranceDelay = 0, removing = false }
               onError={() => setCoverImage(null)}
             />
           ) : (
-            <img
-              src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20cover%20illustration%2C%20a%20blank%20open%20storybook%20with%20magical%20sparkles%20and%20stars%20floating%20around%2C%20peach%20pink%20and%20cream%20pastel%20color%20palette%2C%20soft%20watercolor%20style%2C%20dreamy%20and%20whimsical%2C%20no%20text&image_size=portrait_4_3"
-              alt={`《${book.title}》封面`}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
+            <Illustration name="cover-fallback" className="h-full w-full" />
           )}
         </div>
 

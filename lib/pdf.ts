@@ -2,6 +2,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import type { PictureBook } from './types'
 import { getStrategy } from './content-types'
+import { isTierable, tierUrl } from './image-tiers'
 
 export interface GeneratePDFOptions {
   /** 每完成一页回调（done 从 1 开始，total = 封面 + 场景页 + 封底） */
@@ -127,11 +128,18 @@ export async function generatePDF(book: PictureBook, options?: GeneratePDFOption
       let imageHtml = ''
       let objectUrl: string | null = null
       if (scene.imageUrl || scene.imageBlob) {
-        const src = scene.imageUrl
-          ? (scene.imageUrl.startsWith('/') ? window.location.origin + scene.imageUrl : scene.imageUrl)
+        // PDF 画布上限只有 480×320，取 768 档（2x 余量）即可，零观感损失但省掉大量字节。
+        // 新书若尚未生成派生档位（或 sharp 失败），onerror 回退原图，保证导出永不因优化而失败。
+        const original = scene.imageUrl || ''
+        const tiered = original && isTierable(original) ? tierUrl(original, 768) : original
+        const src = tiered
+          ? (tiered.startsWith('/') ? window.location.origin + tiered : tiered)
           : scene.imageBlob ? (objectUrl = URL.createObjectURL(scene.imageBlob)) : ''
         if (src) {
-          imageHtml = `<img src="${escapeHtml(src)}" style="max-width:480px;max-height:320px;border-radius:8px;margin:12px auto;display:block;" crossorigin="anonymous" />`
+          const fallback = tiered !== original && original
+            ? ` onerror="this.onerror=null;this.src='${escapeHtml(original.startsWith('/') ? window.location.origin + original : original)}'"`
+            : ''
+          imageHtml = `<img src="${escapeHtml(src)}"${fallback} style="max-width:480px;max-height:320px;border-radius:8px;margin:12px auto;display:block;" crossorigin="anonymous" />`
         }
       }
 

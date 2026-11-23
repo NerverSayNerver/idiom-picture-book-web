@@ -14,6 +14,10 @@ import { VideoGenerator } from './VideoGenerator'
 import { DesktopPageDots, MobilePagerBar, PagerArrow } from './PagerBar'
 import { useTTS } from '@/hooks/useTTS'
 import { useSwipePager } from '@/hooks/useSwipePager'
+import { usePagePrefetch } from '@/hooks/use-prefetch'
+import type { PageQuality } from '@/hooks/use-prefetch'
+import { TIER_SETS, isTierable, tierUrl } from '@/lib/image-tiers'
+import type { ImageTier } from '@/lib/image-tiers'
 import { getStrategy } from '@/lib/content-types'
 import { getBookFullText, formatPoetryAttribution } from '@/lib/book-display'
 
@@ -43,6 +47,25 @@ const MANUAL_NAV_GUARD_MS = 600
 // 自动推进撞上拖拽：松手后延迟再推进
 const AUTO_ADVANCE_SETTLE_MS = 120
 const TOAST_MS = 3200
+
+// ── 加载体验（阈值全部来自 docs/superpowers/specs/2026-11-23-loading-ux-spec.md）──
+/** 占位：0–300ms 什么都不显示（靠容器渐变底），300ms 起扫光 */
+const IMG_HINT_SHEEN_MS = 300
+/** 1200ms 起才出文案。4G 正常路径永远到不了，出现即代表「这次慢了」 */
+const IMG_HINT_TEXT_MS = 1200
+/** 5s 起给自救手段（慢网提示 + 重试），不等自动重试走完 */
+const IMG_HINT_SLOW_MS = 5000
+/** 2×6s 超时 + 0.8s 退避 → 最坏 13s 内必须给出确定态 */
+const IMG_FAIL_MS = 12800
+/** P0（看得见的图）只重试 1 次，固定退避；预取（看不见的图）不重试 */
+const IMG_RETRY_BACKOFF_MS = 800
+/** 播报防抖：略大于 TTS_RESTART_DEBOUNCE_MS(250)，避免先播页码再被 TTS 打断 */
+const ANNOUNCE_DEBOUNCE_MS = 300
+/** 快扫判定：2s 内 ≥3 次落定 */
+const SKIM_WINDOW_MS = 2000
+const SKIM_FLIPS = 3
+/** 连续 800ms 无落定 → 退出快扫 */
+const SKIM_EXIT_MS = 800
 
 const DESKTOP_MQ = '(min-width: 768px)'
 const EASE_ENTER = 'cubic-bezier(0.22, 1, 0.36, 1)'
@@ -91,6 +114,242 @@ function dragOpacity(offset: number): number {
   const width = typeof window === 'undefined' ? 375 : window.innerWidth
   const ratio = Math.min(Math.abs(offset) / (width * 0.6 || 1), 1)
   return 1 - 0.28 * ratio
+}
+
+/**
+ * React 18.3 的 DOM 属性白名单里还没有 `fetchPriority`（19 才原生支持），
+ * 用全小写 + spread 直接落到 DOM 上：浏览器读得到，dev 也不会报「React 不认识这个 prop」。
+ * 值必须与渲染的实际优先级一致 —— 只有屏幕上这一页是 high。
+ */
+const PRIORITY_HIGH = { fetchpriority: 'high' } as unknown as { fetchPriority?: 'high' }
+const PRIORITY_LOW = { fetchpriority: 'low' } as unknown as { fetchPriority?: 'low' }
+
+const QUALITY_RANK: Record<PageQuality, number> = { full: 0, reduced: 1, minimal: 2 }
+
+/**
+ * 会话质量档：挂载时判定一次，本次阅读期间**只降不升**
+ * （升档 = 二次下载 + 可见的清晰度跳变，两个成本都换不到可感收益）。
+ *
+ * iOS Safari 全版本没有 `navigator.connection` → 先按 `full` 走。
+ * 实测吞吐回退（规范 §2.1）本轮未接：它需要在落地后改档，而已渲染页不回补需要
+ * 按页锁档，收益只在「真的弱网的 iPhone」上，风险却覆盖所有 iPhone，留待单独一轮。
+ */
+function detectQuality(): PageQuality {
+  if (typeof navigator === 'undefined') return 'full'
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+  if (!conn) return 'full'
+  if (conn.saveData === true) return 'minimal'
+  const effectiveType = conn.effectiveType
+  if (effectiveType === 'slow-2g' || effectiveType === '2g') return 'minimal'
+  if (effectiveType === '3g') return 'reduced'
+  return 'full'
+}
+
+/**
+ * 重试题材的 URL 变体。只在 P0（用户看得见的那张）重试时用：
+ * 同一个失败 URL 会被浏览器的负缓存立刻再判失败，必须变一个字节才真的重发。
+ * 预取的 URL 永远不带这个 token —— 预取 URL 必须与渲染 URL 逐字节一致。
+ */
+function withRetryToken(url: string, token: number): string {
+  if (!token) return url
+  return `${url}${url.includes('?') ? '&' : '?'}retry=${token}`
+}
+
+type MediaPhase = 0 | 1 | 2 | 3 | 4 // 0 无反馈 / 1 扫光 / 2 文案 / 3 慢网+重试 / 4 失败
+
+interface SceneMediaProps {
+  src: string
+  page: number
+  alt: string
+  /** 已在内存（B0 命中 / 本次会话看过）：不做淡入、不显示占位，翻页快照不会闪一下白 */
+  cached: boolean
+  /** 只有当前可见页显示占位与失败态；旧页/叶页快照一律 false（占位层绝不能进 3D 翻页层） */
+  active: boolean
+  /** 快扫模式：不显示扫光、不显示失败态（快速翻页时它们会变成闪烁噪声） */
+  skim: boolean
+  /** 0 = 还没重试过 */
+  retryToken: number
+  onSettled: (page: number, ok: boolean) => void
+  onRetry: (page: number) => void
+}
+
+/**
+ * 场景插图：位图 + 占位 + 失败态。**零新增动画**，全部复用既有 token：
+ * 底 = 调用方容器的渐变（本来就是布局的一部分，所以「占位出现」没有颜色跳跃）；
+ * 扫光 = `.progress-sheen`（在 globals.css 的两条 reduced-motion 停用列表里）；
+ * 淡入 = `duration-normal ease-enter`（240ms，与移动 slide 同档）。
+ */
+function SceneMedia({ src, page, alt, cached, active, skim, retryToken, onSettled, onRetry }: SceneMediaProps) {
+  const [loaded, setLoaded] = useState(cached)
+  const [decoded, setDecoded] = useState(cached)
+  const [phase, setPhase] = useState<MediaPhase>(0)
+  const retryTimerRef = useRef<number | null>(null)
+  const imgRef = useRef<HTMLImageElement | null>(null)
+
+  // 换页 / 重试 = 换 src：状态与计时器从头走（重试后不能直接跳回「正在画这一页…」的第 5 秒）
+  useEffect(() => {
+    setLoaded(cached)
+    setDecoded(cached)
+    setPhase(0)
+    if (retryTimerRef.current !== null) {
+      window.clearTimeout(retryTimerRef.current)
+      retryTimerRef.current = null
+    }
+  }, [src, cached])
+
+  useEffect(() => () => {
+    if (retryTimerRef.current !== null) window.clearTimeout(retryTimerRef.current)
+  }, [])
+
+  // 反馈阈值阶梯：只允许单调前进，避免「文案先于扫光出现」
+  useEffect(() => {
+    if (loaded || !active) return
+    const timers = [
+      window.setTimeout(() => setPhase((p) => (p > 1 ? p : 1)), IMG_HINT_SHEEN_MS),
+      window.setTimeout(() => setPhase((p) => (p > 2 ? p : 2)), IMG_HINT_TEXT_MS),
+      window.setTimeout(() => setPhase((p) => (p > 3 ? p : 3)), IMG_HINT_SLOW_MS),
+      window.setTimeout(() => setPhase(4), IMG_FAIL_MS),
+    ]
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [src, loaded, active])
+
+  const handleLoad = () => {
+    setLoaded(true)
+    // H2 的 decoded 必须是 decode() resolved，不是 onload —— 验收用它算 B0 命中率
+    imgRef.current?.decode?.().then(() => setDecoded(true)).catch(() => setDecoded(true))
+    onSettled(page, true)
+  }
+
+  const handleError = () => {
+    onSettled(page, false)
+    if (!active) return
+    if (retryToken === 0) {
+      // P0 重试 1 次，固定退避 800ms。第二次仍失败就是确定态。
+      if (retryTimerRef.current !== null) window.clearTimeout(retryTimerRef.current)
+      retryTimerRef.current = window.setTimeout(() => {
+        retryTimerRef.current = null
+        onRetry(page)
+      }, IMG_RETRY_BACKOFF_MS)
+      return
+    }
+    setPhase(4)
+  }
+
+  const failed = phase === 4
+  const showPlaceholder = !loaded && !failed
+  const imgStatus = failed ? 'error' : decoded || cached ? 'decoded' : 'pending'
+
+  return (
+    <>
+      {/* H1：占位一出现就可观测，不能拿延迟 300ms 的 .progress-sheen 代替，
+          否则「短暂占位」会被误判成 B0 命中。此层不参与视觉，只承载 data 属性。 */}
+      {showPlaceholder && <div data-img-placeholder="1" aria-hidden="true" className="absolute inset-0" />}
+      <img
+        ref={imgRef}
+        data-img-status={imgStatus}
+        src={src}
+        alt={alt}
+        width={1024}
+        height={768}
+        loading="eager"
+        decoding="async"
+        {...(active ? PRIORITY_HIGH : PRIORITY_LOW)}
+        onLoad={handleLoad}
+        onError={handleError}
+        className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-normal ease-enter ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
+      {/* 占位：装饰性，状态由 BookViewer:1125 那唯一的 live region 承载 */}
+      {showPlaceholder && active && phase >= 1 && !skim && (
+        <div aria-hidden="true" className="progress-sheen absolute inset-0" />
+      )}
+      {showPlaceholder && active && phase >= 2 && (
+        <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center px-4 text-center">
+          <p className="animate-fade-in text-[12.5px] leading-[1.6] text-[var(--text-muted)]">
+            {phase >= 3 ? '网络有点慢，可以先点朗读' : '正在画这一页…'}
+          </p>
+        </div>
+      )}
+      {showPlaceholder && active && phase >= 3 && !skim && (
+        <div className="absolute inset-x-0 bottom-3 flex justify-center">
+          <button
+            type="button"
+            onClick={() => onRetry(page)}
+            className="inline-flex min-h-11 items-center rounded-button bg-white/95 px-5 text-[13px] font-semibold text-[var(--text-ink)] shadow-card ring-1 ring-ink/[0.12]"
+          >
+            <span aria-hidden="true" className="mr-1">🔄</span> 重试
+          </button>
+        </div>
+      )}
+
+      {/* 失败态：只出现在当前可见页；不新增 live region，用 role="alert" */}
+      {failed && active && !skim && (
+        <div
+          role="alert"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-4 text-center"
+        >
+          <span aria-hidden="true" className="text-2xl leading-none">🖼️</span>
+          <p className="text-[15px] font-semibold text-[var(--text-ink)]">这一页的画没加载出来</p>
+          <p className="text-[12.5px] leading-[1.6] text-[var(--text-body)]">可以重试，也可以继续听朗读</p>
+          <button
+            type="button"
+            onClick={() => onRetry(page)}
+            className="mt-1 inline-flex min-h-11 items-center rounded-button bg-primary px-5 text-[13px] font-semibold text-ink shadow-card ring-1 ring-ink/[0.16]"
+          >
+            <span aria-hidden="true" className="mr-1">🔄</span> 重试
+          </button>
+        </div>
+      )}
+    </>
+  )
+}
+
+/**
+ * 封面缩略图：逐格独立淡入，**绝不 all-or-nothing**（最慢那张决定整墙时间，
+ * 且任意一张失败整墙就永不出现）。未到位时格子里是恒定的 `brand-strong-soft` 底色，
+ * 格子本身已有标题文字与完整 `aria-label`，所以「图没到」不等于「无名可点目标」。
+ */
+function ThumbImage({ src, desktopSrc, onSettled }: {
+  src: string; desktopSrc?: string; onSettled?: () => void
+}) {
+  const [status, setStatus] = useState<'pending' | 'loaded' | 'error'>('pending')
+  const settledRef = useRef(false)
+  // 换 src（重生成绘本）后状态必须归零，不能沿用上一张图的 loaded
+  useEffect(() => {
+    setStatus('pending')
+    settledRef.current = false
+  }, [src])
+  const settle = (next: 'loaded' | 'error') => {
+    setStatus(next)
+    if (!settledRef.current) {
+      settledRef.current = true
+      onSettled?.()
+    }
+  }
+  return (
+    // 用 <picture media> 按**视口断点**选档，不用 srcSet/sizes：
+    // 后者会让浏览器按 DPR3 把 157px 的移动格子升到 480w（6 张 180KB，顶满预算），
+    // 与「墙按格宽取档、不按 DPR」的硬规则冲突。media 查询不受 DPR 影响。
+    <picture>
+      {desktopSrc && <source media="(min-width: 640px)" srcSet={desktopSrc} />}
+      <img
+        data-thumb-status={status}
+        src={src}
+        alt=""
+        width={1024}
+        height={768}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => settle('loaded')}
+        onError={() => settle('error')}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-normal ease-enter ${
+          status === 'loaded' ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+    </picture>
+  )
 }
 
 export function BookViewer({ book }: BookViewerProps) {
@@ -256,6 +515,8 @@ export function BookViewer({ book }: BookViewerProps) {
       if (autoAdvanceTimerRef.current !== null) clearTimeout(autoAdvanceTimerRef.current)
       if (seekRetryTimerRef.current !== null) clearTimeout(seekRetryTimerRef.current)
       if (toastTimerRef.current !== null) clearTimeout(toastTimerRef.current)
+      if (announceTimerRef.current !== null) clearTimeout(announceTimerRef.current)
+      if (skimExitTimerRef.current !== null) clearTimeout(skimExitTimerRef.current)
       // 卸载时通知 PDF 生成器尽快停下，并释放仍持有的 blob（生命周期兜底出口）
       if (pdfCancelSignalRef.current) pdfCancelSignalRef.current.cancelled = true
       pdfResultRef.current?.revoke()
@@ -337,6 +598,154 @@ export function BookViewer({ book }: BookViewerProps) {
     sceneBlobUrls.forEach((url) => URL.revokeObjectURL(url))
   }, [sceneBlobUrls])
 
+  // ── 会话质量档（只降不升）────────────────────────────
+  const [quality, setQuality] = useState<PageQuality>('full')
+
+  useEffect(() => {
+    setQuality(detectQuality())
+    const conn = (navigator as Navigator & {
+      connection?: { addEventListener?: (type: 'change', cb: () => void) => void; removeEventListener?: (type: 'change', cb: () => void) => void }
+    }).connection
+    if (!conn?.addEventListener) return
+    // change 事件只允许降档：升档会让已渲染的页回补高清 = 二次下载 + 可见清晰度跳变
+    const onChange = () => {
+      const next = detectQuality()
+      setQuality((prev) => (QUALITY_RANK[next] >= QUALITY_RANK[prev] ? next : prev))
+    }
+    conn.addEventListener('change', onChange)
+    return () => conn.removeEventListener?.('change', onChange)
+  }, [])
+
+  // ── 快扫模式（skimMode）──────────────────────────────
+  // 2s 内 ≥3 次手动落定 = 孩子在快速浏览：窗口收为 {+1}、并发 1、不显示扫光与失败态、播报防抖
+  const [skimMode, setSkimMode] = useState(false)
+  const skimStampsRef = useRef<number[]>([])
+  const skimExitTimerRef = useRef<number | null>(null)
+
+  const noteFlipLanded = useCallback(() => {
+    const now = Date.now()
+    const stamps = skimStampsRef.current.filter((at) => now - at <= SKIM_WINDOW_MS)
+    stamps.push(now)
+    skimStampsRef.current = stamps
+    if (stamps.length >= SKIM_FLIPS) setSkimMode(true)
+    if (skimExitTimerRef.current !== null) window.clearTimeout(skimExitTimerRef.current)
+    skimExitTimerRef.current = window.setTimeout(() => {
+      skimExitTimerRef.current = null
+      skimStampsRef.current = []
+      setSkimMode(false)
+    }, SKIM_EXIT_MS)
+  }, [])
+
+  /** 退出条件之二：当前页图片 settled（用户停下并等到了图）。仍在连翻时不要打断 */
+  const maybeExitSkim = useCallback(() => {
+    const last = skimStampsRef.current[skimStampsRef.current.length - 1] ?? 0
+    if (Date.now() - last < SKIM_EXIT_MS) return
+    skimStampsRef.current = []
+    setSkimMode(false)
+  }, [])
+
+  /**
+   * 封面缩略图墙第一行（移动 2 格）落定前，不预取第 1 页。
+   * 6 格 ×19KB 若与 95KB 的正文图均分带宽，「首格有图 ≤2.2s」会被挤到 3s+。
+   * 优先级不是抽象序号，是先后顺序。
+   */
+  const [coverRowSettled, setCoverRowSettled] = useState(false)
+  const coverSettledCountRef = useRef(0)
+  useEffect(() => {
+    coverSettledCountRef.current = 0
+    setCoverRowSettled(false)
+  }, [book.id])
+  const noteCoverThumbSettled = useCallback(() => {
+    coverSettledCountRef.current += 1
+    if (coverSettledCountRef.current >= 2) setCoverRowSettled(true)
+  }, [])
+
+  // ── 图片档位（唯一产地：lib/image-tiers.ts）─────────────
+  // 桌面用 1024（跨页半页 ~600px，DPR2 需 1200px，封顶 1024）；
+  // 移动用 768（单页显示宽 ~272px，768 已是 2.8×，DPR3 所需 816px 也只差 6%），
+  // 省下的 30KB/页正好让「只看封面就走」的封面预取不击穿 180KB 预算。
+  // 弱网一律 768。渲染与预取共用 sceneImgUrl，URL 永远一致。
+  const readerTier: ImageTier = quality === 'full' && isWide ? 1024 : 768
+
+  /**
+   * 场景图 URL 的**唯一**产地：`getSceneImageUrl()` 给出原始路径，这里加档位。
+   * `<img src>` 与预取器都调它 —— 两边各算一次 = 预取下 A 档、渲染要 B 档 = 双倍下载。
+   */
+  const sceneImgUrl = useCallback((scene: Scene) => {
+    const raw = getSceneImageUrl(scene)
+    if (!raw) return ''
+    return isTierable(raw) ? tierUrl(raw, readerTier) : raw // blob:/远程 URL 原样用，不参与档位
+  }, [getSceneImageUrl, readerTier])
+
+  const prefetchPages = useMemo(() => {
+    return book.scenes
+      .map((scene, index) => ({ page: index + 1, url: sceneImgUrl(scene) }))
+      .filter((entry) => entry.url !== '')
+  }, [book.scenes, sceneImgUrl])
+
+  const {
+    isDecoded,
+    reportSettled,
+    notifyRetry,
+    noteFlip,
+  } = usePagePrefetch({
+    pages: prefetchPages,
+    currentPage,
+    totalPages,
+    quality,
+    // 导出 PDF / 打开抽屉或视频面板时暂停：否则弱网下预取会和导出抢带宽，退化成「PDF 导出失败」
+    paused: pdf.status === 'running' || toolbarOpen || showVideoGenerator || (currentPage === 0 && !coverRowSettled),
+    skimMode,
+  })
+
+  // ── 播报：全部走唯一那个 aria-live 区域 ─────────────────
+  const announceTimerRef = useRef<number | null>(null)
+  /** 落定时图还没到位、且在等待的页：图到位后补一条「已加载」闭合状态 */
+  const pendingImageRef = useRef(new Set<number>())
+  /** 每页的「图片已加载」只播一次 */
+  const loadedAnnouncedRef = useRef(new Set<number>())
+
+  /**
+   * aria-live 写入节奏。手动落定最快 3 次/秒（FLIP_COOLDOWN_MS=300），
+   * 而一次 utterance 要 1.5–2s：不防抖会让读屏队列积压 6s+，用户听到「第2页第3页第4页」的残句。
+   * 300ms 略大于 TTS_RESTART_DEBOUNCE_MS(250)，避免先播页码再被 TTS 打断。
+   */
+  const announce = useCallback((text: string, immediate = false) => {
+    if (!text) return
+    if (announceTimerRef.current !== null) window.clearTimeout(announceTimerRef.current)
+    const write = () => {
+      announceTimerRef.current = null
+      setAnnouncement(text)
+    }
+    if (immediate) {
+      write()
+      return
+    }
+    announceTimerRef.current = window.setTimeout(write, ANNOUNCE_DEBOUNCE_MS)
+  }, [])
+
+  // 图片重试：换一个 src 变体逼浏览器真的重发（同一失败 URL 会被负缓存秒判失败）
+  const [retryTokens, setRetryTokens] = useState<Record<number, number>>({})
+
+  const handleSceneRetry = useCallback((page: number) => {
+    notifyRetry(page)
+    loadedAnnouncedRef.current.delete(page)
+    setRetryTokens((prev) => ({ ...prev, [page]: (prev[page] ?? 0) + 1 }))
+  }, [notifyRetry])
+
+  const handleSceneSettled = useCallback((page: number, ok: boolean) => {
+    reportSettled(page, ok)
+    if (!ok) return
+    maybeExitSkim()
+    // 「停留期间图到位」的四个条件：仍在该页 / 该页只播一次 / 未在朗读 / 未开弹窗
+    if (page !== currentPageRef.current) return
+    if (isPlayingRef.current || dialogOpenRef.current) return
+    if (!pendingImageRef.current.delete(page)) return
+    if (loadedAnnouncedRef.current.has(page)) return
+    loadedAnnouncedRef.current.add(page)
+    announce(`第 ${page + 1} 页的图片已加载`)
+  }, [announce, maybeExitSkim, reportSettled])
+
   // ── 朗读推进（先声明 ref，避免与 goToPage 形成循环依赖）──
   const advanceRef = useRef<(page: number, dir: 'next' | 'prev') => void>(() => {})
 
@@ -384,6 +793,9 @@ export function BookViewer({ book }: BookViewerProps) {
 
   /** 翻页落定后的统一收尾：TTS 冲突处理 + 读屏播报 */
   const handleLanding = useCallback((fromPage: number, toPage: number, source: NavSource) => {
+    // 快扫判定只统计手动落定（TTS 自动推进每几秒才一拍，混进来会污染信号）
+    if (source === 'manual') noteFlipLanded()
+
     if (source === 'manual' && isReadingModeRef.current) {
       if (toPage === 0) {
         // 回到封面：朗读无对应内容，直接停
@@ -408,9 +820,23 @@ export function BookViewer({ book }: BookViewerProps) {
 
     // 自动朗读推进不播报（会与语音抢音频）；抽屉/视频面板打开时不播报
     if (source === 'manual' && !dialogOpenRef.current) {
-      setAnnouncement(describePage(toPage))
+      const base = describePage(toPage)
+      // 落定时图还没到位 → 合并进同一次写入（分两次写会让读屏排两个 utterance）
+      let imagePending = false
+      if (toPage > 0 && toPage < totalPages - 1) {
+        if (isDecoded(toPage)) {
+          // 动画期间图已经到位（B0，或 B1 但下载快过 240ms）→ 不额外提图
+          pendingImageRef.current.delete(toPage)
+        } else {
+          pendingImageRef.current.add(toPage)
+          imagePending = true
+        }
+      } else {
+        pendingImageRef.current.delete(toPage)
+      }
+      announce(imagePending ? `${base}，图片还在加载` : base)
     }
-  }, [describePage, restartReadingAtPage, showToast, stop, totalPages])
+  }, [announce, describePage, isDecoded, noteFlipLanded, restartReadingAtPage, showToast, stop, totalPages])
 
   // 兜底解锁：只处理一次
   const finalizeFlip = useCallback(() => {
@@ -449,6 +875,18 @@ export function BookViewer({ book }: BookViewerProps) {
 
     if (source === 'manual') manualNavAtRef.current = Date.now()
 
+    /**
+     * ── B0 / B1 分流（等待阈值恒为 0ms，两条路径都不等图）────────────
+     * B0 命中（目标页已在内存）：立即启动动画，动画期间旧页覆盖画面 → 用户完全无感，这是常态。
+     * B1 未命中：同样立即启动动画；新页的 `<img>`（fetchPriority=high）并发拉 P0，
+     *   占位由 SceneMedia 用容器渐变底填，0–300ms 不显示任何反馈。
+     * 「等图再翻」已被否决：它最坏情况无界，必然退化成「先白等 N 毫秒再走 B1」，
+     * 那 N 毫秒里严格劣于 B1、之后与 B1 等价 —— 不存在任何胜出的子情形。
+     */
+    const targetDecoded = isDecoded(clamped)
+    noteFlip(clamped, targetDecoded)
+    if (!targetDecoded) pendingImageRef.current.add(clamped)
+
     // reduced-motion：直接切页，无位移无淡入
     if (prefersReducedMotion()) {
       lastFlipAtRef.current = Date.now()
@@ -473,7 +911,7 @@ export function BookViewer({ book }: BookViewerProps) {
       finalizeFlip,
       kind === 'leaf' ? FLIP_FALLBACK_MS : kind === 'slide' ? SLIDE_FALLBACK_MS : FADE_FALLBACK_MS,
     )
-  }, [finalizeFlip, handleLanding, setPage, totalPages])
+  }, [finalizeFlip, handleLanding, isDecoded, noteFlip, setPage, totalPages])
 
   const goToNext = useCallback((target?: number, source: NavSource = 'manual') => {
     goToPage(typeof target === 'number' ? target : currentPageRef.current + 1, 'next', source)
@@ -815,26 +1253,31 @@ export function BookViewer({ book }: BookViewerProps) {
 
   /** 单页（<768）场景卡：图上文下，内部滚动 */
   const renderSceneSingle = (pScene: Scene, pSceneIndex: number, highlightEnabled: boolean) => {
-    const imgSrc = getSceneImageUrl(pScene)
+    const imgSrc = sceneImgUrl(pScene)
+    const pageNo = pSceneIndex + 1
     const isCurrent = pSceneIndex === sceneIndex
+    const retryToken = retryTokens[pageNo] ?? 0
 
     return (
       <article className="mx-auto flex max-h-[calc(100dvh-56px-env(safe-area-inset-bottom)-88px)] w-full max-w-[560px] flex-col overflow-hidden rounded-card bg-white shadow-card">
-        {/* 图片：固定宽高比消除 CLS；图片区底缘 hairline + 8px 渐变白过渡，不加分割线 */}
+        {/* 图片：固定宽高比消除 CLS；图片区底缘 hairline + 8px 渐变白过渡，不加分割线。
+            容器渐变底是布局的一部分、永远在 —— 所以「占位出现」不会产生任何颜色跳跃。 */}
         <div className="relative aspect-[4/3] max-h-[46dvh] min-h-[180px] shrink-0 overflow-hidden border-b border-[var(--hairline)] bg-gradient-to-br from-[var(--brand-strong-soft)] to-primary/25">
           {imgSrc ? (
-            <img
-              src={imgSrc}
-              alt={`第 ${pSceneIndex + 1} ${sceneUnit}：${pScene.title}`}
-              width={1024}
-              height={768}
-              loading={isCurrent ? 'eager' : 'lazy'}
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-contain"
+            <SceneMedia
+              src={withRetryToken(imgSrc, retryToken)}
+              page={pageNo}
+              alt={`第 ${pageNo} ${sceneUnit}：${pScene.title}`}
+              cached={isDecoded(pageNo)}
+              active={isCurrent}
+              skim={skimMode}
+              retryToken={retryToken}
+              onSettled={handleSceneSettled}
+              onRetry={handleSceneRetry}
             />
           ) : null}
           <span className="absolute left-3 top-3 inline-flex h-6 items-center rounded-full bg-white/[0.88] px-2 text-[11.5px] text-[var(--text-ink)] shadow-card">
-            第 {pSceneIndex + 1} {sceneUnit}
+            第 {pageNo} {sceneUnit}
           </span>
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-2 bg-gradient-to-b from-transparent to-white" />
         </div>
@@ -880,26 +1323,32 @@ export function BookViewer({ book }: BookViewerProps) {
 
   /** 双页（≥768）场景跨页：左图右文 */
   const renderSceneSpread = (pScene: Scene, pSceneIndex: number, highlightEnabled: boolean) => {
-    const imgSrc = getSceneImageUrl(pScene)
+    const imgSrc = sceneImgUrl(pScene)
+    const pageNo = pSceneIndex + 1
+    const retryToken = retryTokens[pageNo] ?? 0
     return (
       <div className="relative flex items-stretch">
         <div className="w-1/2 rounded-l-card bg-gradient-to-r from-[var(--brand-strong-soft)] to-primary/25 p-6 shadow-card">
           <div className="mb-4 text-center">
             <span className="text-[12px] text-[var(--text-muted)]">
-              第 {pSceneIndex + 1} {sceneUnit}
+              第 {pageNo} {sceneUnit}
             </span>
             <h3 className="text-xl font-bold text-[var(--text-ink)]">{pScene.title}</h3>
           </div>
           {imgSrc ? (
+            /* 图框底沿用 bg-white/40，**不要**为了和单页统一改成渐变：
+               左侧大面板已经是渐变，图框再渐变会破坏左图右文的层次 */
             <div className="relative aspect-[4/3] overflow-hidden rounded-inner bg-white/40">
-              <img
-                src={imgSrc}
-                alt={`第 ${pSceneIndex + 1} ${sceneUnit}：${pScene.title}`}
-                width={1024}
-                height={768}
-                loading={pSceneIndex === sceneIndex ? 'eager' : 'lazy'}
-                decoding="async"
-                className="absolute inset-0 h-full w-full object-contain"
+              <SceneMedia
+                src={withRetryToken(imgSrc, retryToken)}
+                page={pageNo}
+                alt={`第 ${pageNo} ${sceneUnit}：${pScene.title}`}
+                cached={isDecoded(pageNo)}
+                active={pSceneIndex === sceneIndex}
+                skim={skimMode}
+                retryToken={retryToken}
+                onSettled={handleSceneSettled}
+                onRetry={handleSceneRetry}
               />
             </div>
           ) : null}
@@ -974,6 +1423,8 @@ export function BookViewer({ book }: BookViewerProps) {
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {book.scenes.map((s, i) => {
                 const imgSrc = getSceneImageUrl(s) || null
+                // 墙按格宽取档，只出 320/480（TIER_SETS.thumb 在数据结构上禁止升到 768/1024）
+                const thumbSrc = imgSrc && isTierable(imgSrc) ? tierUrl(imgSrc, 320) : imgSrc
                 return (
                   <button
                     key={i}
@@ -985,15 +1436,11 @@ export function BookViewer({ book }: BookViewerProps) {
                     className="group overflow-hidden rounded-inner bg-white text-left ring-1 ring-[var(--hairline)] transition-all duration-normal ease-standard focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B04A2E] md:hover:-translate-y-0.5 md:hover:scale-[1.02] md:hover:shadow-cardHover"
                   >
                     <div className="relative aspect-[4/3] overflow-hidden bg-[var(--brand-strong-soft)]">
-                      {imgSrc && (
-                        <img
-                          src={imgSrc}
-                          alt=""
-                          width={1024}
-                          height={768}
-                          loading="lazy"
-                          decoding="async"
-                          className="absolute inset-0 h-full w-full object-cover"
+                      {thumbSrc && (
+                        <ThumbImage
+                          src={thumbSrc}
+                          desktopSrc={imgSrc && isTierable(imgSrc) ? tierUrl(imgSrc, TIER_SETS.thumb.tiers[1]) : undefined}
+                          onSettled={noteCoverThumbSettled}
                         />
                       )}
                     </div>

@@ -48,6 +48,19 @@ const nextConfig = {
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
         ],
       },
+      {
+        // 派生档位（w320/w480/w768/w1024 WebP）：可长缓存 + 后台再校验。
+        // 不用 immutable：重新生成绘本会以同名覆盖，immutable 会让用户永久看到旧图。
+        source: '/generated/:path+.webp',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        // 原图：可能被重新生成覆盖，只允许短缓存
+        source: '/generated/:path+.png',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }],
+      },
     ]
   },
 }

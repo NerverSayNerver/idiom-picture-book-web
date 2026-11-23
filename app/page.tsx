@@ -10,6 +10,7 @@ import { BookCard } from '@/components/BookCard'
 import { useAppStore } from '@/lib/store'
 import { useJobs } from '@/lib/use-jobs'
 import type { ContentCategory } from '@/lib/types'
+import Illustration from '@/components/Illustration'
 
 interface IndexBook {
   id: string
@@ -400,17 +401,9 @@ export default function Home() {
             </div>
             {/* <640 不渲染插图：首屏省 160px，移动端 LCP 交给文案 */}
             <div className="hidden sm:block md:col-span-2 h-40 md:h-48 relative">
-              <img
-                src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20picture%20book%20illustration%2C%20warm%20pastel%20tone%20with%20peach%20pink%20and%20cream%20color%20palette%2C%20a%20parent%20and%20child%20reading%20a%20storybook%20together%20surrounded%20by%20cute%20woodland%20animals%20and%20floating%20stars%2C%20soft%20watercolor%20style%2C%20whimsical%20and%20dreamy%2C%20no%20text&image_size=landscape_4_3"
-                alt="和宝贝一起读绘本"
-                className="w-full h-[calc(100%_+_16px)] -mt-2 object-cover animate-float-soft hero-float"
-                /* Hero 是最靠上的 LCP 图：必须 eager + 高优先级，不能被 lazy 拖慢 */
-                loading="eager"
-                /* 运行时属性名必须小写：React 18 的类型里有 fetchPriority，但它不在属性白名单，
-                   传驼峰会打 unknown-prop 警告；小写写法浏览器一样识别（属性名大小写不敏感） */
-                {...({ fetchpriority: 'high' } as Record<string, string>)}
-                decoding="async"
-              />
+              {/* 本地 SVG：原先的外链接口已 404，返回的英文占位图直接出现在首屏主视觉上。
+                  SVG 无需网络请求，也没有 float 动画（首屏 LCP 与 reduced-motion 双收益）。 */}
+              <Illustration name="hero" className="w-full h-full -mt-2" />
             </div>
           </div>
         </section>
@@ -571,13 +564,7 @@ export default function Home() {
             /* 三种空态必须区分：搜索无结果 / 分类空 / 真没有 */
             hasSearch ? (
               <div className="rounded-card bg-white shadow-card overflow-hidden px-6 py-10 text-center">
-                <img
-                  src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20illustration%2C%20a%20magnifying%20glass%20looking%20at%20an%20empty%20picture%20book%20page%2C%20soft%20warm%20sunlight%2C%20peach%20pink%20and%20cream%20color%20palette%2C%20cute%20watercolor%20style%2C%20no%20text&image_size=landscape_4_3"
-                  alt=""
-                  className="w-full max-w-[220px] mx-auto rounded-inner mb-4"
-                  loading="lazy"
-                  decoding="async"
-                />
+                <Illustration name="empty-shelf" className="w-full max-w-[220px] mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-[var(--text-ink)]">
                   没找到「{searchText.trim()}」
                 </h3>
@@ -594,13 +581,7 @@ export default function Home() {
               </div>
             ) : filterCategory !== 'all' ? (
               <div className="rounded-card bg-white shadow-card overflow-hidden px-6 py-10 text-center">
-                <img
-                  src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20illustration%2C%20an%20empty%20wooden%20bookshelf%20with%20a%20small%20potted%20plant%20on%20top%2C%20soft%20warm%20sunlight%2C%20peach%20pink%20and%20cream%20color%20palette%2C%20cute%20watercolor%20style%2C%20cozy%20and%20minimal%2C%20no%20text&image_size=landscape_4_3"
-                  alt=""
-                  className="w-full max-w-[220px] mx-auto rounded-inner mb-4"
-                  loading="lazy"
-                  decoding="async"
-                />
+                <Illustration name="empty-shelf" className="w-full max-w-[220px] mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-[var(--text-ink)]">
                   「{indexData?.categories[filterCategory]?.label ?? CATEGORY_LABELS[filterCategory] ?? '这个分类'}」还一本都没有
                 </h3>
@@ -627,13 +608,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="rounded-card bg-white shadow-card overflow-hidden px-6 py-10 text-center">
-                <img
-                  src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20illustration%2C%20an%20empty%20wooden%20bookshelf%20with%20a%20small%20potted%20plant%20sprouting%20on%20top%2C%20soft%20warm%20sunlight%2C%20peach%20pink%20and%20cream%20color%20palette%2C%20cute%20watercolor%20style%2C%20cozy%20and%20hopeful%2C%20no%20text&image_size=landscape_4_3"
-                  alt=""
-                  className="w-full max-w-[260px] mx-auto rounded-inner mb-4"
-                  loading="lazy"
-                  decoding="async"
-                />
+                <Illustration name="empty-shelf" className="w-full max-w-[260px] mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-[var(--text-ink)]">
                   书架还空着，等你来讲第一个故事 🌱
                 </h3>

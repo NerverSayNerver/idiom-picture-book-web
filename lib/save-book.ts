@@ -3,6 +3,7 @@ import path from 'path'
 import type { PictureBook } from './types'
 import { getBookFullText } from './book-display'
 import { sanitizeFilename, validateCategory, assertPathWithinBase } from './path-security'
+import { ensureImageTiers } from './image-tiers-server'
 
 // S3: 简单的 Promise 互斥锁，防止 updateIndex 并发读写冲突
 let indexLock: Promise<void> = Promise.resolve()
@@ -42,6 +43,17 @@ export async function saveBook(book: PictureBook): Promise<{ path: string }> {
     JSON.stringify(book, null, 2),
     'utf-8'
   )
+
+  // 新书自动出派生档位。这是优化不是正确性依赖：失败只记录，绝不阻断保存。
+  // 并发/超时/失败吞噬都封装在 ensureImageTiers 内部（单本最多等 8s）。
+  try {
+    const result = await ensureImageTiers(bookDir)
+    if (result.failed > 0 || result.timedOut) {
+      console.warn(`[image-tiers] ${safeCategory}/${safeSourceText} 档位生成不完整`, result)
+    }
+  } catch (err) {
+    console.warn('[image-tiers] 档位生成异常，已忽略：', (err as Error)?.message ?? err)
+  }
 
   await updateIndex(baseDir, book, safeCategory, safeSourceText)
 

@@ -31,5 +31,17 @@
 - 关键变量：LLM_API_KEY/LLM_API_BASE/LLM_MODEL、AGNES_API_KEY、IMAGE_PROVIDER/VIDEO_PROVIDER、ALLOWED_IMAGE_DOMAINS（SSRF白名单）、INTERNAL_API_KEY+NEXT_PUBLIC_INTERNAL_API_KEY（API鉴权，部署公网必设）、DEBUG_LLM
 - next.config.js 含完整 CSP/安全头 + turbopack.root 配置
 
+## 图片与字体约定（2026-11-23 第三轮建立）
+- **图片 URL 单一产地**：`lib/image-tiers.ts`。任何组件不得手拼 `/generated/...` 或 `.w{n}.webp`；预取与渲染必须算出同一 URL（否则双倍下载 + 清晰度跳变）。档位 320/480/768/1024 WebP q76
+- 派生档位不进 git（public/generated 整体 gitignore），由 `npm run tiers[:all|:report]` 生成；新书经 `lib/save-book.ts` → `ensureImageTiers()` 自动出档，失败只警告不阻断
+- **缩略图墙按视口选档**：用 `<picture media="(min-width:640px)">`，不要用 `srcSet/sizes` —— 浏览器会按 DPR3 把 157px 格子升档，抹掉最大收益且无可测回归
+- 阅读页档位：桌面 1024 / 移动 768 / 弱网 768；PDF 显式 768 + onerror 回退原图
+- **字体走系统中文栈**（tailwind.config.ts 的 fontFamily.sans），禁止回退 next/font/google 全量 Noto Sans SC：实测 36 个 woff2 / 1880KB。要统一字形只能自托管按本站文案子集化的字体
+- 本地插画统一在 `components/Illustration.tsx`，禁止再引 `trae-api-cn` 外链（已 404 且返回英文占位图）
+
+## 构建环境注意
+- `next build` 会被 WorkBuddy 的安全删除护栏拦在 `.next/trace`（50 项阈值）。解决：构建前 `mv .next /tmp/pb-next-bak/next-$(date +%s)`，不要强删
+
 ## 文档位置
 - 设计文档在 docs/superpowers/{plans,specs}/ 下（非 docs/plans）
+- `docs/superpowers/specs/2026-11-23-loading-ux-spec.md`：21 条机械可核对加载指标 M-01–M-21

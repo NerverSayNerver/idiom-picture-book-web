@@ -56,7 +56,13 @@ const config: Config = {
         modal: '0 2px 8px rgba(60,40,30,.08), 0 12px 40px rgba(60,40,30,.18)',
       },
       fontFamily: {
-        sans: ['var(--font-noto-sans-sc)', 'Noto Sans SC', 'sans-serif'],
+        // 系统中文栈：0 网络字节。iOS/iPad=苹方、macOS=苹方、Windows=微软雅黑、Android=Noto Sans CJK。
+        // 不要改回 next/font/google 的全量 Noto Sans SC：实测首页 36 个 woff2 / 1880KB。
+        sans: [
+          '-apple-system', 'BlinkMacSystemFont', 'Segoe UI',
+          'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+          'Noto Sans CJK SC', 'sans-serif',
+        ],
       },
       transitionDuration: {
         instant: '80ms', fast: '150ms', normal: '240ms',
