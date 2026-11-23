@@ -1,17 +1,6 @@
 import type { PictureBook } from './types'
 import { getContentInfo } from './content-info'
 
-const POETRY_INTRO_PATTERN = /的夜晚|介绍|背景|开篇|序幕|意境/
-
-/**
- * 判断 title 是否为一句诗（而非 intro/说明性标题）。
- * 古诗后处理已保证所有场景标题为诗句原文；此函数保留作为兜底防护。
- */
-export function isPoetryVerseTitle(title: string): boolean {
-  const t = title.trim()
-  return t.length >= 2 && t.length <= 12 && !POETRY_INTRO_PATTERN.test(t)
-}
-
 export function getBookAuthor(book: PictureBook): string | undefined {
   return book.author ?? getContentInfo(book.sourceText, book.category)?.author
 }

@@ -9,10 +9,10 @@ export default function Error({
   reset: () => void
 }) {
   return (
-    <main className="min-h-screen flex items-center justify-center px-4">
+    <main id="main" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4">
       <div
         role="alert"
-        className="max-w-md w-full bg-white rounded-card shadow-md p-8 text-center animate-fade-up"
+        className="max-w-md w-full bg-white rounded-card shadow-card p-8 text-center animate-fade-up"
       >
         <img
           src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Children%27s%20book%20illustration%2C%20a%20cute%20confused%20owl%20with%20head%20tilted%20looking%20puzzled%2C%20small%20floating%20sparks%20around%2C%20peach%20pink%20and%20cream%20pastel%20color%20palette%2C%20soft%20watercolor%20style%2C%20minimal%20and%20clean%2C%20no%20text&image_size=square"

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import { useJobs, pauseJobAPI, resumeJobAPI, cancelJobAPI, deleteJobAPI, retryJobAPI } from '@/lib/use-jobs'
 import type { Task, TaskStatus } from '@/lib/task-types'
 import { TaskCard } from './TaskCard'
@@ -16,8 +17,65 @@ type FilterMode = 'all' | 'pending' | 'running' | 'paused' | 'completed' | 'fail
 type ConfirmAction = 'cancel-all' | 'clear-completed' | 'clear-failed' | 'retry-failed' | null
 interface NotifyState { text: string; failed: boolean }
 
+// ── 错误态文案（按 HTTP 状态分流：网络 / 鉴权 / 服务端） ──
+type ErrorKind = 'network' | 'auth' | 'server' | 'unknown'
+
+const ERROR_COPY: Record<ErrorKind, { icon: string; title: string; desc: string; backToShelf: boolean }> = {
+  network: {
+    icon: '📡',
+    title: '任务状态暂时看不到',
+    desc: '你的任务还在后台生成，网络恢复后会自动显示',
+    backToShelf: false,
+  },
+  auth: {
+    icon: '🔑',
+    title: '任务列表打不开',
+    desc: '可能是内部密钥未配置（部署问题）',
+    backToShelf: true,
+  },
+  server: {
+    icon: '🛠️',
+    title: '服务暂时不可用',
+    desc: '每 15 秒会自动重试一次',
+    backToShelf: false,
+  },
+  unknown: {
+    icon: '⚠️',
+    title: '任务状态暂时看不到',
+    desc: '请稍后重试，或刷新页面',
+    backToShelf: false,
+  },
+}
+
+// 骨架屏 3 条：含状态点/类型图标/标题/徽章/进度条形状，避免加载时布局跳动
+function TaskListSkeleton() {
+  return (
+    <div>
+      <div aria-hidden="true" className="space-y-3">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="bg-white rounded-card border border-[var(--hairline)] shadow-card overflow-hidden animate-pulse">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-[3px] bg-[var(--status-cancelled-soft)]" />
+                <div className="w-2 h-2 rounded-full bg-[var(--status-cancelled-soft)]" />
+                <div className="w-5 h-4 rounded-[3px] bg-[var(--status-cancelled-soft)]" />
+                <div className="w-24 h-3 rounded-full bg-[var(--status-cancelled-soft)]" />
+              </div>
+              <div className="w-16 h-5 rounded-full bg-[var(--status-cancelled-soft)]" />
+            </div>
+            <div className="px-4 pb-3">
+              <div className="w-full h-2.5 rounded-full bg-[var(--status-cancelled-soft)]" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <span role="status" aria-live="polite" className="sr-only">正在加载任务状态…</span>
+    </div>
+  )
+}
+
 export function TaskQueue({ compact = false, className = '', initialFilter }: TaskQueueProps) {
-  const { jobs, allTasks, refresh } = useJobs()
+  const { jobs, allTasks, refresh, error, errorStatus, hasLoaded, isValidating } = useJobs()
   const [filter, setFilter] = useState<FilterMode>(
     (initialFilter && ['all', 'pending', 'running', 'paused', 'completed', 'failed'].includes(initialFilter)
       ? initialFilter
@@ -33,6 +91,10 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
   const [retrying, setRetrying] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [pendingConfirm, setPendingConfirm] = useState<ConfirmAction>(null)
+  // 全局唯一的卡片内确认区（取消/删除互斥，避免多张卡同时展开确认）
+  const [activeConfirmId, setActiveConfirmId] = useState<string | null>(null)
+  const [reloading, setReloading] = useState(false)
+  const [online, setOnline] = useState(true)
 
   const showNotify = useCallback((text: string, failed = false) => {
     setNotify({ text, failed })
@@ -42,6 +104,20 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
 
   useEffect(() => () => {
     if (notifyTimer.current) clearTimeout(notifyTimer.current)
+  }, [])
+
+  // 在线状态：区分"断网"与"服务端报错"，并让网络恢复后文案自动更新
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return
+    setOnline(navigator.onLine)
+    const goOnline = () => setOnline(true)
+    const goOffline = () => setOnline(false)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => {
+      window.removeEventListener('online', goOnline)
+      window.removeEventListener('offline', goOffline)
+    }
   }, [])
 
   // ── 完成通知 ──────────────────────────────────────────
@@ -73,6 +149,34 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
       return next
     })
   }, [])
+
+  // ── 三态判定 ──────────────────────────────────────────
+  // firstLoading：首屏还没拿到过成功响应且没报错 → 骨架
+  // fatalError：从未成功过且报错 → 全区域错误态（关键：401/500 不再显示"暂无任务"）
+  // staleError：有旧数据 + 更新失败 → 保留列表 + 顶部细条提示
+  const firstLoading = !hasLoaded && !error
+  const fatalError = !hasLoaded && !!error
+  const staleError = hasLoaded && !!error
+
+  const errorKind: ErrorKind = !online || errorStatus == null
+    ? 'network'
+    : errorStatus === 401 || errorStatus === 403
+      ? 'auth'
+      : errorStatus >= 500
+        ? 'server'
+        : 'unknown'
+
+  const handleReload = useCallback(async () => {
+    if (reloading) return
+    setReloading(true)
+    try {
+      await refresh()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setReloading(false)
+    }
+  }, [refresh, reloading])
 
   // ── 统计数据（不受筛选影响） ──────────────────────────
   const stats = {
@@ -116,18 +220,28 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
     setFilter(prev => prev === mode ? 'all' : mode)
   }, [])
 
-  // ── 非破坏性全局控制：直接执行 ──────────────────────
+  // ── 非破坏性全局控制：直接执行（mutate API 会 throw，需兜底并给出可见反馈） ──
   const handlePauseAll = useCallback(async () => {
-    for (const j of jobs.filter(j => j.status === 'running')) {
-      await pauseJobAPI(j.id)
+    try {
+      for (const j of jobs.filter(j => j.status === 'running')) {
+        await pauseJobAPI(j.id)
+      }
+    } catch (err) {
+      console.error(err)
+      showNotify('❌ 全部暂停失败，请稍后重试', true)
     }
-  }, [jobs])
+  }, [jobs, showNotify])
 
   const handleResumeAll = useCallback(async () => {
-    for (const j of jobs.filter(j => j.status === 'paused')) {
-      await resumeJobAPI(j.id)
+    try {
+      for (const j of jobs.filter(j => j.status === 'paused')) {
+        await resumeJobAPI(j.id)
+      }
+    } catch (err) {
+      console.error(err)
+      showNotify('❌ 全部继续失败，请稍后重试', true)
     }
-  }, [jobs])
+  }, [jobs, showNotify])
 
   // ── 破坏性批量操作：统一「二次确认 → 执行」 ─────────
   // 三个原生 window.confirm 与「取消全部」统一走内联确认，失败统一走错误横幅
@@ -207,13 +321,13 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
     }
   }, [pendingConfirm, processing, jobs, refresh, showNotify])
 
-  // ── 分组（状态色统一引用 CSS 变量） ──────────────────
-  const orderedGroups: { label: string; color: string; jobs: Task[] }[] = [
-    { label: '执行中', color: 'bg-[var(--status-running)] status-dot--running', jobs: runningJobs },
-    { label: '已暂停', color: 'bg-[var(--status-paused)]', jobs: pausedJobs },
-    { label: '等待中', color: 'bg-[var(--status-waiting)]', jobs: pendingJobs },
-    { label: '失败', color: 'bg-[var(--status-failed)]', jobs: failedJobs },
-    { label: '已完成', color: 'bg-[var(--status-completed)]', jobs: completedJobs },
+  // ── 分组（状态色统一引用 CSS 变量；key 用于 aria-controls 的稳定 id） ──
+  const orderedGroups: { key: string; label: string; color: string; jobs: Task[] }[] = [
+    { key: 'running', label: '执行中', color: 'bg-[var(--status-running)] status-dot--running', jobs: runningJobs },
+    { key: 'paused', label: '已暂停', color: 'bg-[var(--status-paused)]', jobs: pausedJobs },
+    { key: 'pending', label: '等待中', color: 'bg-[var(--status-waiting)]', jobs: pendingJobs },
+    { key: 'failed', label: '失败', color: 'bg-[var(--status-failed)]', jobs: failedJobs },
+    { key: 'completed', label: '已完成', color: 'bg-[var(--status-completed)]', jobs: completedJobs },
   ]
 
   // ── 折叠状态管理 ──────────────────────────────────────
@@ -226,17 +340,17 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
     })
   }, [])
 
-  // ── 统计栏配置 ────────────────────────────────────────
+  // ── 统计栏配置（文字用 -ink 深色变体，实色留给圆点/描边） ──
   const statItems: { label: string; mode: FilterMode; count: number; activeClass: string; defaultClass: string }[] = [
-    { label: '等待', mode: 'pending', count: stats.pending, activeClass: 'text-[var(--status-waiting)] ring-2 ring-[var(--status-waiting-soft)]', defaultClass: 'text-[var(--status-waiting)]' },
-    { label: '执行中', mode: 'running', count: stats.running + stats.paused, activeClass: 'text-[var(--status-running)] ring-2 ring-[var(--status-running-soft)]', defaultClass: 'text-[var(--status-running)]' },
-    { label: '完成', mode: 'completed', count: stats.completed, activeClass: 'text-[var(--status-completed)] ring-2 ring-[var(--status-completed-soft)]', defaultClass: 'text-[var(--status-completed)]' },
-    { label: '失败', mode: 'failed', count: stats.failed + stats.cancelled, activeClass: 'text-[var(--status-failed)] ring-2 ring-[var(--status-failed-soft)]', defaultClass: 'text-[var(--status-failed)]' },
-    { label: '总计', mode: 'all', count: jobs.length, activeClass: 'text-gray-700 ring-2 ring-gray-300', defaultClass: 'text-gray-700' },
+    { label: '等待', mode: 'pending', count: stats.pending, activeClass: 'text-[var(--status-waiting-ink)] ring-2 ring-[var(--status-waiting-soft)]', defaultClass: 'text-[var(--status-waiting-ink)]' },
+    { label: '执行中', mode: 'running', count: stats.running + stats.paused, activeClass: 'text-[var(--status-running-ink)] ring-2 ring-[var(--status-running-soft)]', defaultClass: 'text-[var(--status-running-ink)]' },
+    { label: '完成', mode: 'completed', count: stats.completed, activeClass: 'text-[var(--status-completed-ink)] ring-2 ring-[var(--status-completed-soft)]', defaultClass: 'text-[var(--status-completed-ink)]' },
+    { label: '失败', mode: 'failed', count: stats.failed + stats.cancelled, activeClass: 'text-[var(--status-failed-ink)] ring-2 ring-[var(--status-failed-soft)]', defaultClass: 'text-[var(--status-failed-ink)]' },
+    { label: '总计', mode: 'all', count: jobs.length, activeClass: 'text-[var(--text-ink)] ring-2 ring-[var(--brand-strong-soft)]', defaultClass: 'text-[var(--text-ink)]' },
   ]
 
   const confirmMessages: Record<Exclude<ConfirmAction, null>, string> = {
-    'cancel-all': `确定取消全部 ${stats.pending + stats.running + stats.paused} 个进行中任务？此操作不可撤销。`,
+    'cancel-all': `确定取消全部 ${stats.pending + stats.running + stats.paused} 个进行中任务？已生成的部分会保留，但需要重新排队。`,
     'clear-completed': `确定批量清理 ${stats.completed} 个已完成任务？生成的绘本不受影响。`,
     'clear-failed': `确定批量清理 ${failedClearCount} 个失败/已取消任务？将同时清理已生成的临时文件。`,
     'retry-failed': `确定批量重试 ${retriableFailedCount} 个失败/已取消任务？`,
@@ -245,9 +359,10 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
   // 横幅退出动画期间保留最后一条内容，避免收起时内容瞬间消失
   if (notify) lastNotify.current = notify
   const shownNotify = notify ?? lastNotify.current
+  const errCopy = ERROR_COPY[errorKind]
 
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden relative flex flex-col ${className}`}>
+    <div className={`bg-white rounded-card shadow-card overflow-hidden relative flex flex-col ${className}`}>
       {/* 通知横幅：文档流内 grid 高度过渡；header 不再用 pt-12 硬推，进入/退出都不跳动 */}
       <div
         className={`grid transition-all duration-normal ease-standard ${notify ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
@@ -261,11 +376,12 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
               aria-atomic="true"
               className={`toast-in flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium border-b ${
                 shownNotify.failed
-                  ? 'bg-[var(--status-failed-soft)] text-[var(--status-failed)] border-[var(--status-failed)]'
-                  : 'bg-[var(--status-completed-soft)] text-[var(--status-completed)] border-[var(--status-completed)]'
+                  ? 'bg-[var(--status-failed-soft)] text-[var(--status-failed-ink)] border-[var(--status-failed-soft)]'
+                  : 'bg-[var(--status-completed-soft)] text-[var(--status-completed-ink)] border-[var(--status-completed-soft)]'
               } ${notify ? 'animate-slide-down' : ''}`}
             >
-              <span className="min-w-0">{shownNotify.text}</span>
+              {/* pr-2.5：✕ 的 44px 热区向左扩 10px，文案留出等宽内边距，避免点文案末尾误关通知 */}
+              <span className="min-w-0 pr-2.5">{shownNotify.text}</span>
               <button
                 type="button"
                 aria-label="关闭通知"
@@ -277,7 +393,7 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
                     notifyTimer.current = null
                   }
                 }}
-                className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors duration-fast focus-ring"
+                className="hit-44 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors duration-fast focus-ring"
               >
                 ✕
               </button>
@@ -287,32 +403,53 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
       </div>
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-3 flex items-center justify-between">
-        <div>
+      <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
           <h2 className="text-lg font-bold text-white">📋 任务队列</h2>
           <p className="text-white text-xs mt-0.5">
-            {jobs.length} 个任务 | {stats.completed} 完成 | {stats.failed} 失败
+            {firstLoading
+              ? '正在获取任务状态…'
+              : fatalError
+                ? '任务状态获取失败'
+                : `${jobs.length} 个任务 | ${stats.completed} 完成 | ${stats.failed} 失败`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <NotificationToggle />
-          {hasActive && (
-          <div className="flex gap-2">
-            {stats.running > 0 && (
-              <button onClick={handlePauseAll} className="px-2 py-1 text-xs bg-white/20 text-white rounded hover:bg-white/30">⏸ 全部暂停</button>
-            )}
-            {stats.paused > 0 && (
-              <button onClick={handleResumeAll} className="px-2 py-1 text-xs bg-white/20 text-white rounded hover:bg-white/30">▶ 全部继续</button>
-            )}
-            <button
-              onClick={() => setPendingConfirm('cancel-all')}
-              disabled={processing}
-              className="px-2 py-1 text-xs bg-red-600/80 text-white rounded hover:bg-red-600 transition-colors duration-fast disabled:opacity-50"
-            >
-              ✕ 取消全部
-            </button>
-          </div>
-        )}
+          {hasLoaded && hasActive && (
+            <div className="flex flex-wrap items-center gap-2">
+              {stats.running > 0 && (
+                <button
+                  type="button"
+                  onClick={handlePauseAll}
+                  aria-label="全部暂停进行中的任务"
+                  className="min-h-11 px-2.5 text-[12px] rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors duration-fast focus-ring"
+                >
+                  ⏸ 全部暂停
+                </button>
+              )}
+              {stats.paused > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResumeAll}
+                  aria-label="全部继续已暂停的任务"
+                  className="min-h-11 px-2.5 text-[12px] rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors duration-fast focus-ring"
+                >
+                  ▶ 全部继续
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setPendingConfirm('cancel-all')}
+                disabled={processing}
+                aria-busy={cancelling}
+                aria-label="取消全部进行中任务"
+                className="min-h-11 px-2.5 text-[12px] rounded-full bg-red-600/80 text-white hover:bg-red-600 transition-colors duration-fast disabled:opacity-50 focus-ring"
+              >
+                ✕ 取消全部
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -321,15 +458,16 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
         <div
           role="alert"
           aria-label="操作确认"
-          className="collapse-in px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between gap-3 animate-collapse-in duration-normal"
+          className="collapse-in px-4 py-2 bg-[var(--warn-soft)] border-b border-[var(--hairline)] flex flex-wrap items-center justify-between gap-3 animate-collapse-in duration-normal"
         >
-          <span className="text-xs text-amber-800">{confirmMessages[pendingConfirm]}</span>
-          <div className="flex gap-2 flex-shrink-0">
+          <span className="text-xs text-[var(--warn)]">{confirmMessages[pendingConfirm]}</span>
+          <div className="flex gap-4 flex-shrink-0">
             <button
               type="button"
               onClick={performConfirmedAction}
               disabled={processing}
-              className="px-2.5 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-fast disabled:opacity-50"
+              aria-busy={processing}
+              className="min-h-11 px-3 py-1 text-xs rounded-full bg-[var(--danger)] text-white hover:opacity-90 transition-colors duration-fast disabled:opacity-50 focus-ring"
             >
               {processing ? '处理中…' : '确定'}
             </button>
@@ -337,7 +475,7 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
               type="button"
               onClick={() => setPendingConfirm(null)}
               disabled={processing}
-              className="px-2.5 py-1 text-xs bg-white text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-fast disabled:opacity-50"
+              className="min-h-11 px-3 py-1 text-xs rounded-full bg-white text-[var(--text-body)] border border-[var(--hairline)] hover:bg-background transition-colors duration-fast disabled:opacity-50 focus-ring"
             >
               再想想
             </button>
@@ -345,50 +483,60 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
         </div>
       )}
 
-      {/* 可点击的统计栏 */}
-      {jobs.length > 0 && (
-        <div className="grid grid-cols-5 gap-2 p-3 bg-gray-50 border-b border-gray-100 text-center">
+      {/* 可点击的统计/筛选条：加载中显示 —（不显示误导性的 0） */}
+      {(firstLoading || jobs.length > 0) && (
+        <div className="grid grid-cols-5 max-[359px]:grid-cols-3 gap-1.5 p-2 bg-background border-b border-[var(--hairline)] text-center">
           {statItems.map(item => (
             <button
               key={item.label}
+              type="button"
               onClick={() => toggleFilter(item.mode)}
-              className={`rounded-lg p-1 cursor-pointer hover:bg-gray-100 transition-colors duration-normal ${
-                filter === item.mode ? 'bg-white shadow-sm ' + item.activeClass : item.defaultClass
-              }`}
+              disabled={firstLoading}
+              aria-pressed={filter === item.mode}
+              aria-label={`筛选：${item.label}${firstLoading ? '' : `（${item.count}）`}`}
+              className={`min-h-11 rounded-inner text-[11.5px] flex flex-col items-center justify-center leading-none transition-colors duration-normal focus-ring ${
+                !firstLoading && filter === item.mode ? 'bg-white shadow-card ' + item.activeClass : item.defaultClass
+              } ${firstLoading ? 'opacity-60 cursor-default' : 'cursor-pointer hover:bg-white/70'}`}
             >
-              <div className="text-lg font-bold">{item.count}</div>
-              <div className="text-xs text-gray-500">{item.label}</div>
+              <span className="text-[15px] font-bold tabular-nums">{firstLoading ? '—' : item.count}</span>
+              <span className="mt-0.5 text-[10px] text-[var(--text-muted)]">{item.label}</span>
             </button>
           ))}
         </div>
       )}
 
       {/* 批量操作工具栏 */}
-      {jobs.length > 0 && (retriableFailedCount > 0 || stats.completed > 0 || failedClearCount > 0) && (
-        <div className="flex items-center justify-end gap-2 px-3 py-2 bg-white border-b border-gray-100">
+      {hasLoaded && jobs.length > 0 && (retriableFailedCount > 0 || stats.completed > 0 || failedClearCount > 0) && (
+        <div className="flex flex-wrap items-center justify-end gap-3.5 px-3 py-2 bg-white border-b border-[var(--hairline)]">
           {retriableFailedCount > 0 && (
             <button
+              type="button"
               onClick={() => setPendingConfirm('retry-failed')}
               disabled={processing}
-              className="px-2.5 py-1 text-xs bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors duration-fast disabled:opacity-50"
+              aria-busy={retrying}
+              className="min-h-11 px-2.5 py-1 text-xs rounded-full bg-[var(--info-soft)] text-[var(--info)] hover:opacity-80 transition-colors duration-fast disabled:opacity-50 focus-ring"
             >
               {retrying ? '处理中…' : `🔄 批量重试 (${retriableFailedCount})`}
             </button>
           )}
           {failedClearCount > 0 && (
             <button
+              type="button"
               onClick={() => setPendingConfirm('clear-failed')}
               disabled={processing}
-              className="px-2.5 py-1 text-xs bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors duration-fast disabled:opacity-50"
+              aria-busy={clearingFailed}
+              className="min-h-11 px-2.5 py-1 text-xs rounded-full bg-[var(--danger-soft)] text-[var(--danger)] hover:opacity-80 transition-colors duration-fast disabled:opacity-50 focus-ring"
             >
               {clearingFailed ? '处理中…' : `🗑️ 清理已失败 (${failedClearCount})`}
             </button>
           )}
           {stats.completed > 0 && (
             <button
+              type="button"
               onClick={() => setPendingConfirm('clear-completed')}
               disabled={processing}
-              className="px-2.5 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors duration-fast disabled:opacity-50"
+              aria-busy={clearing}
+              className="min-h-11 px-2.5 py-1 text-xs rounded-full bg-[var(--status-cancelled-soft)] text-[var(--text-body)] hover:opacity-80 transition-colors duration-fast disabled:opacity-50 focus-ring"
             >
               {clearing ? '处理中…' : `🗑️ 清理已完成 (${stats.completed})`}
             </button>
@@ -396,40 +544,104 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
         </div>
       )}
 
+      {/* 有旧数据 + 更新失败：保留列表，顶部细条提示（不遮挡内容） */}
+      {staleError && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-between gap-2 px-3 py-0.5 bg-[var(--status-waiting-soft)] border-b border-[var(--hairline)] text-[11.5px] text-[var(--status-waiting-ink)]"
+        >
+          <span className="min-w-0 truncate">状态可能不是最新（更新失败）</span>
+          <button
+            type="button"
+            onClick={handleReload}
+            disabled={reloading}
+            aria-busy={reloading || isValidating}
+            aria-label="重新获取任务状态"
+            className="flex-shrink-0 min-h-11 px-2 rounded-full font-medium hover:bg-black/[0.06] transition-colors duration-fast disabled:opacity-60 focus-ring"
+          >
+            {reloading || isValidating ? '重试中…' : '· 重试'}
+          </button>
+        </div>
+      )}
+
       {/* Job list */}
       <div className="p-3 space-y-3 flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0">
-        {jobs.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            <div className="text-3xl mb-2">📭</div><p>暂无任务</p>
+        {firstLoading ? (
+          <TaskListSkeleton />
+        ) : fatalError ? (
+          /* 全区域错误态：按 errorStatus 分流，role=alert 让读屏立刻播报 */
+          <div role="alert" className="text-center py-10 px-4">
+            <div className="text-3xl mb-2" aria-hidden="true">{errCopy.icon}</div>
+            <p className="text-sm font-semibold text-[var(--text-ink)]">{errCopy.title}</p>
+            <p className="text-xs text-[var(--text-body)] mt-1.5 leading-relaxed">{errCopy.desc}</p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={handleReload}
+                disabled={reloading}
+                aria-busy={reloading}
+                className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-[var(--brand-strong-soft)] text-[var(--brand-strong)] text-sm font-medium hover:opacity-85 transition-colors duration-fast disabled:opacity-60 focus-ring"
+              >
+                {reloading ? '重试中…' : '重试'}
+              </button>
+              {errCopy.backToShelf && (
+                <Link
+                  href="/"
+                  className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-[var(--status-cancelled-soft)] text-[var(--text-body)] text-sm hover:opacity-85 transition-colors duration-fast focus-ring"
+                >
+                  回到书架
+                </Link>
+              )}
+            </div>
+          </div>
+        ) : jobs.length === 0 ? (
+          <div className="text-center py-10 px-4">
+            <div className="text-3xl mb-2" aria-hidden="true">📭</div>
+            <p className="text-sm text-[var(--text-body)]">还没有任务</p>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center min-h-11 px-4 mt-3 rounded-full bg-[var(--brand-strong-soft)] text-[var(--brand-strong)] text-sm font-medium hover:opacity-85 transition-colors duration-fast focus-ring"
+            >
+              去书架挑一本开始 →
+            </Link>
           </div>
         ) : filteredJobs.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            <p>当前筛选条件下无匹配任务</p>
+          <div className="text-center py-8 px-4">
+            <p className="text-sm text-[var(--text-body)]">这个筛选下没有任务</p>
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className="inline-flex items-center justify-center min-h-11 px-4 mt-3 rounded-full bg-[var(--status-cancelled-soft)] text-[var(--text-body)] text-sm hover:opacity-85 transition-colors duration-fast focus-ring"
+            >
+              看全部任务
+            </button>
           </div>
         ) : (
           orderedGroups.map(group => {
             const isOpen = !collapsedGroups.has(group.label)
+            const groupDomId = `task-group-${group.key}`
             return group.jobs.length > 0 ? (
               <div key={group.label} className="space-y-2">
-                <h3
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={isOpen}
-                  onClick={() => toggleGroupCollapse(group.label)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      toggleGroupCollapse(group.label)
-                    }
-                  }}
-                  className="text-sm font-medium text-gray-500 flex items-center cursor-pointer select-none hover:text-gray-700 transition-colors duration-fast focus-ring"
-                >
-                  <span className={`w-2 h-2 rounded-full mr-2 transition-colors duration-normal ${group.color}`}></span>
-                  {group.label} ({group.jobs.length})
-                  <span className={`ml-1 text-xs text-gray-400 inline-block transition-transform duration-fast ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                {/* 标题语义保留在 h3 上，交互交给内部真 button（aria-expanded 才被正确播报） */}
+                <h3 className="text-sm font-medium text-[var(--text-body)]">
+                  <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    aria-controls={groupDomId}
+                    onClick={() => toggleGroupCollapse(group.label)}
+                    className="flex items-center gap-2 w-full min-h-11 text-left select-none hover:text-[var(--text-ink)] transition-colors duration-fast focus-ring"
+                  >
+                    <span aria-hidden="true" className={`w-2 h-2 rounded-full transition-colors duration-normal ${group.color}`} />
+                    <span>{group.label} ({group.jobs.length})</span>
+                    <span aria-hidden="true" className={`ml-1 text-xs text-[var(--text-muted)] inline-block transition-transform duration-fast ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                  </button>
                 </h3>
                 {/* grid 高度过渡：折叠时保留内容以播放退出动画 */}
-                <div className={`grid transition-all duration-normal ease-standard ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                <div
+                  id={groupDomId}
+                  className={`grid transition-all duration-normal ease-standard ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+                >
                   <div
                     ref={(el) => { if (el) el.inert = !isOpen }}
                     className="overflow-hidden space-y-2"
@@ -453,6 +665,8 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
                             childTasks={childTasks}
                             jobProgress={{ completed: completedCount, total, percent }}
                             onDelete={() => refresh()}
+                            activeConfirmId={activeConfirmId}
+                            onRequestConfirm={setActiveConfirmId}
                           />
                         </div>
                       )
@@ -466,11 +680,11 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
       </div>
 
       {/* Footer */}
-      {hasCompleted && (
-        <div className="px-3 py-2 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-          <span className="text-xs text-gray-500">任务状态自动刷新</span>
+      {hasLoaded && hasCompleted && (
+        <div className="px-3 py-2 bg-background border-t border-[var(--hairline)] flex justify-between items-center">
+          <span className="text-xs text-[var(--text-muted)]">任务状态自动刷新</span>
           {stats.failed > 0 && (
-            <span className="text-xs text-orange-500">失败任务可点击展开后重试</span>
+            <span className="text-xs text-[var(--status-paused-ink)]">失败任务可点击展开后重试</span>
           )}
         </div>
       )}

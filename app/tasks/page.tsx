@@ -10,10 +10,10 @@ function TasksContent() {
   const filterParam = searchParams.get('filter')
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-secondary/30 to-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <main id="main" tabIndex={-1} className="min-h-screen bg-gradient-to-b from-secondary/30 to-background">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 md:py-8">
         {/* 页头 */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
           <Link
             href="/"
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"

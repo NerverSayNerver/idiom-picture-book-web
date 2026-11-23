@@ -12,14 +12,48 @@ const config: Config = {
         primary: '#fcb69f',
         secondary: '#ffecd2',
         accent: '#f093fb',
-        success: '#4caf50',
         background: '#faf7f5',
-        // 浅色背景上的高对比文字色（primary 7.37:1 / accent 6.14:1，均达 WCAG AA）
-        ink: '#4a2c20',
+        // ── 语义色单一来源 ──────────────────────────────────────────────
+        // 全部用**字面色值**注册，不用 var()。原因见下，这是本轮最大的坑：
+        //   bg-[var(--text-ink)]/[.06]   → Tailwind 的 withAlphaVariable 对
+        //                                  parseColor('var(--x)') 返回 null，
+        //                                  直接 return defaultValue，**规则被静默跳过**。
+        //                                  不报错、不告警、DevTools 里类名还在，只是样式不存在。
+        //   bg-ink/[.06]                 → background-color: rgb(74 44 32 / .06)  ✅
+        //   不带修饰符的 bg-[var(--x)]    → 正常生成，不受影响。
+        //
+        // 【取值口径】两者等价，按是否需要透明度选择，不要混用：
+        //   · 不需要透明度 → 用 CSS 变量形式 `text-[var(--text-ink)]`（与 globals.css 同步）
+        //   · 需要透明度   → 必须用别名形式 `text-ink/40`、`bg-ink/[.06]`
+        // 验收门禁：grep -rn "var(--[a-zA-Z-]*)\]/" --include=*.tsx app components 必须为 0
+        //
+        // 对比度（白底）：ink 12.56:1 / ink-body 7.88:1 / ink-mute 4.84:1 / brand 5.43:1
+        ink: '#4a2c20',                    // 主文字（上一轮已有，保持）
+        'ink-body': '#6b4a3a',             // 次要文字
+        'ink-mute': '#8a6b5c',             // 辅助文字（达 WCAG AA）
+        'ink-line': 'rgba(74,44,32,.08)',  // 发丝线：border-ink-line
+        brand: '#B04A2E',                  // 文字/图标/指示器/激活态
+        'brand-soft': '#FBE7DC',           // 选中底（配 brand 文字 4.55:1）
+        success: '#15803D',                // 覆盖旧 #4caf50（2.8:1 不达标），全站零引用故安全
+        'success-soft': '#E7F6EC',
+        danger: '#B91C1C',                 // 6.47:1
+        'danger-soft': '#FEE9E7',
+        info: '#1D4ED8',                   // 6.70:1
+        'info-soft': '#E8EFFD',
+        warn: '#A16207',                   // 4.92:1
+        'warn-soft': '#FEF6E0',
+        warm: '#FFF8EC',                   // 诗词纸底：bg-warm
       },
       borderRadius: {
         'card': '16px',
         'button': '25px',
+        // 卡内小容器（旁白块 / 原诗块 / 错误框 / 缩略图内框 / 筛选格）
+        'inner': '10px',
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(74,44,32,.04), 0 4px 12px rgba(90,63,45,.08)',
+        cardHover: '0 2px 4px rgba(74,44,32,.06), 0 10px 24px rgba(90,63,45,.12)',
+        modal: '0 2px 8px rgba(60,40,30,.08), 0 12px 40px rgba(60,40,30,.18)',
       },
       fontFamily: {
         sans: ['var(--font-noto-sans-sc)', 'Noto Sans SC', 'sans-serif'],
@@ -47,7 +81,6 @@ const config: Config = {
         'page-shadow': { '0%': { opacity: '.45' }, '100%': { opacity: '0' } },
         'float-soft': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
         'breathe': { '0%,100%': { opacity: '1', transform: 'scale(1)' }, '50%': { opacity: '.6', transform: 'scale(1.06)' } },
-        'twinkle': { '0%,100%': { opacity: '.25', transform: 'scale(.85)' }, '50%': { opacity: '1', transform: 'scale(1.15)' } },
         'snail-bob': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
         'collapse-in': { '0%': { opacity: '0', transform: 'translateY(-4px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
         'page-in': { '0%': { opacity: '0', transform: 'translateX(8px)' }, '100%': { opacity: '1', transform: 'translateX(0)' } },
@@ -63,7 +96,6 @@ const config: Config = {
         'page-shadow': 'page-shadow 560ms cubic-bezier(0.42,0,0.2,1) both',
         'float-soft': 'float-soft 4.5s ease-in-out infinite',
         'breathe': 'breathe 2.4s ease-in-out infinite',
-        'twinkle': 'twinkle 1.8s ease-in-out infinite',
         'snail-bob': 'snail-bob 1.8s ease-in-out infinite',
         'collapse-in': 'collapse-in 240ms cubic-bezier(0.22,1,0.36,1) both',
         'page-in': 'page-in 240ms cubic-bezier(0.22,1,0.36,1) both',

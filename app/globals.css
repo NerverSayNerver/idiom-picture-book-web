@@ -36,6 +36,34 @@
   --status-failed-soft: #FEE2E2;
   --status-cancelled: #94A3B8;
   --status-cancelled-soft: #F1F5F9;
+
+  /* 品牌 */
+  --brand-strong: #B04A2E;        /* 文字/图标/指示器，白底 5.43:1 */
+  --brand-strong-soft: #FBE7DC;   /* 选中底 */
+  /* 文本 */
+  --text-ink: #4a2c20;            /* 12.56:1 */
+  --text-body: #6b4a3a;
+  --text-muted: #8a6b5c;          /* 4.84:1 */
+  /* 语义 */
+  --select: #B04A2E;
+  --danger: #B91C1C;
+  --danger-soft: #FEE9E7;
+  --success: #15803D;
+  --success-soft: #E7F6EC;
+  --info: #1D4ED8;
+  --info-soft: #E8EFFD;
+  --warn: #A16207;
+  --warn-soft: #FEF6E0;
+  /* 表面 */
+  --surface-warm: #FFF8EC;        /* 诗词纸 */
+  --hairline: rgba(74, 44, 32, .08);
+  /* 状态文字深色变体（原实色作文字不达标） */
+  --status-waiting-ink: #A16207;
+  --status-running-ink: #1D4ED8;
+  --status-paused-ink: #C2410C;
+  --status-completed-ink: #15803D;
+  --status-failed-ink: #B91C1C;
+  --status-cancelled-ink: #556070;
 }
 
 body {
@@ -43,13 +71,26 @@ body {
   background: rgb(var(--background-rgb));
 }
 
+/* 关闭 iOS/Android 的"下拉即刷新"。
+   理由：本项目所有数据刷新都有显式入口（任务中心重试按钮、SWR 轮询、书架重新加载），
+   下拉刷新属于重复能力；但它是**破坏性**的 —— 首页批量勾选了 8 个成语后误触下拉，
+   整批选择瞬间丢失且无法恢复。用一个重复能力换一条数据丢失路径，不划算。
+   阅读器正文区另有 overscroll-contain 阻止滚动链外传。
+   Safari 16+ 才支持该属性，更早版本会忽略（即维持现状，无回归）。 */
+html, body { overscroll-behavior-y: none; }
+
 /* 童趣绘本风全局样式 */
 .card {
-  @apply rounded-card shadow-md transition-all duration-normal ease-standard hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg;
+  @apply rounded-card shadow-card transition-all duration-normal ease-standard;
+}
+/* hover 只在有真实指针的设备上生效：触屏 hover 不释放，会"粘住"位移；
+   hover 只做 -translate-y，不加 scale —— 1 列大卡放大 2% 会让相邻卡边缘叠 1–2px */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { @apply shadow-cardHover -translate-y-0.5; }
 }
 
 .button-primary {
-  @apply rounded-button bg-gradient-to-r from-primary to-accent px-6 py-3 text-ink font-semibold shadow-lg hover:shadow-xl transition-all active:scale-[0.97] duration-fast ease-bounce-soft;
+  @apply rounded-button bg-gradient-to-r from-primary to-accent px-6 py-3 text-ink font-semibold shadow-card hover:shadow-cardHover transition-all active:scale-[0.97] duration-fast ease-bounce-soft;
 }
 
 .progress-fill {
@@ -76,7 +117,20 @@ body {
 .leaf-sheen { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(90,60,40,.22) 0%, rgba(255,255,255,.16) 38%, rgba(90,60,40,0) 72%); }
 .leaf-sheen--prev { transform: scaleX(-1); }
 .page-shadow { pointer-events: none; background: linear-gradient(90deg, rgba(91,63,45,.16), transparent 55%); }
-.spine-shadow { position: absolute; top: 0; bottom: 0; left: calc(50% - 14px); width: 28px; pointer-events: none; z-index: 3; background: linear-gradient(90deg, rgba(60,40,30,.10), transparent 45%, transparent 55%, rgba(60,40,30,.10)); }
+/* 跨页中缝阴影：90deg 硬边会形成"两张纸拼在一起"的折痕感，
+   改成以 50% 为中心向两侧淡出的对称渐变才是装订线。
+   position 由使用点提供（BookViewer 里是 book-stage 的绝对子元素）。 */
+.spine-shadow {
+  position: absolute; top: 0; bottom: 0; left: 50%; width: 48px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(90,63,45,0)    0%,
+    rgba(90,63,45,.055) 32%,
+    rgba(90,63,45,.115) 50%,
+    rgba(90,63,45,.055) 68%,
+    rgba(90,63,45,0)    100%);
+}
 
 /* reduced-motion 与手动开关双通道：系统偏好 + .motion-reduced 顶层 class */
 @media (prefers-reduced-motion: reduce) {
@@ -91,18 +145,89 @@ html.motion-reduced *, html.motion-reduced *::before, html.motion-reduced *::aft
 }
 /* 循环装饰类：两套通道都彻底停掉并停在终态 */
 @media (prefers-reduced-motion: reduce) {
-  html:not(.motion-full) .hero-float, html:not(.motion-full) .breathing, html:not(.motion-full) .twinkle, html:not(.motion-full) .snail-wobble, html:not(.motion-full) .progress-sheen, html:not(.motion-full) .status-dot--running { animation: none !important; transform: none !important; }
+  html:not(.motion-full) .hero-float, html:not(.motion-full) .breathing, html:not(.motion-full) .snail-wobble, html:not(.motion-full) .progress-sheen, html:not(.motion-full) .status-dot--running { animation: none !important; transform: none !important; }
   html:not(.motion-full) .book-stage .flip-leaf { display: none !important; }
   html:not(.motion-full) .book-stage .page-layer { transition: opacity 140ms linear !important; }
+  /* 单页模式：降级下直接切页，不做位移动画（.book-stage 的交叉淡入由上面更具体的规则保留） */
+  html:not(.motion-full) .page-layer { transition: none !important; }
   html:not(.motion-full) .progress-fill { transition: transform 120ms linear !important; }
   html:not(.motion-full) .modal-in, html:not(.motion-full) .toast-in, html:not(.motion-full) .collapse-in { transform: none !important; }
 }
-html.motion-reduced .hero-float, html.motion-reduced .breathing, html.motion-reduced .twinkle,
+html.motion-reduced .hero-float, html.motion-reduced .breathing,
 html.motion-reduced .snail-wobble, html.motion-reduced .progress-sheen, html.motion-reduced .status-dot--running { animation: none !important; transform: none !important; }
 html.motion-reduced .book-stage .flip-leaf { display: none !important; }
 html.motion-reduced .book-stage .page-layer { transition: opacity 140ms linear !important; }
+/* 单页模式：同上，直接切页 */
+html.motion-reduced .page-layer { transition: none !important; }
 html.motion-reduced .progress-fill { transition: transform 120ms linear !important; }
 html.motion-reduced .modal-in, html.motion-reduced .toast-in, html.motion-reduced .collapse-in { transform: none !important; }
 
 /* 通用无障碍辅助类（.sr-only 由 Tailwind utilities 内置提供） */
-.focus-ring:focus-visible { outline: 2px solid #3B82F6; outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
+.focus-ring:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
+
+/* ── 触控热区 ─────────────────────────────────────────────────────────────
+   实现：居中 + max(100%, 目标尺寸)，与元素本体尺寸解耦。
+   - 24px 的 ✕ → 44px；28px 的重试按钮 → 44px；32px → 44px
+   - 本体已 ≥44px 时保持本体，不会无谓放大
+
+   [媒体查询为何是并集]
+   只写 (pointer: coarse) 时，"iPad 接了妙控键盘 / Surface 外接鼠标"会判为 false
+   （主指针变成 fine），热区整体消失 —— 而这正是平板陪读的主力场景。
+   并集写法在纯鼠标环境也启用热区，无害。
+   【已知不对称】hover 用的是 (hover:hover)（见 .card）。触屏模拟器可能出现
+   coarse=true + hover:none，于是"热区有、hover 无"。这是预期行为：热区用 pointer
+   条件验证，hover 稳定性用 (hover:none) 仿真验证，两件事分开测。
+
+   [用法约束 — 违反任意一条都会造成误触或静默失效]
+   1) 热区每侧外扩 = (目标 − 本体)/2：24px 每侧 10px、28px 每侧 8px、32px 每侧 6px。
+      相邻可交互控件间距必须 ≥ 两侧外扩之和（两个 24px 相邻需 ≥20px；一般式 gap ≥ 44 − w），
+      否则热区互相重叠，重叠区按 DOM 顺序取后者 —— 点左键可能触发右键。
+   2) 间距不够的紧凑行（TaskCard 操作行 space-x-2、图标排）不要叠热区，
+      直接把按钮本体做成 `min-h-11 min-w-11` 实体 44px 盒。
+   3) 宽而矮的元件（如 h-7 w-28 的重试按钮、h-8 w-20 的次级按钮）**禁止**套这两档。
+      它们横向本来就 ≥44，真正不足的是高度；而热区是等比撑到 44×44，会把热区纵向
+      撑出本体上下各 8.5px，和相邻行的元素重叠 —— 且用户对"整行按钮"的点击预期是
+      点行内任意位置，热区越界会让他点上一行时命中本行。这类请用 `min-h-11` 撑高本体，
+      横向保持原宽，或直接 `h-11`。
+   4) 祖先带 overflow-hidden / overflow-x-auto 时 ::after 会被一起裁掉，热区静默回落，
+      不要在这种容器里用。
+   5) `::after` 只在触控媒体查询下存在。**不能靠热区满足桌面端 44px 点击目标**，
+      重要按钮仍要有本体尺寸。
+   ──────────────────────────────────────────────────────────────────────── */
+@media (pointer: coarse), (any-pointer: coarse) {
+  /* :where() 把特异性降到 0：本体已带 .absolute / .fixed / .sticky 时不被这里的 relative 覆盖
+     （Modal 图片弹窗的 ✕ 是 absolute top-2 right-2 + hit-44，直接用 .hit-44{position:relative}
+      会把 absolute 顶掉、按钮掉回文档流） */
+  :where(.hit-44) { position: relative; }
+  .hit-44::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 44px); height: max(100%, 44px);
+  }
+  /* 紧凑档：相邻间距只够 16–20px 时用 */
+  :where(.hit-40) { position: relative; }
+  .hit-40::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 40px); height: max(100%, 40px);
+  }
+}
+
+/* ── 热区调试覆盖层（仅在 <html class="debug-hit"> 时生效，默认关闭）─────
+   用法：DevTools 里给 <html> 加 class="debug-hit"，所有热区变半透明洋红块，
+   可直接看出重叠、越界、被 overflow 裁掉。上线无影响，可长期保留。
+   注意这里**不复用**上面的 ::after，而是自己再声明一份：否则在非触控环境
+   （媒体查询不匹配）下 ::after 不存在，调试时看不到任何东西。
+   ─────────────────────────────────────────────────────────────────────── */
+html.debug-hit :where(.hit-44),
+html.debug-hit :where(.hit-40) { position: relative; }
+html.debug-hit .hit-44::after,
+html.debug-hit .hit-40::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 0, 128, .32);
+  outline: 1px dashed rgba(255, 0, 128, .95);
+}
+html.debug-hit .hit-44::after { width: max(100%, 44px); height: max(100%, 44px); }
+html.debug-hit .hit-40::after { width: max(100%, 40px); height: max(100%, 40px); }
