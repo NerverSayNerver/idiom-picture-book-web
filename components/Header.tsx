@@ -61,7 +61,11 @@ export function Header() {
     saveMotionPreference(pref)
   }
 
-  const isTasksActive = pathname === '/tasks'
+  // usePathname() 不含 hash，判活前先剥离锚点（如 '/#bookshelf'）
+  const isActive = (href: string) => {
+    const p = href.split('#')[0]
+    return p === '/' ? pathname === '/' : pathname === p || pathname.startsWith(p + '/')
+  }
 
   return (
     // sticky + 半透明毛玻璃：52px 固定高度，移动端不挤压内容
@@ -82,11 +86,25 @@ export function Header() {
 
         <nav aria-label="主导航" className="flex items-center shrink-0">
           <Link
+            href="/#bookshelf"
+            aria-label="书架"
+            aria-current={isActive('/#bookshelf') ? 'page' : undefined}
+            className={`flex items-center justify-center h-11 w-11 sm:w-auto sm:px-3.5 rounded-full text-sm font-medium transition-colors duration-fast focus-ring ${
+              isActive('/#bookshelf')
+                ? 'bg-primary/25 text-[var(--brand-strong)]'
+                : 'text-[var(--text-body)] hover:bg-ink/[.04]'
+            }`}
+          >
+            <span aria-hidden="true">📚</span>
+            {/* <640：只留图标（44×44 热区）；sm 起显示文案 */}
+            <span className="hidden sm:inline sm:ml-1.5">书架</span>
+          </Link>
+          <Link
             href="/tasks"
             aria-label="任务中心"
-            aria-current={isTasksActive ? 'page' : undefined}
+            aria-current={isActive('/tasks') ? 'page' : undefined}
             className={`flex items-center justify-center h-11 w-11 sm:w-auto sm:px-3.5 rounded-full text-sm font-medium transition-colors duration-fast focus-ring ${
-              isTasksActive
+              isActive('/tasks')
                 ? 'bg-primary/25 text-[var(--brand-strong)]'
                 : 'text-[var(--text-body)] hover:bg-ink/[.04]'
             }`}

@@ -228,6 +228,24 @@ export default function Home() {
     cancelButtonRef.current?.focus()
   }, [deleteTarget])
 
+  // 硬加载 /#bookshelf 时 Next 的原生 fragment 滚动与 hydration 存在竞态（实测会被重置回页顶），
+  // 软导航由框架 scrollIntoView+focus 处理；本 effect 幂等兜底：只认 #bookshelf，同位置重滚无副作用。
+  // 依赖 loadState：书架骨架→真实网格会改变 section 的 offsetTop（实测 610→816），
+  // 数据落定后需重锚一次，否则按骨架高度滚出的位置会漂移 200px+；
+  // loadState 稳定后（visibility 刷新写入同值）React 不重渲染，不会重复触发。
+  useEffect(() => {
+    const onArrive = () => {
+      if (window.location.hash !== '#bookshelf') return
+      const el = document.getElementById('bookshelf')
+      if (!el) return
+      el.scrollIntoView({ block: 'start' }) // 无 behavior = 瞬时；reduced-motion 由 globals.css 兜底
+      el.focus({ preventScroll: true })
+    }
+    onArrive()
+    window.addEventListener('hashchange', onArrive)
+    return () => window.removeEventListener('hashchange', onArrive)
+  }, [loadState])
+
   const totalBooks = indexData
     ? Object.values(indexData.categories).reduce((sum, cat) => sum + cat.count, 0)
     : 0
@@ -423,7 +441,7 @@ export default function Home() {
         </div>
 
         {/* 书架 */}
-        <section aria-labelledby="shelf-heading">
+        <section id="bookshelf" tabIndex={-1} aria-labelledby="shelf-heading" className="scroll-mt-[60px]">
           <div className="mb-4">
             <h2 id="shelf-heading" className="text-2xl font-bold text-[var(--text-ink)]">📚 绘本成品</h2>
           </div>
