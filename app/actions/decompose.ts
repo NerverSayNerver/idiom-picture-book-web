@@ -70,7 +70,7 @@ function normalizePoetrySceneTitles(
   return scenes.map((s) => {
     const title = (s.title || '').trim()
     // 优先：正文子串匹配（处理 LLM 加了前后文的情况）
-    let matchedIdx = poemLines.findIndex(
+    const matchedIdx = poemLines.findIndex(
       (line) => !used.has(poemLines.indexOf(line)) && title.includes(line) && line.length >= 2
     )
     if (matchedIdx >= 0 && !used.has(matchedIdx)) {
@@ -189,7 +189,7 @@ export async function decomposeSource(
   let data: DecompositionRaw
   try {
     data = JSON.parse(jsonStr)
-  } catch (parseError) {
+  } catch {
     // 尝试修复被截断的 JSON（补全未闭合的括号）
     const repaired = repairTruncatedJson(jsonStr)
     if (repaired) {

@@ -13,7 +13,7 @@ import { generateSceneImage, generateSceneImageWithRef } from './app/actions/gen
 import { saveBook } from './lib/save-book'
 import { buildEnhancedPrompt, getSystemPrompt, buildUserPrompt } from './lib/prompts'
 import { getStrategy, getContentInfo } from './lib/content-types'
-import type { Task, ChildTaskDef } from './lib/task-types'
+import type { ChildTaskDef } from './lib/task-types'
 import type { ContentCategory, SceneTemplate } from './lib/types'
 import { promises as fs } from 'fs'
 import path from 'path'

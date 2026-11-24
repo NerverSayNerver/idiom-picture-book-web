@@ -55,9 +55,10 @@ function formatTime(iso?: string): string {
 type RegenState = 'idle' | 'confirm' | 'submitting' | 'queued'
 
 export function BookCard({ book, onDelete, entranceDelay = 0, removing = false }: BookCardProps) {
-  // 首次挂载即固定延迟：搜索/筛选改变 index 时不重播已存在卡片的入场动画
-  const frozenDelayRef = useRef(entranceDelay)
-  const delayIndex = Math.min(Math.max(Math.floor(frozenDelayRef.current / 50), 0), 5)
+  // 首次挂载即固定延迟：搜索/筛选改变 index 时不重播已存在卡片的入场动画。
+  // useState 惰性初始化等价于旧的 ref 冻结写法，且符合 React「渲染期不读 ref」语义。
+  const [frozenDelay] = useState(() => entranceDelay)
+  const delayIndex = Math.min(Math.max(Math.floor(frozenDelay / 50), 0), 5)
   const [coverImage, setCoverImage] = useState<string | null>(null)
   const [regenState, setRegenState] = useState<RegenState>('idle')
   const [regenError, setRegenError] = useState<string | null>(null)

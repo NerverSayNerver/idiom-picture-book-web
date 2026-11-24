@@ -208,9 +208,8 @@ async function suiteReader(browser) {
       const r = el.getBoundingClientRect()
       return r.height > 0 ? performance.now() : -1
     })
-    h1At >= 0
-      ? check('M-05a', 'P0', '封面文字可读', `${Math.round(h1At)}ms`, '≤1200ms', h1At <= 1200)
-      : unverifiable('M-05a', 'P0', '封面文字可读', '未找到可见 h1')
+    if (h1At >= 0) check('M-05a', 'P0', '封面文字可读', `${Math.round(h1At)}ms`, '≤1200ms', h1At <= 1200)
+    else unverifiable('M-05a', 'P0', '封面文字可读', '未找到可见 h1')
 
     await page.waitForFunction(() => document.querySelectorAll('button[aria-label$="，打开"]').length === 6, null, { timeout: 15000 }).catch(() => {})
     const wallAt = await page.evaluate(() => {
@@ -218,9 +217,8 @@ async function suiteReader(browser) {
       return bs.length === 6 && bs.every((b) => !b.disabled && b.getBoundingClientRect().height > 0)
         ? performance.now() : -1
     })
-    wallAt >= 0
-      ? check('M-05b', 'P0', '缩略图墙可点', `${Math.round(wallAt)}ms`, '≤1500ms', wallAt <= 1500)
-      : unverifiable('M-05b', 'P0', '缩略图墙可点', '6 个按钮未到齐')
+    if (wallAt >= 0) check('M-05b', 'P0', '缩略图墙可点', `${Math.round(wallAt)}ms`, '≤1500ms', wallAt <= 1500)
+    else unverifiable('M-05b', 'P0', '缩略图墙可点', '6 个按钮未到齐')
 
     await page.waitForFunction(
       () => document.querySelector('[data-thumb-status="loaded"]') !== null,
@@ -230,9 +228,8 @@ async function suiteReader(browser) {
       const el = document.querySelector('[data-thumb-status="loaded"]')
       return el ? performance.now() : -1
     })
-    firstImgAt >= 0
-      ? check('M-06a', 'P0', '墙首格有图', `${Math.round(firstImgAt)}ms`, '≤2200ms', firstImgAt <= 2200)
-      : unverifiable('M-06a', 'P0', '墙首格有图', '等待超时')
+    if (firstImgAt >= 0) check('M-06a', 'P0', '墙首格有图', `${Math.round(firstImgAt)}ms`, '≤2200ms', firstImgAt <= 2200)
+    else unverifiable('M-06a', 'P0', '墙首格有图', '等待超时')
     await waitCoverSettled(page)
     const allImgAt = await page.evaluate(() =>
       document.querySelectorAll('[data-thumb-status="loaded"]').length === 6 ? performance.now() : -1)
@@ -296,9 +293,8 @@ async function suiteReader(browser) {
     await page.locator('[aria-label="开始朗读"]:visible').first().click()
     await page.waitForFunction(() => (window.__speak || []).length > 0, null, { timeout: 6000 }).catch(() => {})
     const speakAt = await page.evaluate(() => (window.__speak || [])[0] ?? -1)
-    speakAt >= 0
-      ? check('M-01', 'P0', '朗读立即出声', `${Math.round(speakAt)}ms`, '≤1800ms', speakAt <= 1800)
-      : unverifiable('M-01', 'P0', '朗读立即出声', 'speak 未被调用')
+    if (speakAt >= 0) check('M-01', 'P0', '朗读立即出声', `${Math.round(speakAt)}ms`, '≤1800ms', speakAt <= 1800)
+    else unverifiable('M-01', 'P0', '朗读立即出声', 'speak 未被调用')
 
     const seq = await page.evaluate(async () => {
       const out = []
@@ -314,9 +310,8 @@ async function suiteReader(browser) {
     for (let i = 1; i < seq.length; i++) {
       if (seq[i] >= 0 && seq[i - 1] >= 0 && seq[i] < seq[i - 1]) mono = false
     }
-    seqValid.length >= 2
-      ? check('M-18', 'P0', '逐字高亮单调', `${seqValid.length} 样本`, '无回跳', mono)
-      : unverifiable('M-18', 'P0', '逐字高亮单调', `有效样本不足(${seqValid.length})`)
+    if (seqValid.length >= 2) check('M-18', 'P0', '逐字高亮单调', `${seqValid.length} 样本`, '无回跳', mono)
+    else unverifiable('M-18', 'P0', '逐字高亮单调', `有效样本不足(${seqValid.length})`)
 
     const cls = await page.evaluate(() => window.__cls || 0)
     check('M-17', 'P0', '加载无布局跳动', cls.toFixed(4), '<0.01', cls < 0.01)
@@ -338,9 +333,8 @@ async function suiteReader(browser) {
       const el = document.querySelector('[data-img-status="decoded"]')
       return el ? performance.now() : -1
     })
-    decodedAt >= 0
-      ? check('M-02', 'P0', '第1页插图可上屏', `${Math.round(decodedAt)}ms`, '≤2500ms', decodedAt <= 2500)
-      : unverifiable('M-02', 'P0', '第1页插图可上屏', '未见到 decoded')
+    if (decodedAt >= 0) check('M-02', 'P0', '第1页插图可上屏', `${Math.round(decodedAt)}ms`, '≤2500ms', decodedAt <= 2500)
+    else unverifiable('M-02', 'P0', '第1页插图可上屏', '未见到 decoded')
     await ctx.close()
   }
 
@@ -373,9 +367,8 @@ async function suiteReader(browser) {
       flipping: Boolean(document.querySelector('[data-flipping="true"]')),
       inside: document.querySelector('.flip-leaf [data-img-placeholder]')?.outerHTML ?? null,
     }))
-    inFlip.flipping
-      ? check('M-19', 'P0', '占位不进3D翻转层', String(inFlip.inside), '= null', inFlip.inside === null)
-      : unverifiable('M-19', 'P0', '占位不进3D翻转层', '未捕捉到动画中的 data-flipping 状态')
+    if (inFlip.flipping) check('M-19', 'P0', '占位不进3D翻转层', String(inFlip.inside), '= null', inFlip.inside === null)
+    else unverifiable('M-19', 'P0', '占位不进3D翻转层', '未捕捉到动画中的 data-flipping 状态')
     await dt.ctx.close()
   }
 }
@@ -478,9 +471,8 @@ async function suiteA11y(browser) {
       }
       return { total: els.length, bad, unver }
     })
-    r.bad === 0 && r.unver === 0
-      ? check('M-14', 'P0', '触控热区四角', `${r.total} 控件`, '4/4 角', true)
-      : unverifiable('M-14', 'P0', '触控热区四角', `${r.bad} 角未命中 / ${r.unver} 角越界`)
+    if (r.bad === 0 && r.unver === 0) check('M-14', 'P0', '触控热区四角', `${r.total} 控件`, '4/4 角', true)
+    else unverifiable('M-14', 'P0', '触控热区四角', `${r.bad} 角未命中 / ${r.unver} 角越界`)
     await ctx.close()
   }
 }

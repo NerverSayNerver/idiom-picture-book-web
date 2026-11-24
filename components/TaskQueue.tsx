@@ -3,12 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useJobs, pauseJobAPI, resumeJobAPI, cancelJobAPI, deleteJobAPI, retryJobAPI } from '@/lib/use-jobs'
-import type { Task, TaskStatus } from '@/lib/task-types'
+import type { Task } from '@/lib/task-types'
 import { TaskCard } from './TaskCard'
 import { NotificationToggle } from './NotificationToggle'
 
 interface TaskQueueProps {
-  compact?: boolean
   className?: string
   initialFilter?: string
 }
@@ -74,7 +73,7 @@ function TaskListSkeleton() {
   )
 }
 
-export function TaskQueue({ compact = false, className = '', initialFilter }: TaskQueueProps) {
+export function TaskQueue({ className = '', initialFilter }: TaskQueueProps) {
   const { jobs, allTasks, refresh, error, errorStatus, hasLoaded, isValidating } = useJobs()
   const [filter, setFilter] = useState<FilterMode>(
     (initialFilter && ['all', 'pending', 'running', 'paused', 'completed', 'failed'].includes(initialFilter)
@@ -145,7 +144,8 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
   const toggleExpand = useCallback((jobId: string) => {
     setExpandedJobs(prev => {
       const next = new Set(prev)
-      next.has(jobId) ? next.delete(jobId) : next.add(jobId)
+      if (next.has(jobId)) next.delete(jobId)
+      else next.add(jobId)
       return next
     })
   }, [])
@@ -335,7 +335,8 @@ export function TaskQueue({ compact = false, className = '', initialFilter }: Ta
   const toggleGroupCollapse = useCallback((label: string) => {
     setCollapsedGroups(prev => {
       const next = new Set(prev)
-      next.has(label) ? next.delete(label) : next.add(label)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
       return next
     })
   }, [])

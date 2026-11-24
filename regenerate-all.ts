@@ -20,41 +20,6 @@ import type { ContentCategory } from './lib/types'
 
 // ── 清理 ──────────────────────────────────────────────────────
 
-/** 检查一本书是否已完整生成（book.json + 所有图片都存在） */
-async function isBookComplete(category: string, sourceText: string, expectedScenes: number): Promise<boolean> {
-  const bookJson = path.join(process.cwd(), 'public', 'generated', category, sourceText, 'book.json')
-  try {
-    await fs.access(bookJson)
-    // 检查所有图片
-    for (let i = 1; i <= expectedScenes; i++) {
-      const png = path.join(process.cwd(), 'public', 'generated', category, sourceText, `${i}.png`)
-      await fs.access(png)
-    }
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function cleanAll() {
-  const genDir = path.join(process.cwd(), 'public', 'generated')
-  // 删除所有品类目录
-  for (const dir of ['idiom', 'poetry', 'nursery-rhyme', 'proverb', 'fairy-tale']) {
-    const p = path.join(genDir, dir)
-    try { await fs.rm(p, { recursive: true, force: true }) } catch {}
-  }
-  // 重置 index.json
-  await fs.writeFile(
-    path.join(genDir, 'index.json'),
-    JSON.stringify({ version: 2, generatedAt: '', categories: {} }, null, 2),
-    'utf-8'
-  )
-  // 重置 SQLite 任务 DB（删表重建）
-  const dbPath = path.join(process.cwd(), 'picture-book-tasks.db')
-  try { await fs.unlink(dbPath) } catch {}
-  console.log('✅ 清理完成')
-}
-
 // ── 下载图片到本地 ────────────────────────────────────────────
 
 async function downloadImage(url: string, filePath: string): Promise<void> {

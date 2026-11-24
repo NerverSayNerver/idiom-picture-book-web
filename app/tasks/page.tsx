@@ -29,7 +29,7 @@ function TasksContent() {
         </div>
 
         {/* 任务队列（全功能模式） */}
-        <TaskQueue compact={false} initialFilter={filterParam ?? undefined} />
+        <TaskQueue initialFilter={filterParam ?? undefined} />
       </div>
     </main>
   )

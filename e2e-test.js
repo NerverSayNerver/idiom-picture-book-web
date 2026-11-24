@@ -1,7 +1,6 @@
 const { chromium } = require('playwright');
 
 const BASE_URL = 'http://localhost:3000';
-const TEST_TIMEOUT = 180000; // 3 minutes
 
 let passed = 0;
 let failed = 0;

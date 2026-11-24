@@ -2,7 +2,7 @@
 
 import { useState, useId } from 'react'
 import type { Task, TaskStatus, TaskType } from '@/lib/task-types'
-import type { SceneTemplate } from '@/lib/types'
+import type { SceneTemplate, ContentCategory } from '@/lib/types'
 import Link from 'next/link'
 import { getStrategy } from '@/lib/content-types'
 import Modal from './Modal'
@@ -109,7 +109,10 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
   const [retryError, setRetryError] = useState<string | null>(null)
   const canShowPrompt = task.status === 'completed' && !!task.prompt
   const startMs = toMs(task.startTime)
-  // 用 `||` 而不是 `??`：时间戳里 0（1970-01-01）不是合法取值，一并当作「未结束」兜回 now
+  // 用 `||` 而不是 `??`：时间戳里 0（1970-01-01）不是合法取值，一并当作「未结束」兜回 now。
+  // 渲染期读 Date.now 是有意设计：进行中任务的耗时随 SWR 轮询重渲染而刷新；
+  // elapsed 仅在客户端数据就绪后非空，无 SSR/hydration 不一致风险。
+  // eslint-disable-next-line react-hooks/purity
   const elapsed = startMs ? formatDuration((toMs(task.endTime) || Date.now()) - startMs) : null
   const progressPercent = task.total > 0 ? Math.round((task.progress / task.total) * 100) : 0
 
@@ -124,7 +127,7 @@ function ChildTaskRow({ task, showActions }: { task: Task; showActions: boolean 
   // 获取父 job 信息 — 从 props 无法直接获取，使用 task 上的冗余字段
   const decomposeIdiom = task.idiom
   const categoryLabel = (() => {
-    try { return getStrategy((task.category || 'idiom') as any).label } catch { return '内容' }
+    try { return getStrategy((task.category || 'idiom') as ContentCategory).label } catch { return '内容' }
   })()
 
   // 类型对应的默认标题
@@ -374,7 +377,8 @@ export function TaskCard({
 }: TaskCardProps) {
   const status = statusConfig[task.status]
   const startMs = toMs(task.startTime)
-  // 用 `||` 而不是 `??`：时间戳里 0（1970-01-01）不是合法取值，一并当作「未结束」兜回 now
+  // 同上：轮询驱动的运行耗时展示，渲染期 Date.now 是有意设计
+  // eslint-disable-next-line react-hooks/purity
   const elapsed = startMs ? formatDuration((toMs(task.endTime) || Date.now()) - startMs) : null
   // 卡头 button ↔ 子列表容器的 aria-controls 关联
   const childrenId = useId()

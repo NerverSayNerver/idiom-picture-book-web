@@ -20,15 +20,6 @@ function sanitizeName(name) {
   return cleaned
 }
 
-/** 校验最终路径仍在 baseDir 内（防止 .. 穿越） */
-function assertWithinBase(filePath, baseDir) {
-  const resolvedBase = path.resolve(baseDir)
-  const resolved = path.resolve(filePath)
-  if (!resolved.startsWith(resolvedBase + path.sep) && resolved !== resolvedBase) {
-    throw new Error('Path traversal detected')
-  }
-}
-
 // ── 各品类绘本数据 ──────────────────────────────────────
 
 const BOOKS = {
