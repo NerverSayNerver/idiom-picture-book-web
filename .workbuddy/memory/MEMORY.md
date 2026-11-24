@@ -39,6 +39,12 @@
 - **字体走系统中文栈**（tailwind.config.ts 的 fontFamily.sans），禁止回退 next/font/google 全量 Noto Sans SC：实测 36 个 woff2 / 1880KB。要统一字形只能自托管按本站文案子集化的字体
 - 本地插画统一在 `components/Illustration.tsx`，禁止再引 `trae-api-cn` 外链（已 404 且返回英文占位图）
 
+## 验收约定（2026-11-24 建立）
+- `npm run verify` = `scripts/verify-loading.mjs`，机械核对 M-01–M-21；`verify:quick` 跑核心回归。P0 失败退出码 1
+- 验收前先起生产服务（`npx next start -p 3211`），可用 `VERIFY_BASE` 改地址、`VERIFY_JSON` 导出报告
+- **一轮只注入一个 observer**：全局 MutationObserver 在 CPU4× 下会饿死首屏 30s 并让播报计数虚高
+- 2026-11-24 基线：28 个 P0 检查点全绿；M-04a 177KB / M-04b 447KB / M-02 2051ms / CLS 0。详细坑位见 `.workbuddy/memory/2026-11-24.md`
+
 ## 构建环境注意
 - `next build` 会被 WorkBuddy 的安全删除护栏拦在 `.next/trace`（50 项阈值）。解决：构建前 `mv .next /tmp/pb-next-bak/next-$(date +%s)`，不要强删
 

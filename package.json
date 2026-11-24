@@ -11,7 +11,9 @@
     "dev:all": "npx concurrently -n next,worker -c cyan,yellow \"next dev\" \"npx tsx worker.ts\"",
     "tiers": "node scripts/build-image-tiers.mjs",
     "tiers:all": "node scripts/build-image-tiers.mjs --force",
-    "tiers:report": "node scripts/build-image-tiers.mjs --report"
+    "tiers:report": "node scripts/build-image-tiers.mjs --report",
+    "verify": "node scripts/verify-loading.mjs",
+    "verify:quick": "node scripts/verify-loading.mjs --quick"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
