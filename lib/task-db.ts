@@ -202,7 +202,7 @@ export function updateTask(id: string, updates: Partial<Task>): void {
   const now = nowSeconds()
 
   const setClauses: string[] = ['updated_at = ?']
-  const values: any[] = [now]
+  const values: unknown[] = [now]
 
   if (updates.status !== undefined) {
     setClauses.push('status = ?')
@@ -275,7 +275,7 @@ function deriveParentStatus(parentId: string): void {
 
   const now = nowSeconds()
   const updates: string[] = ['status = ?', 'progress = ?', 'updated_at = ?']
-  const values: any[] = [derived, completedCount, now]
+  const values: unknown[] = [derived, completedCount, now]
 
   if (derived === 'completed' || derived === 'failed') {
     updates.push('end_time = ?')
@@ -366,7 +366,7 @@ export function pollPendingJob(): Task | null {
 export function listJobs(filter?: { status?: TaskStatus }): Task[] {
   const db = getDb()
   let query = "SELECT * FROM tasks WHERE type = 'job'"
-  const params: any[] = []
+  const params: unknown[] = []
 
   if (filter?.status) {
     query += " AND status = ?"

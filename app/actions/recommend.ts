@@ -40,7 +40,14 @@ export async function fetchRecommendations(
   const jsonEnd = jsonStr.lastIndexOf(']')
   if (jsonStart !== -1 && jsonEnd !== -1) jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1)
 
-  const data = (() => {
+  interface LlmRecommendItem {
+    idiom?: string
+    sourceText?: string
+    meaning?: string
+    category?: string
+  }
+
+  const data: unknown = (() => {
     try {
       return JSON.parse(jsonStr)
     } catch (parseError) {
@@ -50,9 +57,12 @@ export async function fetchRecommendations(
   })()
   if (!Array.isArray(data) || data.length === 0) throw new Error('LLM 返回格式不正确')
 
-  const items = data
-    .filter((item: any) => (item.idiom || item.sourceText) && item.meaning && item.category)
-    .map((item: any) => ({
+  const items = (data as LlmRecommendItem[])
+    .filter(
+      (item): item is LlmRecommendItem & { sourceText: string; meaning: string; category: string } =>
+        Boolean((item.idiom || item.sourceText) && item.meaning && item.category)
+    )
+    .map((item) => ({
       sourceText: sanitizeLlmOutput(item.idiom || item.sourceText),
       meaning: sanitizeLlmOutput(item.meaning),
       category: item.category as ContentCategory,

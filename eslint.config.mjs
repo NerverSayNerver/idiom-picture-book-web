@@ -18,9 +18,10 @@ export default defineConfig([
       'react-hooks/immutability': 'warn',
 
       // ── 类型收紧 ──────────────────────────────────────────────────────────
-      // 存量 20 处 any 集中在 JSON 边界断言与 catch 块，安全收紧需逐处理解
-      // 语义并定义中间类型，另起「类型收紧」轮次处理。warn 保证新增 any 可见。
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // 2026-11-24 类型收紧轮已将存量 20 处 any 清零（JSON 边界改 unknown +
+      // 类型守卫、SQL 绑定改 unknown[]、卡片展示函数改结构化参数）。
+      // 保持 error 防止新增 any 回流。
+      '@typescript-eslint/no-explicit-any': 'error',
 
       // _ 前缀 = 接口要求但实现有意不用的参数（4 个 content-type strategy）
       '@typescript-eslint/no-unused-vars': [

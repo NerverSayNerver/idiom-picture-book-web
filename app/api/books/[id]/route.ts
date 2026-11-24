@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { sanitizeFilename, validateCategory, assertPathWithinBase } from '@/lib/path-security'
+import type { BookIndex } from '@/lib/save-book'
 
 // DELETE /api/books/:id — 删除绘本（id 格式: category:sourceText）
 export async function DELETE(
@@ -34,13 +35,13 @@ export async function DELETE(
     const indexPath = path.join(baseDir, 'index.json')
     try {
       const indexRaw = await fs.readFile(indexPath, 'utf-8')
-      const index = JSON.parse(indexRaw)
-      if (index.categories?.[safeCategory]) {
-        const cat = index.categories[safeCategory]
-        cat.items = cat.items.filter((i: any) => i.id !== safeSourceText)
+      const index = JSON.parse(indexRaw) as Partial<BookIndex>
+      const cat = index.categories?.[safeCategory]
+      if (cat) {
+        cat.items = cat.items.filter((i) => i.id !== safeSourceText)
         cat.count = cat.items.length
         if (cat.items.length === 0) {
-          delete index.categories[safeCategory]
+          delete index.categories![safeCategory]
         }
         await fs.writeFile(indexPath, JSON.stringify(index, null, 2), 'utf-8')
       }

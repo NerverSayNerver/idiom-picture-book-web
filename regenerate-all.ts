@@ -16,7 +16,10 @@ import { buildEnhancedPrompt } from './lib/prompts'
 import {
   IDIOM_LIST,
 } from './lib/content-info'
-import type { ContentCategory } from './lib/types'
+import type { ContentCategory, PictureBook } from './lib/types'
+
+/** generateOneBook 透传给绘本的可选扩展字段 */
+type ExtraBookFields = Pick<PictureBook, 'author' | 'dynasty' | 'fullText'>
 
 // ── 清理 ──────────────────────────────────────────────────────
 
@@ -54,7 +57,7 @@ async function findReferenceImage(
 async function generateOneBook(
   sourceText: string,
   category: ContentCategory,
-  extraFields: Record<string, any> = {}
+  extraFields: ExtraBookFields = {}
 ): Promise<void> {
   const bookBaseDir = path.join('public', 'generated', category, sourceText)
   const outDir = path.join(process.cwd(), 'public', 'generated', category, sourceText)
@@ -113,24 +116,23 @@ async function generateOneBook(
 
   // Step 3: 组装 book 并保存
   console.log(`  [3/3] 保存 book.json...`)
-  const book = {
+  const book: PictureBook = {
     id: uuidv4(),
     category,
     sourceText,
     title: sourceText,
     idiom: sourceText,
     meaning: decomposition.meaning,
-    author: extraFields.author || undefined,
-    dynasty: extraFields.dynasty || undefined,
-    fullText: extraFields.fullText || undefined,
+    author: extraFields.author,
+    dynasty: extraFields.dynasty,
+    fullText: extraFields.fullText,
     createdAt: new Date().toISOString(),
     scenes: decomposition.scenes.map((s, i) => ({
       ...s,
       id: i + 1,
       imageUrl: imagePaths[i],
     })),
-    ...extraFields,
-  } as any
+  }
 
   await saveBook(book)
   console.log(`  ✅ 完成: ${bookBaseDir}`)
@@ -143,7 +145,7 @@ async function main() {
   console.log('🚀 跳过清理，直接开始生成绘本...')
 
   // 只处理成语故事
-  const items: Array<{ sourceText: string; category: ContentCategory; extra?: Record<string, any> }> = []
+  const items: Array<{ sourceText: string; category: ContentCategory; extra?: ExtraBookFields }> = []
 
   for (const item of IDIOM_LIST) {
     items.push({ sourceText: item.sourceText, category: 'idiom' as ContentCategory })

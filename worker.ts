@@ -14,7 +14,7 @@ import { saveBook } from './lib/save-book'
 import { buildEnhancedPrompt, getSystemPrompt, buildUserPrompt } from './lib/prompts'
 import { getStrategy, getContentInfo } from './lib/content-types'
 import type { ChildTaskDef } from './lib/task-types'
-import type { ContentCategory, SceneTemplate } from './lib/types'
+import type { ContentCategory, PictureBook, SceneTemplate } from './lib/types'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { sanitizeFilename, validateCategory } from './lib/path-security'
@@ -327,7 +327,7 @@ async function executeSave(taskId: string, jobId: string, signal: AbortSignal): 
       ? JSON.parse(decomposeTask.decomposeScenesJson)
       : []
 
-    const book = {
+    const book: PictureBook = {
       id: jobId,
       category: safeCategory as ContentCategory,
       sourceText: job.sourceText || '',
@@ -342,12 +342,12 @@ async function executeSave(taskId: string, jobId: string, signal: AbortSignal): 
           id: i + 1,
           imageUrl: localImageUrl, // 只用本地路径，远程链接会过期
         }
-      }) as any[],
+      }),
     }
 
     if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
 
-    await saveBook(book as any)
+    await saveBook(book)
 
     updateTask(taskId, {
       status: 'completed',

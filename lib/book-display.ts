@@ -1,36 +1,38 @@
 import type { PictureBook } from './types'
 import { getContentInfo } from './content-info'
 
-export function getBookAuthor(book: PictureBook): string | undefined {
+/**
+ * 卡片级书籍信息子集：BookCard 的 BookCardBook 等宽松来源只需满足此结构。
+ * 函数均按结构化类型取值，不要求完整 PictureBook。
+ */
+interface BookCardSource {
+  category: string
+  sourceText: string
+  author?: string
+  dynasty?: string
+}
+
+export function getBookAuthor(book: BookCardSource): string | undefined {
   return book.author ?? getContentInfo(book.sourceText, book.category)?.author
 }
 
-export function getBookDynasty(book: PictureBook): string | undefined {
+export function getBookDynasty(book: BookCardSource): string | undefined {
   return book.dynasty ?? getContentInfo(book.sourceText, book.category)?.dynasty
 }
 
 /** 古诗作者朝代展示，如「唐 · 李白」 */
-export function formatPoetryAttribution(book: PictureBook): string | undefined {
+export function formatPoetryAttribution(book: BookCardSource): string | undefined {
   const dynasty = getBookDynasty(book)
   const author = getBookAuthor(book)
   if (dynasty && author) return `${dynasty} · ${author}`
   return dynasty || author
 }
 
-export function getBookCardAuthor(book: {
-  category: string
-  sourceText: string
-  author?: string
-}): string | undefined {
-  return book.author ?? getContentInfo(book.sourceText, book.category)?.author
+export function getBookCardAuthor(book: BookCardSource): string | undefined {
+  return getBookAuthor(book)
 }
 
-export function getBookCardAttribution(book: {
-  category: string
-  sourceText: string
-  author?: string
-  dynasty?: string
-}): string | undefined {
+export function getBookCardAttribution(book: BookCardSource): string | undefined {
   const author = getBookCardAuthor(book)
   const dynasty = book.dynasty ?? getContentInfo(book.sourceText, book.category)?.dynasty
   const parts = [dynasty, author].filter(Boolean)
@@ -79,10 +81,10 @@ export function getBookCardSubtitle(book: {
   author?: string
   dynasty?: string
   fullText?: string
-  scenes?: Array<{ narration: string; title: string }>
+  scenes?: Array<{ narration?: string; title?: string }>
 }): string {
   if (book.category === 'poetry') {
-    const attribution = formatPoetryAttribution(book as PictureBook)
+    const attribution = formatPoetryAttribution(book)
     if (attribution) return attribution
   }
   if (book.category === 'nursery-rhyme') {

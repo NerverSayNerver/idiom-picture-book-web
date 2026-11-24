@@ -67,7 +67,7 @@ export class AgnesImageProvider implements ImageProvider {
   private async fetchImageApi(params: {
     prompt: string
     size?: string
-    extraBody?: Record<string, any>
+    extraBody?: Record<string, unknown>
   }): Promise<ImageResult> {
     const imgCfg = getImageConfig()
 
@@ -83,7 +83,7 @@ export class AgnesImageProvider implements ImageProvider {
     }
 
     const isImg2img = !!params.extraBody?.image
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       model: this.config.model,
       prompt,
       size: params.size || '512x512',

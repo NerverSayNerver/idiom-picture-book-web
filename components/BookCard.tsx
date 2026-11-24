@@ -91,11 +91,11 @@ export function BookCard({ book, onDelete, entranceDelay = 0, removing = false }
   const sourceText = book.sourceText || book.idiom || book.title
   const isPoetry = book.category === 'poetry'
   const isNurseryRhyme = book.category === 'nursery-rhyme'
-  const cardSubtitle = getBookCardSubtitle(book as any)
+  const cardSubtitle = getBookCardSubtitle({ ...book, sourceText })
   const poetryAttribution = isPoetry
-    ? formatPoetryAttribution({ ...book, sourceText, category: book.category } as any)
+    ? formatPoetryAttribution({ ...book, sourceText })
     : undefined
-  const cardAttribution = getBookCardAttribution(book as any)
+  const cardAttribution = getBookCardAttribution({ ...book, sourceText })
 
   // 「重新生成」三态：进入队列 / 已在队列 / 失败（保留确认态让用户重试）
   const handleRegenerate = async () => {

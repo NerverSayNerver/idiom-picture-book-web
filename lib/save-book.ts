@@ -20,6 +20,34 @@ function acquireIndexLock(): Promise<() => void> {
  * 保存绘本到文件系统 + 更新 index.json
  * 供 API route 和 worker 共用
  */
+/** index.json 单本绘本条目 */
+export interface BookIndexEntry {
+  id: string
+  sourceText: string
+  title: string
+  meaning: string
+  sceneCount: number
+  author?: string
+  dynasty?: string
+  fullText?: string
+  createdAt: string
+}
+
+/** index.json 按品类的分组 */
+export interface BookIndexCategory {
+  label?: string
+  icon?: string
+  count: number
+  items: BookIndexEntry[]
+}
+
+/** index.json 顶层结构 */
+export interface BookIndex {
+  version?: number
+  generatedAt?: string
+  categories: Record<string, BookIndexCategory>
+}
+
 export async function saveBook(book: PictureBook): Promise<{ path: string }> {
   const baseDir = path.join(process.cwd(), 'public', 'generated')
 
@@ -64,7 +92,7 @@ async function updateIndex(baseDir: string, book: PictureBook, safeCategory: str
   const release = await acquireIndexLock()
   try {
     const indexPath = path.join(baseDir, 'index.json')
-    let index: any = {
+    let index: BookIndex = {
       version: 2,
       generatedAt: new Date().toISOString(),
       categories: {},
@@ -72,9 +100,10 @@ async function updateIndex(baseDir: string, book: PictureBook, safeCategory: str
 
     try {
       const existing = await fs.readFile(indexPath, 'utf-8')
-      index = JSON.parse(existing)
+      const parsed = JSON.parse(existing) as Partial<BookIndex>
+      index = { ...index, ...parsed, categories: parsed.categories ?? {} }
     } catch {
-      // 文件不存在，使用默认
+      // 文件不存在或格式异常，使用默认
     }
 
     // 每次写入都刷新 generatedAt，标识最近一次生成/更新绘本的时间
@@ -92,7 +121,7 @@ async function updateIndex(baseDir: string, book: PictureBook, safeCategory: str
     }
 
     const cat = index.categories[safeCategory]
-    const existingIdx = cat.items.findIndex((i: any) => i.id === safeSourceText)
+    const existingIdx = cat.items.findIndex((i) => i.id === safeSourceText)
     const entry = {
       id: safeSourceText,
       sourceText: book.sourceText,

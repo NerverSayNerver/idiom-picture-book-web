@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { ContentInfo } from './types'
+import type { ContentCategory, ContentInfo } from './types'
 
 export class PictureBookDB extends Dexie {
   recommendedItems!: Table<ContentInfo & { id?: number }>
@@ -19,13 +19,13 @@ export const db = new PictureBookDB()
 /** 批量保存推荐条目（按品类覆盖） */
 export async function saveRecommendedItems(
   items: ContentInfo[],
-  category: string
+  category: ContentCategory
 ): Promise<void> {
   await db.transaction('rw', db.recommendedItems, async () => {
     await db.recommendedItems.where('category').equals(category).delete()
     const tagged = items.map(i => ({ ...i, category }))
     if (tagged.length > 0) {
-      await db.recommendedItems.bulkAdd(tagged as any)
+      await db.recommendedItems.bulkAdd(tagged)
     }
   })
 }

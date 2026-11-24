@@ -22,7 +22,7 @@ export function sanitizeFilename(name: string): string {
  * 校验品类是否在白名单内
  */
 export function validateCategory(category: string): string {
-  if (!ALLOWED_CATEGORIES.includes(category as any)) {
+  if (!(ALLOWED_CATEGORIES as readonly string[]).includes(category)) {
     throw new Error(`Invalid category: ${category}`)
   }
   return category
